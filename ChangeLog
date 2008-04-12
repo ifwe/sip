@@ -1,0 +1,4243 @@
+2008/02/12 13:53:13  phil
+Released as v4.7.4.
+
+
+2008/02/09 15:10:06  phil
+"self" is no longer included in method declarations in API files.
+Updated the NEWS file.
+
+
+2008/02/02 13:54:40  phil
+Backed out the support for the reflected special methods - they aren't needed.
+
+
+2008/02/01 23:07:30  phil
+Added support for the reflected number special methods, ie. __radd__, __rsub__,
+__rmul__, __rdiv__, __rmod__, __rlshift__, __rrshift__, __rand__, __ror__, and
+__rxor__.
+
+
+2008/02/01 10:23:17  phil
+Changed the qt_metacast() support so that it will work with PyQt binaries built
+without the support.
+
+
+2008/01/31 15:21:59  phil
+Changed the implementation of qt_metacast() to be consistent with qt_metacall()
+etc.
+
+
+2008/01/30 21:27:35  phil
+qt_metacast() is now automatically generated and handles Python sub-classes.
+
+
+2008/01/23 22:11:20  phil
+Changed the output of "sip -V" so that it is just the latest version number
+(rather than the last release and the latest version number).
+
+
+2008/01/22 12:56:02  phil
+Fixed a bug in working out the header files to include for exceptions.
+Fixed many warning messages.
+
+
+2008/01/20 15:40:21  phil
+Rely more on distutils for determining directories to deal with Leopard's
+non-standard choices.
+
+
+2008/01/18 10:16:56  phil
+Fixed a code generation bug when a function had multiple /Out/ arguments that
+were mapped types.
+
+
+2008/01/10 11:56:42  phil
+Fixed the documentation for MethodCode and the standard binary operators.
+Updated the copyright notices.
+
+
+2007/12/28 12:31:03  phil
+Fixed a bug where PyQt connections from an object owned by C++ were lost when
+the Python object was garbage collected.
+
+
+2007/12/11 17:39:32  phil
+/Transfer/ can now be specified for constructors.
+
+
+2007/12/06 14:13:35  phil
+Added support for automatically generating missing complementary comparision
+operators.
+Released as v4.7.3.
+
+
+2007/12/05 13:41:52  phil
+Released as v4.7.2.
+
+
+2007/12/05 11:39:32  phil
+Fixed a bug in handling virtual comparison operators that caused recursion when
+trying to call the C++ version from a Python reimplementation.
+
+
+2007/11/30 18:26:51  phil
+Fixed the previous fix for Windows.
+
+
+2007/11/30 18:05:19  phil
+Fixed a bug in sip.dump() for Python prior to v2.5.
+
+
+2007/11/17 11:49:31  phil
+Tweaked the way the slot flags are passed to ensure binary compatibility with
+modules built with earlier versions.
+
+
+2007/11/16 19:38:05  phil
+Added the /SingleShot/ argument annotation.
+Increased the minor number of the API version.
+Added the 'g' format character to the argument parser.
+Deprecated the Qt support function to create a universal slot and replaced it
+with one that is passed a set of flags (specifically the one that identifies a
+single shot slot).
+
+
+2007/11/08  9:50:02  phil
+When searching the object map, objects with a 0 reference count are now
+ignored.
+
+
+2007/10/26 17:06:13  phil
+Applied Giovanni's patch to make PythonModuleMakefile skip .svn and CVS
+directories.
+
+
+2007/10/16 17:31:11  phil
+The XML export now has an optional "pickle" attribute on the "Class" element.
+
+
+2007/10/14 15:52:52  phil
+Tiny documentation fix.
+
+
+2007/10/09 14:23:08  phil
+Various fixes for bugs in the handling of protected classes.  (There may also
+be an impact on the handling of protected enums.)
+
+
+2007/10/07 17:06:12  phil
+Added the documentation section describing how to access the SIP API when
+embedding Python in a C/C++ application.
+
+
+2007/10/03 19:47:14  phil
+Added the TransferThis function annotation.
+
+
+2007/09/28 17:03:19  phil
+Released as v4.7.1.
+
+
+2007/09/26 14:46:32  phil
+Fixed a bug in the object map code that meant an object could get skipped when
+searching - which could cause a crash if it was the last one.
+
+
+2007/09/21  6:19:25  phil
+Fixed a longstanding bug when calling a protected method of a super-class by
+passing self as the first argument and the type of self uses multiple
+inheritance but the super-class doesn't.
+
+
+2007/09/19 22:34:09  phil
+When garbage collecting, only check if a wrapped object currently has proxy
+slots if at least one was created at some time in the past.
+
+
+2007/09/14 18:41:56  phil
+Fixed various bugs related to protected classes in namespaces.
+
+
+2007/09/14 12:35:04  phil
+Allowed typedef'ed names to be used in super-class lists.
+
+
+2007/09/04 22:26:36  phil
+Fixed a bug where virtuals in a class template were being added to the module
+in which it was defined (rather than just the modules in which it was used).
+
+
+2007/09/02 16:12:48  phil
+Added a workaround for a bug in Stackless Python.
+
+
+2007/08/30 15:11:43  phil
+The digits to the right of the decimal point in a floating point literal are
+now optional.
+
+
+2007/08/29 17:37:31  phil
+Fixed a bug where unsupported variable types were rejected even though %GetCode
+and %SetCode were provided.
+
+
+2007/08/11 15:32:30  phil
+Un-track a wrapped object before calling the C++ dtor.  Without this the
+garbage collector can be invoked from another thread (because the GIL is
+released before calling the C++ dtor) which can result in a crash.
+
+
+2007/08/10 17:55:47  phil
+Whoops - forgot to make 'f' and 'F' optional.
+
+
+2007/08/10 17:26:45  phil
+Allow a trailing 'f' or 'F' in floating point literals.
+
+
+2007/08/04 15:36:26  phil
+Fixed a bug with class templates defined in an enclosing scope (ie. a namespace
+or another class).
+
+
+2007/07/30 17:01:42  phil
+Released as v4.7.
+
+
+2007/07/28 12:08:32  phil
+Fixed a memory leak with mapped types with the /Out/ annotation.
+
+
+2007/07/27 17:39:06  phil
+Fixed a bug preventing wrapped C++ slots from being disconnected.
+
+
+2007/07/14 15:31:37  phil
+Rather than only lambda functions being given an extra reference when used as a
+slot, anything other that a method or wrapped C function is given an extra
+reference.  Specifically this means that partial functions can now be used as
+slots.
+
+
+2007/07/04 21:16:25  phil
+Relaxed the restriction that /Out/ arguments couldn't be const.
+
+
+2007/06/25 17:17:16  phil
+Fixed a compiler warning message about an unused argument in generated code.
+
+
+2007/06/25 16:50:15  phil
+Fixed a bug in the previous fix so that it only applies to mapped types.
+
+
+2007/06/25 12:32:16  phil
+Fixed a bug where template based types where overwriting the header code of any
+previously defined type based on the same interface file.
+
+
+2007/06/23 17:20:22  phil
+Consolidated modules are now generated as either C or C++ (rather than always
+C) so that the name cache names are consistently mangled.
+
+
+2007/06/22 19:27:21  phil
+Fixed a build system problem for PyQt on Windows against a static Qt.
+
+
+2007/06/22 16:05:25  phil
+Fixed silly code generation typo.
+
+
+2007/06/22  9:46:32  phil
+Changed the build system so that missing macros default to being empty rather
+than causing an error.  (Qt v4.3.0 contains such a case.)
+
+
+2007/06/20 15:52:52  phil
+Split the consolidated module concept into separate consolidated and composite
+module types, which significantly simplifies things.
+
+
+2007/06/19 23:48:55  phil
+Updated some comments in the build system.
+
+
+2007/06/19 20:34:53  phil
+Fixed a bug in the sip module consolidated module support. Otherwise everything
+seems to work.
+
+
+2007/06/19 16:53:41  phil
+More consolidated module refactoring.
+
+
+2007/06/18 21:54:50  phil
+More consolidated module refactoring.  PyQt4 with only QtCore enabled now
+compiles.
+
+
+2007/06/16 14:42:46  phil
+More consolidated module support.
+
+
+2007/06/12 18:43:41  phil
+Hopefully fixed a bug in the handling of the 'C' and 'D' format characters in
+sipParseResult().
+
+
+2007/06/12 18:16:44  phil
+More refactoring for consolidated module support.  SIP no longer generates lots
+of .h files.
+Note that SIP is now less tolerant of missing #includes in %TypeHeaderCode and
+%ModuleHeaderCode.
+
+
+2007/06/04 21:07:49  phil
+Removed the need to generate the shadow class definition in a header file and
+put it in the original class's C++ file instead.
+
+
+2007/06/03 18:31:08  phil
+More consolidated module refactoring.
+
+
+2007/06/01 22:16:36  phil
+Fixed a missing return in parser.y.
+
+
+2007/05/28 23:37:27  phil
+A bit more consolidated module support.
+
+
+2007/05/28 17:07:25  phil
+More work on consolidated modules.
+
+
+2007/05/27 23:53:55  phil
+The component stub modules (ie. those requested with the -p flag) are now
+generated.
+
+
+2007/05/27 17:30:17  phil
+Added the stubs of the -n and -p command line options for the remaining
+consolidated module support.
+Documented the %ConsolidatedModule directive.
+
+
+2007/05/24 19:44:54  phil
+Completed the implementation of %ConsolidatedModule for the simple case (where
+the consolidated module populates itself from the component modules).
+
+
+2007/05/23 22:50:07  phil
+A bit more refactoring for the consolidated module support.
+
+
+2007/05/23 20:11:52  phil
+When deciding if an instance is already wrapped, sip only considers if the
+candidate is a sub-class of the expected class.  (Before it used to consider if
+the candidate was a super-class of the expected class as well.  However this
+shouldn't be necessary as the candidates class should be correct if all the
+sub-class convertor code is working properly.)
+
+
+2007/05/23 18:34:27  phil
+Added the start of the support for %ConsolidatedModule.
+
+
+2007/05/20 14:37:00  phil
+Added the dump() funtion to the sip module.
+
+
+2007/05/13 18:19:11  phil
+Added sipTransferBreak() for removing hidden references without changing
+ownership.
+
+
+2007/05/13 12:23:38  phil
+Added support for /Transfer/ as a function annotation.
+
+
+2007/05/12 17:45:54  phil
+Added the build system hooks for PyQt's QtScript module.
+
+
+2007/05/12 11:26:54  phil
+Fixed some parser problems related to versioning.
+
+
+2007/05/11 17:52:08  phil
+Relaxed the restriction that the arguments to mapped type templates had to be
+simple names and not basic types.
+
+
+2007/05/11 10:49:11  phil
+Generated the sipClass_* for namespaces.
+
+
+2007/05/07 11:16:19  phil
+More fixes to mapped type templates - should be Ok now.
+
+
+2007/05/04 23:13:51  phil
+Fixed a couple of documentation bugs regarding exceptions.
+
+
+2007/05/03 11:37:21  phil
+Fixed a bug where generated .h files for template argument types were being
+included in the mapped type rather than the mapped type's own .h file.
+
+
+2007/04/28 13:49:13  phil
+Removed the need for the copy_reg module. This marks the completion if the
+pickle support.
+
+
+2007/04/28 12:22:27  phil
+Pickling nested types now works.
+
+
+2007/04/28 10:49:23  phil
+Minor refactoring of the pickle code prior to adding support for nested
+classes.
+
+
+2007/04/27 11:21:08  phil
+Named enums that are nested within other types can now be pickled.  (Note that
+the pickle format for classes will be changed in the next few days to allow
+nested classes to be pickled in the same way.)
+
+
+2007/04/26 16:49:44  phil
+More improvements to the pickle code.
+
+
+2007/04/26 16:08:54  phil
+Slight improvement to the generated pickle code.
+
+
+2007/04/22 17:28:24  phil
+Added %PickleCode to allow wrapped objects to be pickled.
+
+
+2007/04/22 14:58:19  phil
+Module level enums can now be pickled.
+Removed the None implementations of __reduce__ and __reduce_ex__ and fixed the
+segfault that pickling was causing.
+
+
+2007/04/10 15:27:04  phil
+Released as v4.6.
+
+
+2007/04/07 17:37:56  phil
+Changed the API file generation to generate the __init__ form of a ctor as well
+as the callable type form.
+
+
+2007/04/02 22:45:04  phil
+Updated the NEWS file.
+
+
+2007/04/02 22:44:16  phil
+Added the -n flag to configure.py to build universal binaries on MacOS/X.
+
+
+2007/04/02 19:07:30  phil
+Fixed a MinGW warning message.
+
+
+2007/04/02 16:03:32  phil
+Backed out the save and restore of the exception state in sipWrapper_dealloc()
+as it can get called when there is no current thread state (which results in a
+segfault).
+
+
+2007/04/02 15:23:53  phil
+Updated the NEWS file.
+
+
+2007/04/02 14:06:29  phil
+Fixed a bug handling sub-class convertor code with multiple inheritance.
+
+
+2007/04/02 12:10:54  phil
+Virtuals that return a wchar_t * now keep then free the previous result to
+limit the possible memory leaks.
+
+
+2007/04/01 16:28:23  phil
+Fixed a bug in the wchar_t support with const wchar_t * arguments.
+Fixed a bug in the wchar_t support with char and wchar_t being considered
+equivalent.
+
+
+2007/03/26 19:28:28  phil
+Fixed problem where lambda slots connected to QObject.destroyed() were cleared
+before the signal was emitted.
+
+
+2007/03/25 13:45:56  phil
+Completed the wchar_t support.
+
+
+2007/03/25  0:00:12  phil
+Added support for wchar_t - undocumented and certainly untested.
+
+
+2007/03/10 15:23:46  phil
+No longer generate the forward declaration of an opaque class.  It shouldn't be
+necessary and means that the class could be a C structure.
+
+
+2007/03/02 22:48:39  phil
+SIP should now handle DOS format files on UNIX systems.
+
+
+2007/02/27 13:25:26  phil
+Undeprecated the -g command line option.
+Added the /HoldGIL/ annotation.
+
+
+2007/02/25 14:28:22  phil
+Fixed the previous fix related to signatures for the cases where the Python and
+C++ signatures have different numbers of arguments.
+
+
+2007/02/25  0:19:29  phil
+Included Matt Newell's fix for making sure that a sub-class convertor returns
+the most specific type available.
+
+
+2007/02/24 16:38:26  phil
+Fixed some documentation references to Py_ssize_t.
+sip now takes C++ as well as Python signatures into account when deciding what
+interface files a class need to include.
+
+
+2007/02/24 13:45:24  phil
+Leave it to the Qt support code to release the GIL when connecting signals.
+
+
+2007/02/20 18:22:48  phil
+An instance dictionary is not longer created automatically.  Python will create
+it if and when it is needed.
+lambda slots are now cleaned up in the clear function rather than being left
+to the slot proxy dtor.
+
+
+2007/02/20  1:14:16  phil
+Fixed a bug in the implementation of /Transfer/ when the object was aleady
+owned by C++ but the owning object had been garbage collected.
+
+
+2007/02/18 16:00:12  phil
+Fixed a bug in the clearing of reference cycles with lambda slots.  Although
+the slot is visited, it is no longer cleared - that is left to the proxy dtor.
+
+
+2007/02/16 18:47:13  phil
+Fixed a bug in the build system for QtDesigner on Windows.
+The Q_OBJECT support code now uses metaObject() rather than staticMetaObject
+because the latter is private in the ActiveQt classes.
+
+
+2007/02/10 23:20:33  phil
+Added support for /TypeFlags/.
+Added sipFindClass() and sipFindNamedEnum() to the public API.
+
+
+2007/02/06 22:20:59  phil
+More changes to the Q_OBJECT support.
+
+
+2007/02/04 17:33:33  phil
+Renamed "Qt4MetaObject" to "Qt4Q_OBJECT".
+
+
+2007/02/01 15:06:34  phil
+Changed the metaObject() hook so that it won't crash if the C++ instance has
+gone.
+
+
+2007/01/30 13:22:16  phil
+Changed the metaObject() hook again.
+
+
+2007/01/30 13:08:35  phil
+Changed the metaObject() hooks.
+
+
+2007/01/27 16:00:54  phil
+Changed the way the Qt support API is created so that new SIPs can build old
+PyQts.
+
+
+2007/01/27 15:29:54  phil
+Added the hooks to allow PyQt to build a proper meta-object when a new Python
+class is defined.
+
+
+2007/01/25 13:22:06  phil
+Fixed a build system bug that affected non-MinGW Windows compilers when
+building static modules.
+Taught the build system about the QtDesigner module.
+
+
+2007/01/23 12:41:52  phil
+Reimplemented the support for qt_metacall() so that it is a bit cleaner and
+can't be called from Python.
+
+
+2007/01/22 22:02:07  phil
+Added support for the QtMetaClass option.
+Added sipParseSignature() to the private Qt API.
+(Both of the above are needed for David Boddie's support for Python widgets in
+Qt Designer.)
+
+
+2007/01/21 16:32:45  phil
+Extended the cyclic garbage collector support for lambda slots so it works with
+SIGNALs as well as PYSIGNALs.
+Incremented the SIP API version number to 3.4.
+
+
+2007/01/21 14:55:47  phil
+Fixed garbage collection support for lambda slots (at the moment only when the
+slot is connected to a PYSIGNAL).
+
+
+2007/01/16 22:32:06  phil
+Added #undef slots to sip.h for when embedding Python 2.3 in Qt applications.
+
+
+2007/01/16 13:54:14  phil
+qRegisterMetaType() is now called for every candidate class at module
+initialisation rather than when the first instance is created from Python.
+
+
+2007/01/15 23:47:45  phil
+Allowed /TransferThis/ to be specified more than once.
+
+
+2007/01/15 13:43:51  phil
+Updated the copyright notices.
+Fixed a reentrancy problem in wrapping objects obtained from C/C++ (thanks to
+Giovanni Bajo for the fix).
+
+
+2007/01/10 16:24:13  phil
+Added support for __truediv__ and __itruediv__ by making them synonyms for
+__div__ and __idiv__.
+
+
+2007/01/07 17:33:58  phil
+Hopefully fixed a bug in the generation of the typedefs table that wasn't using
+the full name of foreign modules.
+
+
+2006/12/28 16:58:57  phil
+Fixed a bug in the sipResetCppHasRef() macro that breaks the /TransferBack/
+annotation.
+
+
+2006/12/20 17:22:28  phil
+Fixed a MacOS specific bug in create_wrapper() in the build system.
+
+
+2006/12/20 15:13:08  phil
+Applied a patch to sipdistutils.py from Giovanni Bajo to allow .sip files to be
+used in the "depends" argument to setup().
+
+
+2006/12/16 16:25:30  phil
+Fixed a bug in the build system that meant that lines in the top level mkspec
+file were being ignored after the last include.
+
+
+2006/12/09 23:44:19  phil
+Released as v4.5.2.
+
+
+2006/12/09 23:42:27  phil
+Fixed a MacOS build problem caused by another change to Qt installs.
+
+
+2006/12/09 18:33:42  phil
+Released as v4.5.1.
+
+
+2006/12/09 18:30:52  phil
+Updated the NEWS file.
+Fixed the internal build system for later versions of docutils.
+
+
+2006/12/06 18:09:27  phil
+"PyQt_PyObject" is now used instead of "PyObject *".
+lamda functions can now be used as slots.
+
+
+2006/11/26 18:19:36  phil
+Fixed an incorrect assumption that if a Python wrapper of a C++ owned object
+was being garbage collected then its Python children (ie. things it owns)
+should also be garbage collected.  It may be that the parent is a "temporary"
+object (eg. the argument of a reimplementation of a virtual) but the children
+are "permanent".  The case in PyQt is the parent argument of
+QAbstractItemDelegate.createEditor().
+
+
+2006/11/25 17:09:54  phil
+PEP 353 fixes from Ulli.
+
+
+2006/11/25 10:48:15  phil
+Some "char *" to "const char *" fixes from Ulli.
+
+
+2006/11/18 13:25:28  phil
+Fixed a broken pointer bug in the API file generation.
+
+
+2006/11/17 18:21:30  phil
+Fixed a misleading error message when instantiating templates.
+Fixed a bug generating global functions in API files.
+
+
+2006/11/11 23:16:12  phil
+Fixed a bug with virtual handlers when a module %Imports from two other
+(independent) modules.
+
+
+2006/11/04 22:07:32  phil
+Released as v4.5.
+
+
+2006/10/28 17:58:28  phil
+The build system now handles .prl files on MacOS.
+
+
+2006/10/27 17:15:09  phil
+Changed NoDefaultCopyCtor to NoDefaultCtors.
+Updated the NEWS file.
+
+
+2006/10/22 16:38:19  phil
+A fix for configuring QtAssistant in PyQt for Qt v4.2 on MacOS.
+Added the NoDefaultCopyCtor class annotation.
+
+
+2006/10/21 17:48:15  phil
+Fixed a Python 2.4/2.5 change that was missed.
+Added sip.setdeleted().
+
+
+2006/10/20 16:40:42  phil
+Platform portability fixes from Ulli.
+Fix for conditional includes in spec files from Ulli.
+Qt4 module include directories are now searched before the main Qt4 include
+directory.
+Handle the change in debug libraries in Qt v4.2.
+
+
+2006/10/15 18:54:40  phil
+Allow virtual signals if the NoEmitters option is set.
+
+
+2006/10/15 12:41:12  phil
+Fixed a bug where the first argument to a global comparison operator was
+mishandled if it was a pointer rather than a reference.
+
+
+2006/10/13 16:28:11  phil
+Improved the previous fix for the incorrect ctor exception.
+
+
+2006/10/08 17:04:46  phil
+Fixed bug where handwritten traverse and clear code wasn't being called for
+derived classes.
+Fixed an incorrect Python exception raised when a C++ exception is thrown by a
+ctor.
+The build system now displayed an error if a non-framework build of Python is
+used on MacOS.
+Untested fix for building a static module with MinGW.
+
+
+2006/10/07 12:21:23  phil
+Build system fixes for Qt v4.2.0 based on a patch from Matt Newell.
+
+
+2006/09/30 19:20:12  phil
+Fixes for building QtTest on Windows.
+
+
+2006/09/24  0:09:37  phil
+Taught the build system about QtTest.
+Fixed a bug in the handling of namespaces split across multiple header files.
+
+
+2006/09/23 18:40:03  phil
+Added support for hooking into the C++ dtor from Python by implementing
+__dtor__() from a patch by Jean Jacques Lecler.
+
+
+2006/09/23 17:59:58  phil
+Added sip.delete() (based on a patch from Jean Jacques Lecler) and
+sip.isdeleted().
+
+
+2006/09/23 14:29:46  phil
+Removed the -n flag to sip now I think I've decided how to change code
+completion in QScintilla.
+
+
+2006/09/22 18:17:25  phil
+Backed out the check that abstract methods are virtual - because they don't
+have to be.
+
+
+2006/09/17 13:04:05  phil
+Added support for pure virtual dtors.
+Fixed a bug where abstract operators weren't flagging the class as being
+abstract.
+
+
+2006/09/03 13:05:16  phil
+Defeated a GCC v4 warning message on generated code.
+
+
+2006/08/17 17:06:30  phil
+Minor code generation formatting tidyups.
+
+
+2006/08/17 16:04:59  phil
+Added argument type checking to sipRegisterIntTypes().
+
+
+2006/08/17  0:12:00  phil
+Added sipRegisterIntTypes() to the private Qt support API so that PyQt4 can
+implement Q_ENUMS and Q_FLAGS.
+
+
+2006/08/05 17:48:43  phil
+Added support for QAxContainer in the build system.
+
+
+2006/07/19 19:52:25  phil
+Updated the spec files from Qt v4.1.4.
+Added (completely untested) support for embedding manifests for MSVC v8.
+
+
+2006/07/16 12:38:09  phil
+More Python v2.5 changes.
+
+
+2006/07/15 22:27:26  phil
+The sip module will now build against Python v2.5. (The 64 bit changes still
+need to be done.)
+
+
+2006/07/08 19:27:08  phil
+Fixed the use of sys.lib in configure.py.
+
+
+2006/07/06 22:17:58  phil
+configure.py uses sys.lib if it is defined (for some 64 bit Linux distros).
+
+
+2006/07/04 17:15:45  phil
+Always call a dtor if there is one, even if we can't see how the instance could
+have been created.
+
+
+2006/07/01 11:20:03  phil
+Fixed default arguments and C++ scoped names in the new API file handling.
+
+
+2006/06/30 23:26:45  phil
+Added the -n command line option (possibly only temporarily).
+Changed the API generation so that it is more complete and uses Python types
+rather than C/C++ types.
+
+
+2006/06/29 22:54:54  phil
+Added sip_config_args to sipconfig.py.
+Added __hex__() to sip.voidptr.
+
+
+2006/06/19 15:57:08  phil
+More warning fixes from Ulli.
+
+
+2006/06/17 10:48:34  phil
+Changed the explicit C linkage to retain the benefit of using static.
+
+
+2006/06/13 12:00:29  phil
+Signals and slots are now const char * rather than char *.
+
+
+2006/06/10 12:33:46  phil
+Fixed the implementation of /TransferBack/ for virtuals.
+Changed all API arguments that take a format string from char * to const char *
+for Solaris.
+Used explicit C linkage for all generated function calls when generating C++.
+(May need more work in this area.)
+
+
+2006/06/06 23:08:25  phil
+Changed the XML handling of opaque classes.
+
+
+2006/06/05 23:30:09  phil
+Added support for opaque classes to the XML.
+
+
+2006/06/03 23:19:33  phil
+More XML generation changes.
+
+
+2006/05/31 21:18:34  phil
+More XML generation changes.
+
+
+2006/05/30 10:39:52  phil
+More XML generation changes.
+
+
+2006/05/28 22:29:04  phil
+More XML generation changes.
+
+
+2006/05/25 20:44:55  phil
+Fixed bug disconnecting Python signals.
+
+
+2006/05/20 21:02:30  phil
+More XML generation changes.
+
+
+2006/05/20 10:50:32  phil
+Backed out the change that treated "char" and "char *" as equivalent when
+comparing Python signatures.  (The former is different to the latter if it
+appears first.)
+
+
+2006/05/18 23:28:21  phil
+More XML generation changes.
+
+
+2006/05/16 23:27:00  phil
+Tightened up on detecting clashing Python signatures involving strings and
+longs.
+Changes to the XML file generation.
+
+
+2006/05/13 23:17:28  phil
+Removed some Python API calls made after the interpreter is known to have gone.
+
+
+2006/05/13 23:10:47  phil
+Fixed a sip module bug that meant that the Python API might be called after the
+interpreter had gone.
+
+
+2006/05/13 17:18:43  phil
+Fixed code generation bug with abstract operators.
+
+
+2006/05/13 15:10:42  phil
+Added %UnitCode.
+
+
+2006/05/11 19:02:42  phil
+Added sipExportSymbol() and sipImportSymbol().
+Bumped the API version number to 3.2.
+
+
+2006/05/08 13:29:42  phil
+Removed (hopefully) two new warning messages.
+
+
+2006/05/07 19:28:35  phil
+Added support for %ExportedHeaderCode.
+
+
+2006/05/07 18:27:34  phil
+Fixed bug in handling of virtuals with different Python and C++ signatures.
+
+
+2006/05/05 13:54:51  phil
+Fixes for compiler warnings and a couple of minor bugs from Ulli.
+Deprecated %SIPNoEmitters and replaced it with %SIPOptions.
+Added the RegisterTypes option so that appropriate classes are registered with
+Qt automatically when needed - so PyQt4 doesn't need to implement
+qRegisterMetaType().
+
+
+2006/05/05 12:23:00  phil
+Fixed some compiler warnings.
+
+
+2006/05/01 14:41:18  phil
+More work on the XML generation.
+
+
+2006/04/30 19:14:19  phil
+Added the -m flag to generate the XML representation of the Pythonic API.
+
+
+2006/04/28 20:49:53  phil
+Replaced long long with PY_LONG_LONG for MSVC 6.
+
+
+2006/04/27  8:01:56  phil
+Fixed bug in handling multiple instances of the same namespace.
+The build system allows Apple's Python to be used if there is also a later
+python.org installation.
+MacOS modules are now bundles rather than dynamic libraries and can now be
+loaded by Pythons from python.org.
+Released as v4.4.3.
+
+
+2006/04/21 12:27:20  phil
+Fixed the previous const mapped type fix.
+
+
+2006/04/20 23:14:34  phil
+Fixed the GUI enabled interpreter in sipconfig.create_wrapper() for MacOS.
+Fixed static const mapped types.
+
+
+2006/04/18 23:49:07  phil
+Fixed the build system for when sys.prefix != sys.exec_prefix.
+
+
+2006/04/16 11:17:30  phil
+Added the export_all argument to the ModuleMakefile constructor of the build
+system so that exports can be handled on a per module basis.  This is needed to
+get around a (not properly understood) problem with modules that wrap C++
+exceptions.
+
+
+2006/04/15 19:21:04  phil
+The build system now complains if a property is used in a spec file when no
+properties have been defined.
+Removed Qt specific properties from the solaris-cc and hurd-g++ spec files.
+Fixed the disconnecting of short-circuited signals.
+
+
+2006/04/08 19:54:38  phil
+Fixed the build system to better support frameworks on MacOS.
+
+
+2006/04/07  8:37:29  phil
+Made sure that all uses of sipMappedType * in the API are const.
+
+
+2006/04/06 10:40:18  phil
+The sipconfig module now uses qt_data_dir (if set) to find the qmake spec files.
+
+
+2006/04/05 12:27:06  phil
+Merged v4.4.1 into the trunk.
+SIP now properly detects duplicate Python signatures.
+
+
+2006/04/03 19:27:34  phil
+Released as v4.4.1.
+
+
+2006/04/03  0:08:03  phil
+Fixed a regression in the handling of __dict__.
+
+
+2006/04/01 10:34:10  phil
+Make the sip module's support for long long and unsigned long long conditional
+on HAVE_LONG_LONG so that it will build with older compilers.
+
+
+2006/03/29 10:17:22  phil
+Removed extraneous brackets in generated code.
+
+
+2006/03/28 13:35:38  phil
+Fixed some C++ code wrongly appearing in C modules.
+
+
+2006/03/25 16:58:15  phil
+Fixed a regression in the handling of namespaces.
+
+
+2006/03/24 22:24:29  phil
+Documented sipModule and sipModuleDict as being available to
+%PostInitialisationCode.
+Released as v4.4.
+
+
+2006/03/21 23:39:27  phil
+Applied patch for sipdistuils.py from Giovanni.
+Documented sipConvertFromNamedEnum().
+Wrapped types now define __reduce_ex__ and __reduce__ attributes set to None so
+that pickle knows they can't be pickled.
+
+
+2006/03/20 23:13:23  phil
+Fixed the special handling of the __dict__ attribute so that it doesn't apply
+to Python sub-classes of wrapped classes.
+
+
+2006/03/19 14:21:56  phil
+Documentation tweaks.
+Generate sipSelf for ctor %MethodCode now that it's existence is documented.
+Fixed a second place where slots with no underlying C++ instance might be
+invoked.
+
+
+2006/03/17  1:17:00  phil
+Removed __unicode__ from the documentation.
+Fixed a bug with virtual methods that returned a reference to a type that had
+%ConvertToTypeCode.
+
+
+2006/03/15 23:44:16  phil
+Removal of a now redundant error message.
+Fixed a leaking weak reference object.
+Another attempt at fixing calling slots where the underlying C++ instance has
+disappeared.
+
+
+2006/03/14 22:46:48  phil
+More const void * fixes.
+Fixed bug with building debug modules using MinGW.
+Fixed feature where too many names were being generated from imported modules.
+SIP now handles nested imports properly and doesn't require all modules to be
+explcitly imported.
+
+
+2006/03/13 11:33:28  phil
+Build system changes to support MacOS properly.
+Fixed crash when %TypeHeaderCode was used outside of a scope.
+
+
+2006/03/12 14:47:22  phil
+Fixed calls to sipConvertFromVoidPtr() with a const argument.
+
+
+2006/03/11 19:15:31  phil
+Minor changes to sipconfig.py for PyQt4's pyqtconfig.py.
+
+
+2006/03/11 15:14:31  phil
+Fixed handling of generating code for the version before the first %Timeline
+version.
+
+
+2006/03/08  9:34:46  phil
+Fixed a bug in the handling of QVariant * and PyObject * signal arguments.
+
+
+2006/03/06 18:59:26  phil
+Fixed a regression in handling of enums defined in an imported module.
+
+
+2006/03/06 12:35:05  phil
+Fixed bug in handling the typedef void hack.
+
+
+2006/03/05 17:41:44  phil
+Fixed bug with abstract classes with %ConvertToSubClassCode.
+Reimplemented namspaces split across modules so that there is a single
+namespace implemented in the original module.
+
+
+2006/03/05 12:55:13  phil
+Fixed missing #include for classes that aren't an immediate parent.
+
+
+2006/03/04 17:55:49  phil
+Fixed a regression in the wrappers around protected methods.
+
+
+2006/03/04 10:48:35  phil
+Suppressed the exception about the underlying object disappearing when calling
+a Python slot. This is because we don't automatically disconnect Python slots.
+
+
+2006/03/02 20:36:56  phil
+Added sipLong_AsUnsignedLong() to work around a bug in PyLong_AsUnsignedLong().
+
+
+2006/02/26 23:19:31  phil
+Fixed bug in handling class arguments with /Out/ specified.
+
+
+2006/02/26 17:08:35  phil
+Recognise NULL as a synonym for 0.
+Some build system changes for Cygwin.
+Fixed the deletion of temporary instances in catch clauses.
+
+
+2006/02/26 13:56:56  phil
+SIP now treats signed char as a type distinct from char.
+
+
+2006/02/26  0:41:23  phil
+Tore up the recent changes for handling cross module namespaces.  A namespace
+is now defined in each module it is used.  That makes things easier to
+implement and should be less confusing for the user.  The API and data
+structures should now be stable.
+
+
+2006/02/25 21:08:24  phil
+Fixed bug in handling of variables introduced in the previous commit.
+
+
+2006/02/25 20:54:19  phil
+Added support for variables defined in namespaces defined in other modules.
+
+
+2006/02/25 19:59:46  phil
+Completed the support for enums in namespaces originating in other modules.
+
+
+2006/02/21 15:22:52  phil
+Added the 't' and 'u' format characters to sipParseArgs(), sipParseResult(),
+sipCallMethod() and sipBuildResult().
+unsigned and unsigned short are now implemented as Python long objects instead
+of integer objects.
+
+
+2006/02/19 16:43:02  phil
+Implemented disconnects for universal signals.
+
+
+2006/02/18 21:04:05  phil
+Implemented support for signal arguments of type PyObject *.
+Implemented support for shortcircuited Python signals (ie. just the name
+without arguments) that will only work with other shortcircuited Python signals
+and Python slots - bit don't need to do any conversions between Python and C++.
+
+
+2006/02/17 10:59:46  phil
+Fixed bug in the implementation of /TransferBack/ in virtual handlers.
+Fixed bug in methods with a void result and a single /Out/ argument that was a
+mapped type or class.
+
+
+2006/02/16 18:24:46  phil
+Fixed bug in generating code that called sipCallMethod().
+Updated the documentation where it was still referring to the legacy type
+convertors.
+
+
+2006/02/16 16:30:10  phil
+Fixed bug in generated legacy mapped type convertor names.
+
+
+2006/02/15 16:45:33  phil
+Fixed bug that could easily result in deleting non-heap instances.
+
+
+2006/02/13 20:04:02  phil
+Fixes to PythonModuleMakefile.
+
+
+2006/02/13  0:23:04  phil
+Renamed the new sipCheckConvert functions to sipForceConvert functions.
+Added the 'B', 'C' and 'D' format character to sipBuildResult() and
+sipCallMethod().
+Removed the 'L' format character from sipBuildResult() and sipCallMethod().
+Added sipConvertFromInstance(), sipConvertFromNewInstance() and
+sipConvertFromMappedType().
+
+
+2006/02/12  1:13:28  phil
+Overhauled how %ConvertToTypeCode should be written - detail below. (Still need
+to overhaul %ConvertFromTypeCode.)
+Added sipCanConvertToInstance(), sipConvertToInstance(),
+sipCheckConvertToInstance() and sipReleaseInstance().
+Added sipCanConvertToMappedType(), sipConvertToMappedType(),
+sipCheckConvertToMappedType(), sipReleaseMappedType() and sipFindMappedType().
+Changed the order of the arguments to sipConvertToCppTransfer().
+Added the 'C' and 'D' format characters to sipParseResult().
+Changed the meaning of the 'J' and 'M' format characters in sipParseArgs().
+Removed the sipConvertTo_*() functions.
+Removed sipConvertToCppTransfer().
+Took all of the None handling out of %ConvertToTypeCode.
+
+
+2006/01/28 20:11:45  phil
+Fixed the support for __hash__.
+
+
+2006/01/26 16:39:44  phil
+Added %SIPNoEmitters to stop SIP generating signal emitters for a module and
+any module that imports it.
+Changed the signal/slot support so that Python signals can be implemented with
+proxies.
+
+
+2006/01/20 22:36:17  phil
+Fixed a bug in sipTransferTo() that caused some objects to be garbage collected
+while ownership was being transferred.
+Check that abstract methods are only ever called as bound methods.
+
+
+2006/01/19 17:57:01  phil
+Updated the documentation for sipConnectRx().
+The __dict__ attribute of a wrapper type now returns a regular dictionary
+rather than a proxy (because PyDict_Next() doesn't iterate over proxies).
+
+
+2006/01/14 16:40:04  phil
+Fixed the searching of signal types.
+
+
+2006/01/11  8:45:06  phil
+The previous fix wasn't quite so trivial.
+
+
+2006/01/11  8:17:58  phil
+Added missing function prototype.
+
+
+2006/01/10 20:12:59  phil
+Fixed code generation bugs in new virtual handling code that was triggered by
+PyKDE.
+Build system changes for MinGW.
+Added support for constrained bools.
+Generate code to wrap static enum instances with inline code rather than
+through tables (as is done with class instances) for Windows.
+
+
+2006/01/09 19:42:45  phil
+Changed the signatures of sipForceConvertTo_*() and sipConvertFrom_*() back to
+their SIP 4.3 versions, deprecated them, and introduced the Transfer variants.
+
+
+2006/01/09 17:49:19  phil
+More build system changes for Windows.
+Added the platform macro to sipconfig.py.
+The default Windows platform Python 2.4 and later is now win32-msvc.net rather
+than win32-msvc.
+
+
+2006/01/08 15:59:48  phil
+Various build system changes needed by PyQt4 on Windows.
+
+
+2006/01/07 15:57:31  phil
+Updated the spec files from Qt v4.1.
+Added support for the $$() method of accessing environment variables in qmake
+spec files.
+sipdistutils.py fix from Giovanni.
+Changes to the build system for the slightly different macro names on Windows.
+
+
+2006/01/04 13:10:29  phil
+Added support for the /NoDerived/ annotation.
+
+
+2006/01/03 21:08:54  phil
+Fixed bug in handling of delayed dtors.
+
+
+2006/01/02 12:43:51  phil
+Fixed another bug with the new handling of virtual function calls (where
+re-implementations from another module weren't picked up).
+
+
+2005/12/30 14:35:11  phil
+Fixed bugs with the new handling of virtuals that caused recursions.
+
+
+2005/12/29 19:02:18  phil
+Taught the build system about the QtAssistantClient library.
+
+
+2005/12/29 15:14:14  phil
+Fixed bugs related to global operators with an enum as the first argument.
+
+
+2005/12/28 19:34:37  phil
+Added sipConvertToCppTransfer().
+Changed the signatures for the type convertor functions.
+Added the 'L' format character to sipBuildResult() and sipCallMethod().
+
+
+2005/12/27 10:53:26  phil
+Added support for the /DelayDtor/ class annotation to control the order of dtor
+calls when the interpreter exits.
+Fixed bugs with cast operators.
+
+
+2005/12/26 10:59:30  phil
+Fixed a documentation bug.
+Slightly changed the declaration of the sipProtectVirt wrappers.
+
+
+2005/12/24 17:33:39  phil
+Class methods called as class.method(self, ...) is now equivalent to
+this->class::method(...). Class methods called as self.method(...) is now
+equivalent to this->method(...).
+Introduced sipSelfWasArg and the sipProtectVirt wrappers in order to support
+the above.
+
+
+2005/12/22 19:13:05  phil
+SIP no longer complains if a slot to be disconnected isn't actually connected
+(and hopes Qt will then behave appropriately).
+
+
+2005/12/19 17:43:03  phil
+Backed out the recent change that ignored abstract specifications if the
+methods wasn't virtual.
+
+
+2005/12/19 14:52:41  phil
+Various changes to the build system to better support Qt v4.
+
+
+2005/12/18 15:24:36  phil
+Added the PythonModuleMakefile class and create_wrapper() function to the build
+system.
+
+
+2005/12/15 15:11:02  phil
+Internally renamed qtlib.cpp to qtlib.c.
+Small changes to the internal build system caused by the move to SVN.
+Removed SIP_BUILD from sip.h.
+
+
+2005/12/12 19:47:19  phil
+Ignore abstract specifications for non-virtual methods as GCC seems to do.
+
+
+2005/12/11 22:51:51  phil
+Fixed bug in the implementation of slot extenders.
+
+
+2005/12/07 18:19:48  phil
+Fixed the misleading exception raised when attempting to call a private
+re-implementation.
+
+
+2005/12/07 00:52:24  phil
+Fixed the fundamentally broken #include dependency handling.
+
+
+2005/12/05 09:57:22  phil
+The sip module now leaves to the Qt support API to determine if a signal is a
+Qt signal or a Python signal (so that PYSIGNAL can be dropped in PyQt4).
+
+
+2005/12/04 16:35:05  phil
+Fixed a bug with the expansion of class templates.
+
+
+2005/11/30 19:00:57  phil
+Made the parsing of default arguments able to handle template instantiations.
+Fixed a bug in the handling of renamed enums.
+Started the support for namespaces defined across modules.
+
+
+2005/11/29 13:06:06  phil
+Implemented the last pieces of cross-module type convertor support.
+
+
+2005/11/26 22:10:57  phil
+Fixed the internal build system for the latest release of docutils.
+Fixed a bug in the parser that caused classes to sometimes appear to be
+external when they weren't.
+
+
+2005/11/25 17:43:01  phil
+Exposed sipConvertRx() as part of the hidden Qt support API.
+Added SIP_ANYSLOT to support the hidden Qt support API.
+
+
+2005/11/24 17:23:25  phil
+Finished the modified mapped type template handling.
+Allowed SIP_SLOT and SIP_SIGNAL to have a default argument.
+
+
+2005/11/23 21:51:04  phil
+Made type expansions in template code aware of SIP generated names.
+Started to modify the handling of mapped type templates (not yet finished).
+
+
+2005/11/20 18:40:37  phil
+Further refined the Python type comparisons.
+
+
+2005/11/19 18:10:05  phil
+Fixed the parsing of ellipsis arguments.
+
+
+2005/11/18 23:23:39  phil
+Made the selection of a suitable ctor when generating error values more likely
+to find one without being explicitly told.
+
+
+2005/11/18 18:02:04  phil
+Fixed class numbering bug with external classes.
+Fixed bug with protected enums used as arguments to virtuals.
+Improved the comparison of Python signatures.
+
+
+2005/11/17 18:04:33  phil
+Completed the support for cross-module operators.
+Started the support for cross-module operator casts.
+
+
+2005/11/16 20:11:14  phil
+Added support for operator casts of basic types.
+Added support for the __long__ and __float__ Python slots.
+Started to add support for operator casts of classes.
+
+
+2005/11/16 17:16:18  phil
+Added support for cross-module number operators.
+
+
+2005/11/15 17:19:33  phil
+Fixed a long standing bug related to default arguments.
+
+
+2005/11/14 17:19:34  phil
+Changed the Qt support API to pass the Python object when creating a new
+universal slot.
+More fixes for external classes.
+
+
+2005/11/13 17:47:38  phil
+Fixed bug in handling external classes (not yet right).
+
+
+2005/11/12 10:21:24  phil
+Updated the documentation regarding module names.
+
+
+2005/11/12 10:15:09  phil
+Added support for hierachies in module names.
+
+
+2005/11/09 18:22:38  phil
+Fixed the documentation error.
+
+
+2005/11/09 17:58:26  phil
+Passing None when an argument will be dereferenced now causes a type error
+(allowing subsequent signatures to possibly succeed) rather than a conversion
+error.  This means QFileDialog(None) works.
+
+
+2005/11/06 17:43:48  phil
+Added support for external class declarations.
+Template signatures can now include base types.
+The arguments to function calls that are default values can now be expressions.
+
+
+2005/11/03 22:25:39  phil
+Removed the restriction that static methods cannot be Qt slots.
+Argument names can now be given for the Qt signal/slot types.
+
+
+2005/11/02 19:16:45  phil
+Added support for SIP_PYTYPE.
+Added support for signatures with variable numbers of arguments.
+__getitem__() no longer requires %MethodCode.
+Global unary + and - operators are now handled properly.
+Fixed bug with nested templates.
+
+
+2005/11/01 22:09:07  phil
+Changed the Qt API to deal with the extra argument in connect() and
+disconnect() in Qt4 and the way in which signal arguments are passed.
+
+
+2005/10/30 18:04:19  phil
+Added the sipdistutils.py script from Giovanni Bajo.
+
+
+2005/10/30 11:23:23  phil
+Fixed bug in error reporting when doing template instantiation.
+Allow template types to be pointers (and the indirection is dropped).
+/TransferThis/ can now be used in non-factory methods.
+Removed the 't' format flag from sipParseArgs(). A pointer to sipSelf is now
+passed which is updated.
+Fixed clash of format characters in sipParseArgs().
+Fixed a couple of bugs with char * output arguments.
+
+
+2005/10/24 16:58:17  phil
+Applied fix from Giovanni Bajo to the build system where a macro was defined in
+terms of another macro *and* additional values.
+
+
+2005/10/23 16:02:18  phil
+Changed the buffer interface support so that sipSelf is always passed in.
+Changed the Qt interface to allow QObject.sender() to support Python signals.
+
+
+2005/10/23 12:44:47  phil
+Added the "user" member to the sipWrapper structure.
+Added support for Python's buffer interface.
+
+
+2005/10/16 16:07:19  phil
+Debugged the support for mapped type templates.
+
+
+2005/10/16 10:47:31  phil
+Documented the use of mapped type templates.
+Completed the implementation of mapped type templates.
+
+
+2005/10/13 21:43:57  phil
+Added parser support for mapped type templates.  (Automatic instantiation not
+yet implemented.)
+
+
+2005/10/13 16:59:01  phil
+Fixed an assumption that a type created by sip.wrappertype would always be
+derived from sip.wrapper causing a segfault.  (__metaclass__ might have been
+used to invalidate the assumption.)
+
+
+2005/10/12 21:10:17  phil
+Fixed legacy C++ism from the Qt support hooks.
+
+
+2005/10/11 21:12:02  phil
+Moved the export module function to the start of the API table. (Not having
+there from day one was a really, really stupid thing to do.)
+
+
+2005/10/09 17:01:39  phil
+Changed the handling of number slots to support the reverse operators.
+
+
+2005/10/06 21:41:32  phil
+Fixed bugs related to function arguments that were classes and had default
+arguments that weren't function calls.
+
+
+2005/10/06 20:24:43  phil
+Removed longs, unsigned longs etc. from the tests for types that Python can
+automatically convert.  I think this needs looking at again as the current
+tests are too simple minded.
+Fixed some missing checks for constrained floats and doubles.
+
+
+2005/10/05 15:39:40  phil
+Added support for the int() cast in classes.
+Debugged the support for template classes and global operators.
+
+
+2005/10/01 11:24:21  phil
+The C/C++ long long and unsigned long long types are now supported.
+
+
+2005/09/30 23:48:16  phil
+longs are now implemented using the Python long object.
+unsigned longs are now handled separately.
+
+
+2005/09/30 18:10:18  phil
+Completed support for global operators with wrapped enums as the first
+argument.
+
+
+2005/09/29 17:56:05  phil
+Template class definitions now have to use typename.
+Started to add support for global operators that have wrapped enums as the
+first argument.
+
+
+2005/09/28 21:10:50  phil
+A couple of fixes to the template support.
+
+
+2005/09/28 16:05:16  phil
+Added support for global operators (so long as the first argument is a class
+wrapped in the same module).
+Fixed a bug that prevented global functions with the same name being defined in
+different modules.
+
+
+2005/09/28 13:50:04  phil
+Completed the support for template classes.
+
+
+2005/09/27 21:16:14  phil
+Started to add support for template classes.  Not yet complete, but shouldn't
+have broken anything.
+
+
+2005/09/25 15:10:20  phil
+Function arguments can now have names (although they are ignored).
+The "explicit" keyword is parsed (but not yet used).
+
+
+2005/09/22 20:21:36  phil
+The generated sipconfig.py no longer contains any Qt version specific
+configuration data and so can be shared between Qt configurations.
+Added Configuration.build_macros(), Configuration.set_build_macros() and
+parse_build_macros() to the build system API.
+Added the macros argument to create_content() and create_config_module() in the
+build system API.
+Removed the dictname argument from create_content() in the build system API.
+Removed the -l, -q, -x and -c command line flags to configure.py.
+
+
+2005/09/19 21:14:35  phil
+Started to refactor the build system so that sipconfig.py doesn't know about
+Qt.
+
+
+2005/09/17 15:19:17  phil
+The build system now detects the open source edition of Qt v4.
+
+
+2005/09/17 13:42:19  phil
+The build system no longer passes QT_THREAD_SUPPORT to Qt v4.
+
+
+2005/09/09 22:06:20  phil
+Reverted to the v4.3 behaviour of the /Factory/ annotation in virtual methods.
+
+
+2005/09/08 20:15:09  phil
+Updated the documentation where it covers what Qt support is.
+Universal slots no longer take part in cyclic garbage collection as they are
+associated with C++ instances and not Python objects.
+
+
+2005/09/07 20:53:06  phil
+The Qt support framework is now C rather than C++.
+
+
+2005/09/06 20:32:33  phil
+Refactored the Qt support so that the sip module no longer makes any Qt calls
+and so it can support PyQt v3 and v4 without needing to be re-compiled.
+
+
+2005/09/04 20:47:42  phil
+More build system changes for Qt4.
+
+
+2005/09/04 17:57:02  phil
+Small fix so it still builds in the internal development systems.
+
+
+2005/09/04 17:49:32  phil
+Started to update the build system to deal with Qt4.
+
+
+2005/08/31 18:39:27  phil
+Fixed slot handling bug caused when a slot was defined in a C++ super-class and
+called from a wrapped sub-class.
+
+
+2005/08/30 16:32:20  phil
+Released as v4.3.
+
+
+2005/08/28 11:42:13  phil
+Clarifed the documentation regarding object ownership with the some of the
+flags to sipBuildObject().
+
+
+2005/08/28 07:50:59  phil
+Fixed bug in exception handling that caused a seg fault when generating code.
+
+
+2005/08/22 20:39:42  phil
+Backed out part of the last commit - the bit I wasn't sure about (seems I was
+right).
+
+
+2005/08/22 16:46:30  phil
+Applied some HP-UX and AIX portability fixes from Ulli.
+
+
+2005/08/21 11:54:53  phil
+Fixed bug with new ownership code related to objects with no owning object.
+(It breaks PyQt's semaphore.py example.)
+
+
+2005/08/19 16:01:47  phil
+Fixed a regression that caused the leak of universal slots.
+
+
+2005/08/17 22:32:13  phil
+Reimplemented the code that handles object ownership.
+Deprecated sipTransfer() and sip.transfer().
+Added sipTransferTo(), sipTransferBack(), sip.transferto() and
+sip.transferback().
+
+
+2005/08/16 16:35:21  phil
+Backed out the garbage collector fix yet again.  I now know what the real
+problem & solution is.
+
+
+2005/08/10 16:40:47  phil
+Hopefully fixed the remaining problem with the cyclic garbage collector
+support.
+
+
+2005/07/27 17:17:29  phil
+Put back in the possible fix for weak references and cyclic garbage collection
+so that it can be selectively tested.
+
+
+2005/07/27 12:08:18  phil
+Fix for very subtle bug where an object being garbage collected was passed as
+an argument to a Python method and its referenced count increased again.
+
+
+2005/07/26 19:45:59  phil
+Fixed a bug in the handling of __dict__ for wrapped instances.
+
+
+2005/07/10 09:45:43  phil
+Added support for sipCppRet in %ConvertSubClassCode.
+
+
+2005/07/09 15:37:04  phil
+Redid some of the handwritten code handling now I properly understand what
+flex is doing.
+
+
+2005/07/09 10:25:58  phil
+Hopefully, finally, nailed the lexing of handwritten code.
+
+
+2005/07/03 15:54:41  phil
+Backed out some of the "fix" for Windows path separators.
+
+
+2005/07/03 13:56:25  phil
+Fixed segv trigged by a reference to __dict__ in an __init__ function before
+the instance dictionary has been created.
+
+
+2005/07/02 11:06:14  phil
+Fixed handling of variables based on the pseudo PyObject based types.
+Allowed all of the pseudo PyObject types to be variables (not just
+SIP_PYOBJECT).
+
+
+2005/07/01 17:06:50  phil
+Updated the NEWS file.
+Possibly fixed the problem with directory separators on Windows not being
+escaped in generated #lines.  (Actually in the last commit but I forgot to
+mention it.)
+
+
+2005/07/01 16:41:12  phil
+Fixed a silly bug in the handling of sipExceptionRef.
+
+
+2005/06/30 18:04:35  phil
+Fixed a couple of bugs related to global anonymous enums.
+
+
+2005/06/30 16:56:10  phil
+Classes are properly marked as abstract if they have an abstract method visible
+in their super class hierarchy.
+
+
+2005/06/30 16:15:12  phil
+Don't generate sipExceptionRef if it isn't used.
+
+
+2005/06/30 15:53:27  phil
+Fixed a bug in the handling of slots with implied connections caused by a
+recent GC related fix.
+
+
+2005/06/29 20:44:11  phil
+Backed out the last fix for the cyclic garbage collector - it's wrong.  Still
+leaves the problem with weak references.
+
+
+2005/06/29 15:00:30  phil
+Fixed segv with the new exception support when class or undefined exceptions
+where used in throw specifier.
+The build file now doesn't include non-existant C++ files for exceptions.
+
+
+2005/06/26 22:03:27  phil
+Implemented the support for %Exception.
+The parsing of handwritten code still seems to have problems in that blank
+lines seem to be ignored.  This seems to be a problem with flex (the rule
+doesn't seem to be recognised for this condition).  Ignore until somebody
+complains.
+
+
+2005/06/25 17:28:17  phil
+Fixed a bug with In,Out arguments that had type convertors.
+
+
+2005/06/25 15:47:51  phil
+Fixed the cyclic garbage collector support for objects owned by C++.
+
+
+2005/06/25 13:19:50  phil
+Fixed the extra linefeed appearing in handwritten code.
+
+
+2005/06/25 11:42:49  phil
+Connections from emitters not owned by Python are now maintained if the Python
+wrapper is garbage collected.
+
+
+2005/06/23 16:46:33  phil
+Allow comments on the same line after %End and (as a side effect) fix compile
+problem on Windows (thanks to Ulli Berning).
+
+
+2005/06/22 17:45:57  phil
+Hopefully fixed blank lines in handwritten code.
+
+
+2005/06/19 13:47:59  phil
+Code blocks can now contain %.
+Added parser support for the new %Exception directive.  The implementation
+hasn't yet been done - but it shouldn't break anything.
+
+
+2005/06/05 08:28:05  phil
+Fixed code generation bug in the new variable handling code.
+
+
+2005/06/01 17:38:26  phil
+Updated the documentation regarding %GetCode and %SetCode for static class
+variables.
+
+
+2005/05/31 20:34:53  phil
+Added support for %GetCode and %SetCode.
+
+
+2005/05/29 10:10:24  phil
+Fixed silly bug in new -c flag to configure.py.
+
+
+2005/05/28 15:55:11  phil
+Added the -c flag to configure.py to allow the directory containing qconfig.h
+to be explicitly specified.
+Fixed a bug with assigning None to a class variable that was itself a class or
+mapped type.
+Fixed a bug when the (non-existent) cast function was being called for a C
+structure.
+
+
+2005/05/27 19:51:30  phil
+sip.voidptr can now be instansiated from Python.
+Added the ascobject() method to sip.voidptr.
+
+
+2005/05/24 16:12:54  phil
+Updated the documentation regarding the simple C example.
+
+
+2005/05/24 14:55:09  phil
+C structures can now have constructors and a destructor.
+Updated the NEWS file.
+
+
+2005/05/13 16:31:08  phil
+Fixed simple code generation bug that didn't get triggered with PyQt.
+
+
+2005/05/05 20:19:00  phil
+%TypeHeaderCode can now be used in namespaces.
+%TypeHeaderCode defined in an enclosing scope (class or namespace) now gets
+automatically included for each sub-scope.
+
+
+2005/05/04 18:32:09  phil
+Added SIP_VERSION_STR to the sip module.
+
+
+2005/04/30 09:51:27  phil
+Fixed bug with protected const method (thanks to James Emerton).
+Fixed the text of the exception raised by sipConvertFromSequenceIndex().
+
+
+2005/04/23 23:17:56  phil
+Fixed the previous fix.
+
+
+2005/04/23 18:11:37  phil
+Fixed bug with shadow classes if explicit C++ signatures were duplicates.
+
+
+2005/04/23 11:46:33  phil
+Fixed a leak where virtual handlers return a mapped type or a class with
+handwritten conversion code.  (Thanks to James Emerton.)
+
+
+2005/04/23 09:20:53  phil
+Removed the caching of enum values in type dictionaries - it's the wrong thing
+to do.
+
+
+2005/04/17 10:49:17  phil
+Fixed a bug preventing a class that couldn't be instantiated explicitly
+(because of private ctors) being wrapped.
+
+
+2005/04/14 19:04:14  phil
+Further tweaked the text of the operator type exception.
+
+
+2005/04/14 18:15:54  phil
+Improved the text of the exception raised when some operators get bad argument
+types.
+
+
+2005/04/03 10:02:00  phil
+Fixed a problem with the recent fix for leaking weak reference objects.
+
+
+2005/04/02 23:22:10  phil
+Wrapped types now support Python's cyclic garbage collector.
+Added %GCTraverseCode and %GCClearCode to allow types to cooperate with the
+garbage collector.
+
+
+2005/04/02 18:54:31  phil
+Abstract C++ classes can no longer be instantiated from Python - they can only
+be sub-classed.
+The above change needed the SIP API major version bumping.  The minor version
+number has been added to the main module data structure to (hopefully) reduce
+the need for this in future.
+
+
+2005/04/02 10:12:46  phil
+Replaced the new /NoConvertor/ annotation with an extended implementation of
+/Constrained/.
+
+
+2005/03/25 20:17:44  phil
+Dealloc functions are now generated whenever it might be possible to call the
+C++ dtor, even if it is not possible to create a class instance from Python.
+Fixed a bug where universal slots were never destroyed.
+
+
+2005/03/25 14:26:46  phil
+Fixed bug in sip.cast() when casting to a more specific type.
+
+
+2005/03/17 17:56:18  phil
+Updated the documentation regarding sip.transfer(), sipTransfer() and
+/TransferBack/.
+
+
+2005/03/10 17:52:22  phil
+The C++ unary '+' and '-' operators are now handled correctly.
+
+
+2005/03/10 17:34:09  phil
+Added support for __pos__ and __abs__ (which meant bumping the API to 1.1).
+
+
+2005/03/06 10:03:25  phil
+Released as v4.2.1.
+
+
+2005/03/04 17:37:36  phil
+Fixed problem with sipWrapQVariant().
+Added support for multiple %Timelines in a single module.
+
+
+2005/02/26 11:22:02  phil
+Fixed problem with relative path arguments to configure.py.
+
+
+2005/02/25 22:57:28  phil
+Backed out the changes that attempted to detect exceptions in Python
+re-implementations if virtual C++ methods.  The restoration of PyErr_Print()
+means that sys.excepthook is usefull again.
+
+
+2005/02/20 08:45:42  phil
+Fixed missing cast in generated code.
+
+
+2005/02/19 15:22:53  phil
+Fixed a bug with the new enum support when returning one as a tuple element.
+Released as v4.2.
+
+
+2005/02/18 19:00:37  phil
+Backed out a supposed improvement in the handling of char * method results.
+Added SIP_VERSION to the sip module.
+
+
+2005/02/13 20:01:23  phil
+Hopefully removed a couple of compiler warnings from the sip module.
+
+
+2005/02/11 18:43:40  phil
+Updated the NEWS file.
+Released as v4.2rc2.
+
+
+2005/02/11 17:20:15  phil
+Updated the copyright notice in the documentation.
+The recent fix in the object map code was broken. It should now be fixed
+properly.
+
+
+2005/02/06 14:39:02  phil
+Thanks to Ulli Berning, by default the build system now only exports a module's
+initialisation function.  Added the -a flag to configure.py to restore the old
+behaviour.
+
+
+2005/02/04 18:29:16  phil
+All modules are now stripped by default on installation.
+Fixed a bug where namespaces' generated names were wrong so that they appeared
+to go AWOL.
+
+
+2005/01/29 10:15:15  phil
+Synced build system with Qt v3.3.4.
+
+
+2005/01/22 18:35:10  phil
+Updated the NEWS file.
+Released as v4.2rc1.
+
+
+2005/01/16 13:07:00  phil
+Minor fix to the documentation.
+
+
+2005/01/16 00:12:33  phil
+Fixed bug in new signal handling introduced when __module__/__name__ handling
+was fixed.
+
+
+2005/01/14 17:35:33  phil
+Backed out the changes that relaxed the interpretation of enums.
+Updated the copyright notices.
+Fixed the __module__ and __name__ attributes for wrapped classes and enums.
+sip.cast() will now cast to both sub and super-types of an instance.
+Added support for debug builds to the internal build system.
+
+
+2005/01/09 14:03:48  phil
+Relaxed the new enum type checking so that an integer can also be used where a
+named enum is expected.  The previous rigorous type checking was likely to
+break too much code.
+
+
+2004/12/31 15:29:22  phil
+Fixed problems handling signals that were emitted by a QSignal instance.
+
+
+2004/12/30 21:51:11  phil
+Fixed bug in the object map code where unused slots weren't being reclaimed
+properly.
+
+
+2004/12/30 14:18:27  phil
+Fixed invalid format characters in calls to PyErr_Format().
+
+
+2004/12/26 18:51:39  phil
+The sip module now complains about an argument with a bad type in preference to
+having too many arguments - which is a more meaningful error message in that
+context.
+
+
+2004/12/26 12:26:30  phil
+Fixed a typo in the mkcustom.py script.
+
+
+2004/12/24 17:53:37  phil
+Restored the support for moc in the build system for SIP v3.
+Deprecated the -g flag to sip.
+Fixed a code generation bug related to virtual operators.
+
+
+2004/12/23 22:43:16  phil
+Added the custom directory.
+Added the section on custom interpreters to the documentation.
+
+
+2004/12/19 19:27:35  phil
+Make %PreInitialisationCode and %PostInitialisationCode subject to version
+control.
+Removed the calls to PyErr_Print() now that we detect exceptions in Python
+re-implementations.
+Changed the building of static modules so that they are used as libraries
+(still need to document this).
+
+
+2004/12/10 18:07:24  phil
+Fixed bug where members of global enums weren't being added to the module
+dictionary.
+Fixed debug builds on Windows.
+Fixed bug where invalid C code was being generated in the module init function.
+Fixed bug where enums defined in a super-class from another module would
+segfault when referenced.
+Fixed bug that meant that the C++/Python object map would continually grow.
+
+
+2004/12/05 11:27:27  phil
+Fixed silly bug in the new typedef handling.
+
+
+2004/12/04 23:51:39  phil
+Virtual and abstract operators are now supported.
+The __call__ slot no longer requires %MethodCode.
+Python exceptions raised in virtual re-implementations of C++ methods are now
+detected when they occur.
+
+
+2004/12/03 18:59:33  phil
+The /PyName/ annotation can now be applied to classes, variables and enums.
+
+
+2004/11/28 10:57:58  phil
+Added support for %PreInitialisationCode from Ulli Berning.
+Added a check for name clashes with named enums.
+
+
+2004/11/26 18:54:04  phil
+Completed the support for named enums having distinct types.
+The new signal support now handles typedefs (untested).
+
+
+2004/11/21 10:38:30  phil
+Build system fixes and README.HP-UX from Ulli Berning.
+
+
+2004/11/19 19:05:02  phil
+Initial support for named enums having distinct types.  This should work as
+before.  The new types are not yet exploited.
+
+
+2004/11/13 19:07:52  phil
+Generalise the build system treatment of INCDIR and LIBDIR to INCDIR* and
+LIBDIR*.
+
+
+2004/11/13 18:59:33  phil
+Fixed a feature where a factory function with a /TransferThis/ would always
+keep a C++ pointer, never finding out it was invalid, and mistakenly recognise
+the address when it was re-used.
+
+
+2004/10/30 13:44:50  phil
+Fixed bad bugs in new slot proxy handling.
+Exposed the voidptr, wrapper and wrappertype types in the sip module.
+Updated the documentation.
+
+
+2004/10/06 22:36:38  phil
+The new signal handling now supports mapped types.
+
+
+2004/10/05 07:56:53  phil
+Revert to a C-style cast for protected enums for some older compilers.
+
+
+2004/10/02 16:23:00  phil
+Fixed some warning messages.
+SIP v4.x no longer supports Qt v2.x and earlier (use SIP v3.x).
+Unrecognised signal argument types are now converted to NotImplemented rather
+than causing connections to fail.
+Fixed the new signal handling for Qt v3.0.x.
+The new signal handling has now been tested on Windows.
+
+
+2004/10/01 16:59:42  phil
+Initial support for the new dynamic signal handling that allows previously
+unknown signals to be connected to Python callables (needed for ActiveX
+support).  At the moment mapped types and enums aren't (yet) supported.  Qt
+versions 1 and 2 aren't (yet) supported.  Untested on Windows.
+
+
+2004/09/29 18:31:22  phil
+Fixed significant bugs in the way the metatype was working.  Operators are now
+properly inherited in sub-classes of wrapped classes.
+
+
+2004/09/24 16:56:23  phil
+Released as v4.1.1.
+
+
+2004/09/23 20:46:59  phil
+Really fixed the previous problem this time.  The return type is ignored, but
+the re-implementation must be in a sub-class and not a different branch of the
+class hierarchy.
+
+
+2004/09/23 19:04:52  phil
+Fixed a problem with classes with a virtual and a non-virtual with the same
+signature but different return types in the hierarchy.
+
+
+2004/09/23 17:27:51  phil
+Fixed an incompatibility accidentally introduced with v4.1.
+
+
+2004/09/21 12:21:20  phil
+Minor build system fix for tmake.
+
+
+2004/09/21 11:00:39  phil
+Improved the test for the + and * operators context again - the previous change
+seems to have got lost.
+Added the /Numeric/ annotation to give more control over the above test.
+
+
+2004/09/20 18:18:16  phil
+Fixed a problem with deleting const instances.
+Released as v4.1.
+
+
+2004/09/15 08:46:45  phil
+Fixed bug with arguments that are const simple types.
+
+
+2004/09/14 07:31:13  phil
+Updated the NEWS file.
+Released as v4.1rc1.
+
+
+2004/09/11 17:25:12  phil
+Improved the test to see if the + and * operators should mean concat and repeat
+rather than add and multiply.
+
+
+2004/09/10 22:33:28  phil
+Re-implemented some of the virtual method handling so that the return type is
+ignored when comparing signatures.  Not sure it is completely correct yet, but
+PyQt seems to be fine.
+
+
+2004/08/25 19:17:59  phil
+Fixed const bug - only MSVC complains.
+
+
+2004/08/24 17:32:39  phil
+Fixed a bug in the support for protected classes.
+
+
+2004/08/23 22:25:51  phil
+Added limited support for protected classes (sufficient for immediate
+requirements).
+
+
+2004/08/22 10:16:38  phil
+Fixed a bug with access controls in nested classes.
+
+
+2004/08/21 14:12:40  phil
+Added the cast() function to the sip module.
+
+
+2004/08/19 22:31:48  phil
+Added the /Abstract/ class annotation.
+Updated the documentation.
+
+
+2004/08/17 17:56:55  phil
+Added support for typedefs that define pointers to functions.
+
+
+2004/08/17 13:58:53  phil
+A method that starts a new thread will now make sure that a single thread state
+is created - rather than forcing PyGILState_Ensure() to create a new one each
+time.
+
+
+2004/08/17 09:24:07  phil
+Fixed bug in the internal build system.
+
+
+2004/08/15 23:35:20  phil
+Updated the build system from Qt 3.3.3.
+Added README.Fink.
+
+
+2004/08/04 14:05:57  phil
+Fixed the previous fix.
+
+
+2004/08/04 12:53:29  phil
+Fixed a bug where arguments passed to sipParseArgs() may have been const.
+
+
+2004/08/03 16:23:10  phil
+The SIP_PYCALLABLE type now supports the /AllowNone/ annotation.
+Fixed a documentation bug.
+
+
+2004/08/02 15:28:30  phil
+Mostly fixed a problem where a virtual handler without code was being used in
+preference to one with code.
+More type information is supplied when calling the default constructor.
+Fixed a bug with protected enums as arguments to protected methods.
+Handle protected abstract methods properly.
+
+
+2004/08/01 18:08:36  phil
+Fixed another typo in the documentation example code for %VirtualCatcherCode.
+
+
+2004/08/01 17:55:34  phil
+Fixed a typo in the documentation example code for %VirtualCatcherCode.
+
+
+2004/08/01 08:55:03  phil
+Added support for the threaded version of Qt/Embedded to the build system.
+
+
+2004/07/27 22:00:24  phil
+Added support for MSVC.NET to the build system.
+
+
+2004/07/19 18:42:48  phil
+Fixed a bug in sipconfig.read_version() so that version strings with embedded
+spaces are handled properly.
+
+
+2004/07/16 21:50:12  phil
+Change to the internal build system as Gentoo has prefixed the names of the
+docutils binaries.
+A few trivial changes to the documentation.
+
+
+2004/07/06 08:12:25  phil
+Released as v4.0.1.
+
+
+2004/07/05 16:12:02  phil
+Fixed a bug where dtors could be calling Python functions after the interpreter
+had been finalised.
+
+
+2004/07/05 10:48:04  phil
+Backed out the previous fix for functions that used /TransferThis/ and
+/Factory/ and fixed it properly in the sip module.
+
+
+2004/07/05 09:18:44  phil
+Fixed bug for methods that used /Factory/ and /TransferThis/.
+
+
+2004/07/02 07:27:56  phil
+Fixed problem with internal build system.
+
+
+2004/07/01 12:38:43  phil
+Attempts to wrap a NULL pointer now return None rather than raise an exception.
+Minor documentation fix.
+
+
+2004/06/30 22:36:17  phil
+Fixed a bug in the build system related to libraries.
+
+
+2004/06/23 14:01:38  phil
+Released as v4.0.
+
+
+2004/06/21 22:42:42  phil
+Switched the SIP4 branch to the trunk.  (SIP v3 is now on its own SIP3 branch.)
+
+
+2004/06/20 21:45:18  phil
+Completed the documentation.
+
+
+2004/06/15 18:22:26  phil
+Added more documentation.  SIP pseudo-types and annotations are now complete.
+
+
+2004/06/11 17:32:42  phil
+Deprecated the 'L' and 'K' format characters to sipParseResult().
+Added more documentation.  The API for handwritten code is now complete.
+
+
+2004/06/09 16:28:20  phil
+Added more documentation.  The directives section is now complete.
+
+
+2004/06/07 19:44:22  phil
+Added more documentation.
+Added the transfer() function to the sip module.
+
+
+2004/06/06 17:47:39  phil
+A few changes to the new wrapinstance() and unwrapinstance() functions.
+
+
+2004/06/05 17:30:45  phil
+Added some more documentation.
+Added the wrapinstance() and unwrapinstance() functions to the sip module.
+
+
+2004/06/04 21:32:52  phil
+Added some more documentation.
+
+
+2004/05/30 19:05:14  phil
+Fixed another benign bug in the build system.
+
+
+2004/05/30 18:06:00  phil
+Fix minor bug in the build system.
+
+
+2004/05/27 22:00:37  phil
+Updated the TODO list.
+Added support for Qt v2 non-commercial to the build system.
+Tidied up unused parameters, variables etc.
+Added support for the Borland compiler to the build system.
+
+
+2004/05/22 17:41:41  phil
+Released as v4.0rc4.
+
+
+2004/05/15 22:33:35  phil
+Operators will now recognise return values that have already been wrapped.
+
+
+2004/05/14 06:26:35  phil
+Fixed a bug where the wrong virtual handlers were being used from imported
+modules.
+
+
+2004/05/10 20:10:27  phil
+Fixed bugs related to generating calls to sipBuildResult().
+
+
+2004/05/04 16:00:17  phil
+Fixed the handling of .prl files.
+
+
+2004/05/01 17:10:27  phil
+Fixed a bug with virtual methods returning a class reference.
+Fixed a bug with hasattr() of a sip.wrapper type.
+
+
+2004/04/30 21:51:10  phil
+Fixed missing const_cast in variable handlers.
+Fixed missing #includes for classes used in global functions but defined in
+other modules.
+
+
+2004/04/24 22:46:22  phil
+Suppress the const and & when on the error return path for abstract functions.
+
+
+2004/04/24 09:07:33  phil
+Sync (again) to SIP v3 build system.
+
+
+2004/04/24 08:42:38  phil
+Sync the build system with SIP v3.
+
+
+2004/04/21 19:06:09  phil
+SIP now builds using MinGW.
+
+
+2004/04/19 21:57:51  phil
+Changes to the build system to support MinGW - not yet complete.
+
+
+2004/04/18 15:45:41  phil
+Added support for the evaluation version of Qt.
+
+
+2004/04/11 11:41:09  phil
+Reverted the recent change to sub-class convertors - the original code was
+correct.
+
+
+2004/04/10 18:17:30  phil
+Fixed a bug with legacy GIL management when the -g and -e flags were given.
+
+
+2004/03/30 22:48:17  phil
+Fixed a bad bug that meant that sub-class converters weren't working properly.
+
+
+2004/03/29 17:47:56  phil
+Fixed crash when an argument was a non-const mapped type with a non-zero
+default value.
+
+
+2004/03/17 23:56:40  phil
+Fixed a bug where /ArraySize/ was broken for long (or short) types.
+
+
+2004/03/16 18:14:48  phil
+Released as v4.0rc3.
+
+
+2004/03/15 23:53:21  phil
+Added some more documentation.
+
+
+2004/03/13 10:20:34  phil
+Fixed a problem with const struct pointers and MSVC .NET.
+
+
+2004/03/12 23:15:25  phil
+Fixed bugs where opaque classes were assumed to have a default ctor.
+
+
+2004/03/10 18:30:17  phil
+Fixed incompatibility with non-standard MSVC.
+#defines are now generated for enabled features.
+
+
+2004/03/06 15:39:24  phil
+Fixed problem with slot arguments being ignored for anything other than complex classes.
+
+
+2004/03/06 01:07:38  phil
+Fixed problem with static methods with a SLOT argument.
+
+
+2004/03/05 18:25:13  phil
+Improved the support for resolving multiple non-virtual base classes by
+removing the need for the hack for PyKDE.
+
+
+2004/03/04 23:02:57  phil
+Added support for resolving multiple non-virtual base classes.
+
+
+2004/03/03 21:35:54  phil
+Fixed a build system problem when DEFINES had more than one value.
+
+
+2004/03/02 21:02:53  phil
+Fixed a bug where private copy ctors in super-classes might not be detected
+properly.
+Fixed __str__() after breaking it when trying to fix inherited operators.
+
+
+2004/03/01 23:50:14  phil
+Fixed problems with classes containing private dtors.
+
+
+2004/02/29 19:57:04  phil
+Fixed a build system problem caused by copying a file from SIP v3 to the wrong
+place.
+
+
+2004/02/29 19:51:52  phil
+Updated build spec files from Qt v3.3.1.
+Updated the internal build system to exploit distcc.
+Fixed small bug in configure.py.
+Fixed a bug where operators were not inherited by wrapped C++ sub-classes.
+
+
+2004/02/16 23:36:08  phil
+Fixed problems in the new build system with spaces in directory names.
+Updated the documentation to reflect the (small) change in the build system
+API.
+
+
+2004/02/15 22:33:16  phil
+Added some more documentation.
+Updated the build system from SIP v3.
+
+
+2004/02/11 19:25:24  phil
+Added some more documentation.
+The new build system now supplies a sensible context specific default if
+install_dir is None.
+Fixed a bug when sipSelf was used in handwritten code.
+
+
+2004/02/08 12:17:13  phil
+Backed out the last change relating to ctor argument types - it was a feature,
+not a bug.
+
+
+2004/02/07 23:58:51  phil
+Fixed bug in validating ctor argument types.
+
+
+2004/02/07 17:37:36  phil
+Added Ulli Berning's patch to the build system to read Qt's .prl files.  This
+should mean that PyQt should build against a static Qt library.
+
+
+2004/02/05 23:41:04  phil
+Change to the internal build system so that sip compiles under Windows without
+a hacked version of flex.
+Static C++ class instances are now wrapped with inline code rather that through
+a table.  Hopefully this works round a problem reported by Ulli Berning with
+static linking under Windows due to C++ not defining the order in which static
+instances are instantiated.
+
+
+2004/01/31 23:08:41  phil
+Virtual handlers now respect the /Factory/ and /TransferBack/ flags.
+Updated the spec files from Qt v3.3.0.
+
+
+2004/01/29 19:20:49  phil
+Windows build system changes from Ulli Berning.
+
+
+2004/01/27 23:50:29  phil
+Fixed bugs with handling class references as /Out/ arguments.
+
+
+2004/01/18 15:14:49  phil
+The build system configuration files are now part of the CVS tree rather than
+being copied in from the local machine when building.
+
+
+2004/01/18 14:24:44  phil
+Fixed a compiler warning message in the SIP module.
+Fixed a bug where #includes weren't being generated when only needed by
+operators.
+
+
+2004/01/12 22:13:14  phil
+Fixed the corrupt #line directives when joining files.
+Released as v4.0rc2.
+
+
+2004/01/11 11:58:50  phil
+Fixed bug where the header files needed by static namespace methods weren't
+being #included.
+
+
+2004/01/10 17:41:34  phil
+Fixed a bug with static methods that connect to slots.
+
+
+2004/01/05 23:19:33  phil
+Fixed a bug handling some /In/ argument types.
+Fixed a bug that prevented a namespace's methods from being generated.
+
+
+2004/01/04 18:53:08  phil
+Minor updates to the build system.
+Completed the build system documentation.
+
+
+2004/01/02 18:41:28  phil
+Minor changes to the build system.
+Added some more documentation.
+
+
+2003/12/31 16:42:50  phil
+Fixed problem with virtual methods that return references.
+
+
+2003/12/29 10:26:38  phil
+Fixed namespace related bug when typing sipCpp in ctors.
+
+
+2003/12/28 19:30:55  phil
+Change to the build system to only use -soname for SIP v3.x (so MacOS/X should
+work again).
+
+
+2003/12/28 13:30:36  phil
+Fixed problems with thread handling.  The semaphore.py example now works
+properly again.
+
+
+2003/12/27 15:42:05  phil
+Build system changes based on patches from Ulrich Berning.
+
+
+2003/12/26 19:30:25  phil
+Fixed bug where the not all .h files were being #included for signal
+signatures.
+
+
+2003/12/23 08:14:37  phil
+Added support for LITERAL_WHITESPACE in build system spec files.
+Added support for macros in braces in build system spec files.
+Made sure that trailing spaces in macros don't get lost.
+
+
+2003/12/21 17:29:10  phil
+Implemented sip.voidptr.asstring().
+
+
+2003/12/21 12:57:43  phil
+We now distinguish (automatically) between add and mul when applied to numbers
+and sequences because they have slightly different APIs.
+The sequence repeat and in-place repeat slots now don't convert their integer
+argument to a Python object.
+Number slots now support new-style numbers.
+
+
+2003/12/16 20:00:33  phil
+Changed the documentation so as not to suggest using -fno-rtti as it's bad
+advice if you are using KDE.
+
+
+2003/12/14 20:53:23  phil
+Make sure we don't lie to Python by saying we support new-style numbers when we
+don't (yet).
+Number methods return Py_NotImplemented rather than raise an exception.
+Fixed a reference count bug in sipParseArgs().
+
+
+2003/12/11 22:29:33  phil
+configure.py now doesn't complain if environment variables in the spec. files
+aren't defined (ie. $QTDIR).
+Properly defined setSetBool().
+Added the help about the -e flag to configure.py.
+
+
+2003/12/11 20:03:32  phil
+Changed the new build system to use LFLAGS_SONAME instead of RPATH for modules.
+
+
+2003/12/10 18:21:10  phil
+Fixed bug in configure.py that prevented empty build macros from being
+overridden on the command line.
+
+
+2003/12/09 23:02:51  phil
+Fixed bug with operators in classes in namespaces.
+Fixed bug with sub-class convertors and namespaces.
+Fixed problems with multi-dimensional __getitem__, __setitem__ and __delitem__.
+
+
+2003/12/06 21:04:17  phil
+Released as v4.0rc1.
+
+
+2003/12/06 21:00:25  phil
+Fixed problem with new build system when Qt support is disabled.
+
+
+2003/12/06 20:21:02  phil
+Fixed a bug in building a static module with the new build system.
+
+
+2003/12/05 19:42:58  phil
+Fixed a problem with methods that had an abstract version in the super-class
+hierarchy.
+
+
+2003/12/04 19:36:13  phil
+Changed the new build system to handle Borland a bit better.
+
+
+2003/12/04 00:16:19  phil
+Fixed a bug when connecting to a Python callable that is actually a wrapped C++
+method.
+
+
+2003/12/03 19:00:41  phil
+Make sure that the instance dictionary of a type exists.
+
+
+2003/12/02 21:28:11  phil
+Fixed a bug in the modified object map code.  This fixes the last outstanding
+problem with user's test cases.
+
+
+2003/12/02 18:56:03  phil
+Fixed build problem on MacOS/X where it thought multiple -framework flags were
+unnecessary duplicates.
+
+
+2003/12/02 00:02:17  phil
+Changed the naming of names so they don't change when other names are added or
+removed.
+Added the start of the documentation.
+Several tidy ups to the object map code of the sip module.
+Changed the implementation of virtual handlers as it was keeping results alive.
+sipParseArgs() no longer garbage collects the result object being parsed.
+Add $(DESTDIR) to generated Makefiles.
+
+
+2003/11/25 23:09:12  phil
+Fixed silly typo in configure.py.
+
+
+2003/11/25 18:45:30  phil
+Fixed build system bug in handling line continuations in spec files.
+
+
+2003/11/24 23:21:19  phil
+Minor code tidy up in the sip module.
+
+
+2003/11/24 21:55:20  phil
+Cleared any exception before returning Py_NotImplemented.
+
+
+2003/11/23 17:02:53  phil
+More build system changes. PyQt now builds under the commercial and educational
+versions on Windows.
+Released as v4.0pre4.
+
+
+2003/11/22 20:54:44  phil
+Windows related changes to the new build system.
+Removed some of the old licensing stuff.
+
+
+2003/11/22 10:18:02  phil
+Fixed bug with the build file when not concatenating sources.
+Make sure the proxy header file #includes qobject.h.
+Successfully builds PyQt for the Zaurus.
+
+
+2003/11/22 00:52:15  phil
+Fix code that generates warning message when building PyQt for Qt v2.
+
+
+2003/11/22 00:06:43  phil
+More changes to the new build system related to building Qt v2.
+
+
+2003/11/21 23:06:56  phil
+More changes to the new build system.  Tested with Qt Professional on Linux.
+
+
+2003/11/21 07:34:16  phil
+Renamed %Build back to %Makefile and deprecated it for SIP v4.
+Added the -b flag and removed the -m flag.
+Fixed the new build system so that it will build PyQt under Linux.
+
+
+2003/11/16 21:03:12  phil
+Changed the build system to generate Makefiles (and dumped SCons).  DO NOT USE
+TO TRY AND BUILD PyQt UNTIL FURTHER NOTICE.
+
+
+2003/11/15 11:20:50  phil
+More changes to the new build system.
+
+
+2003/11/13 19:42:15  phil
+More changes to the new build system.
+
+
+2003/11/13 13:12:10  phil
+New build system changes. PyQt now builds correctly on Linux.
+
+
+2003/11/12 22:24:23  phil
+Updated the new build system.
+Filenames given to %Build no longer need to have an extension.
+Added the -j flag to generate concatanated source files.
+Changed the name of the header file containing the proxy class to conform to
+SCons way of doing things.
+Fixed the handling of __call__, __cmp__, __neg__ and __invert__.
+
+
+2003/11/05 20:31:25  phil
+Changes to the new build system for PyQt.
+
+
+2003/11/04 17:50:20  phil
+Tidying up of the new build system.  The sipconfig.py module has better support
+for non-SCons build scripts.
+
+
+2003/11/03 22:56:38  phil
+Removed the old build system.
+Added the $L macro to generate the list of source files as a Python list.
+
+
+2003/11/03 19:44:27  phil
+More changes to the new build system.  It now seems to work Ok for SIP, but not
+yet tested under Windows.
+
+
+2003/10/30 19:18:02  phil
+Added the start of the new SCons based build system.
+
+
+2003/10/29 13:50:47  phil
+Added "x11" to the default configuration for non-Windows, non-Mac.
+Make sure active virtual handlers don't look for Python methods after the
+interpreter has gone.
+Don't create a overwrite an instance dictionary when a wrapped object's
+__init__ method is called.
+
+
+2003/10/28 11:08:25  phil
+Released as v4.0pre3.
+
+
+2003/10/27 23:24:07  phil
+Completed the support for pointers and references to base types.
+
+
+2003/10/26 22:52:29  phil
+Added support for handling functions that return values via pointers and
+references.  (Virtual functions not yet handled.)
+
+
+2003/10/24 08:35:18  phil
+Added the -g flag and the /ReleaseGIL/ option to allow fine control over the
+release of the GIL.
+
+
+2003/10/23 18:28:27  phil
+Removed deprecated macros from handwritten code.
+Renamed %Makefile to %Build.
+Renamed %PostInitialisationC++Code to %PostInitialisationCode.
+Renamed %HeaderCode to %TypeHeaderCode or %ModuleHeaderCode depending on the
+context.
+Renamed %C++Code to %TypeCode or %ModuleCode depending on the context.
+Allow structs within classes.
+Added %CModule - SIP can now wrap C libraries as well as C++ libraries.
+
+
+2003/10/22 18:42:08  phil
+The object mapper now checks for super-classes and sub-classes when determining
+if an C++ pointer has already been wrapped.
+%Import, %Include and %OptionalInclude can now take a relative (UNIX style)
+pathname.  The directory containing the file will also be searched for files
+that it itself includes or imports.
+
+
+2003/10/21 16:41:32  phil
+Fixed a bug in the mapping of C++ addresses to Python objects that was probably
+causing the occaisional "random" "underlying C++ object has been deleted"
+exception to be raised.
+Fixed a bug in sipconfig.py which meant that PyQt modules for MacOS were
+misnamed.
+
+
+2003/10/21 13:38:47  phil
+Added support for namespaces - SIP v4 should now be as functional as SIP v3.
+
+
+2003/10/20 18:51:21  phil
+More MacOS/X related changes.
+More Windows porting changes.
+Revert to SIP v3 behaviour that allows wrapped methods and enums to be
+overwritten in an instance.
+Removed many warning messages when compiling the sip module with -Wall.
+Generated code now compiles without warning messages.
+
+
+2003/10/19 19:46:35  phil
+Initial changes the build system to handle the Mac.
+Portability fixes for Windows.
+
+
+2003/10/19 10:21:37  phil
+Now uses the new GIL functions (see PEP 311).  This means it is no longer
+necessary to manage the GIL exactly right in handwritten code and makes it more
+likely that code will work with non-SIP generated extension modules that don't
+handle the GIL properly (ie. Boost).
+
+
+2003/10/18 16:42:40  phil
+Completed support for class variables.
+
+
+2003/10/17 16:45:47  phil
+Fixed a bug with ctors that had a Qt slot in their argument list (QToolButton
+is the only example in Qt).
+Tidied up the public sip.h file a little bit.
+Fixed the handling of common strings so that there are no name clashes between
+modules. This means that modules can be builtins of the interpreter.
+Renamed %VariableCode to %AccessCode.
+Started on support for variables.
+
+
+2003/10/16 15:52:11  phil
+Added support for dir() of a wrapped type.
+Changed the API to sipEmitToSlot() so that it takes the arguments on the stack.
+Virtual catchers now use sipCallMethod().
+Released as 4.0pre1.
+
+
+2003/10/15 18:21:19  phil
+Slot handlers are now only installed for slots that have actually been defined.
+This fixes the problem with QPopupMenu.  The problem with quickly moving the
+cannon in the tutorials also seems to have gone away.
+All examples now appear to work.
+All unit tests work except for QString and QStringList.
+
+
+2003/10/14 22:37:30  phil
+Added sipTrace() to the module API.
+More debugging - all tutorials mostly work (except for an odd problem when
+dragging the cannon) and some of the examples (except for a problem with
+QPopupMenu).
+
+
+2003/10/11 21:58:49  phil
+More debugging - tut7.py now works.
+
+
+2003/10/09 19:12:47  phil
+Various changes so that PyQt now compiles.
+
+
+2003/10/07 18:55:10  phil
+Fix for protected enums as arguments to protected methods.
+Removed the 'O' and 't' format characters from sipParseArgs().
+Removed sipBadVirtualResultType() from the module API.
+Added sipBadCatcherResult(), sipCallMethod() and sipParseResult() to the module
+API.
+Added support for /TransferBack/ for function results.
+Added support for %VirtualCatcherCode.
+Removed support for %VirtualCode.
+
+
+2003/10/04 14:54:16  phil
+Added SIP_VERSION and SIP_BUILD to sip.h.
+Removed the 'K' format character from sipParseArgs().
+Added the 'b' format character to sipParseArgs().
+Added support for the /GetWrapper/ option flag.
+Added support for /GetWrapper/ to the 'J' format character to sipParseArgs().
+Added sipBuildResult() and sipClassName() to the module API.
+Renamed sipTransferSelf() to sipTransfer().
+Added support for SIP_SLOT, SIP_PYCALLABLE and SIP_QOBJECT.
+
+
+2003/10/01 14:01:21  phil
+sipParseArgs() now handles a single argument as well as a tuple.
+Removed the last vestiges of %MemberCode support.
+Added support for explicit C++ signatures.
+
+
+2003/09/28 12:06:00  phil
+Fully implemented Python special methods in the sip module.
+Added the SIP_PYTUPLE type.
+
+
+2003/09/26 23:38:35  phil
+Added support for the SIP v3 slots.
+Added /AllowNone/ to arguments.
+These changes were in the previous commit but I forgot to add them to the log.
+
+
+2003/09/26 23:36:18  phil
+Added support for %MethodCode.
+Added -w flag to enable warnings.
+Added the SIP_PYLIST and SIP_PYDICT types.
+Added PreHook and PostHook support to ctors.
+
+
+2003/09/21 12:08:00  phil
+Ported all outstanding fixes from SIP v3.
+
+
+2003/09/20 21:32:08  phil
+Ported the exception support from SIP v3.
+
+
+2003/09/19 15:31:16  phil
+The build system is now a copy of the one from SIP v3.
+Fixed bugs related to sub-classing wrapped types.
+Implemented the __str__slot.
+Added the SIP_PYSLICE pseudo-type.
+Added support for empty enum definitions.
+Added SIP_VERSION_STR to sip.h
+Added support for the 'L' format character.
+Added support for virtual dtors.
+Added dupport for %VirtualCode in dtors.
+Added operator support in the parser only.
+
+
+2003/04/15 17:56:27  phil
+Name strings are no longer shared between modules.
+PyQt now imports - non-lazy methods and handwritten code still to do.
+Python v2.3 is now required.
+
+
+2003/04/14 23:39:00  phil
+All of PyQt should now compile.
+Attribute handling is working (except for variables and non-lazy methods).
+Adding static class instances fails because we are currently relying on static
+ctors.
+
+
+2003/04/13 12:37:49  phil
+PyQt now compiles (except for the qtnetwork module because it includes nested
+classes.)
+
+
+2003/04/10 18:49:45  phil
+Lots of changes moving towards implementing new-style classes.  sip compiles
+but, other than that, everything is broken.
+
+
+2003/04/05 17:32:11  phil
+Fixed a bug where templates weren't being parsed properly.
+Make sure classes only appear once in a hierarchy.
+
+
+2003/04/04 10:36:49  phil
+Added the %e format charcter to sipParseArgs() to handle enums.
+Removed all remaining inter-module dependencies.  PyQt now builds and loads.
+
+
+2003/04/01 20:44:04  phil
+Added support for the educational version.
+Added the -r and -t flags to build.py based on patches from Hans-Peter Jansen.
+Changed the format of symbolic names from sipName_module_name to sipName_name.
+
+
+2003/03/31 22:29:31  phil
+Many more changes to eliminate inter-module dependencies.
+
+
+2003/03/26 22:23:43  phil
+Fixed all the remaining dependencies on the old-style SIP API.
+Many other bug fixes.
+sipQt.h is no longer needed.
+
+
+2003/03/25 17:51:28  phil
+Fixes so that PyQt now compiles - but modules do not yet load because of
+remaining symbol dependencies.
+
+
+2003/03/25 12:33:33  phil
+Converted the remaining old-style API calls to the new style.
+
+
+2003/03/24 19:49:01  phil
+Moved another load of functions from the old-style API to the new-style API.
+
+
+2003/03/23 13:34:27  phil
+Forward ported the fixes for private and protected dtors.
+Forward ported the -a flag for generating Scintilla API files.
+
+
+2003/03/16 16:21:01  phil
+Forward port the latest handling of the Python version number in build.py.
+Forward port the cast fixes for PyString_FromString().
+
+
+2003/03/01 14:42:24  phil
+Forward ported all the recent changes to SIP v3.
+
+
+2003/01/25 11:09:39  phil
+The names and sub-class convertors are now part of the new API.
+The sub-class convertors are now generated in the main module code instead of
+in the class file.
+
+
+2003/01/20 08:10:53  phil
+Added SIP_MAJOR_NR.
+The values of sipClass_* are no generated for the new API.
+
+
+2003/01/17 19:40:52  phil
+Removed the external API header file.
+The Python stub file is no longer generated.
+The instance variable hierachy tables are no longer needed.
+
+
+2003/01/14 09:41:59  phil
+The module APIs now have an optional version number so that imports of
+incompatible modules can be detected.
+
+
+2003/01/12 22:17:40  phil
+Added the table of modules to import to the main module definition.
+The list of classes is now ordered so that no class appears before any of its
+super classes.
+
+
+2003/01/05 15:54:32  phil
+Make sure that sipPyThis is always initialised in case a C++ ctor calls one of
+its own methods that has been re-implemented in Python.
+
+
+2003/01/04 17:16:41  phil
+Removed %ExposedFunction and %PythonCode.
+%PrePythonCode is now a no-op.
+Removed the -p command line flag.
+SLOT(), SIGNAL() and PYSIGNAL() are no longer generated by SIP.
+Removed the SIP_EXTERN/EXPORT/IMPORT nonsense in the module.
+Added the generation of the .h file that defines a module's external API.
+
+
+2002/12/28 17:37:00  phil
+The start of development of SIP v4.
+Dropped support for Python earlier than v2.2 and Qt earlier than v3.0.
+Start of the changes needed to make the SIP module a pure Python module rather
+than a hybrid module and shared library.
+
+
+2002/12/11 13:51:00  phil
+Ensure that generated Makefiles have a later timestamp than the project file.
+Released as v3.5.
+
+
+2002/12/10 23:12:03  phil
+Build change where FORCE wasn't being handled properly now that it is version
+dependent.
+
+
+2002/12/05 18:26:47  phil
+Finalisation fixes (thanks to Kristine Sato).
+
+
+2002/12/05 17:27:33  phil
+Build system change for Qt v3.0.x and FORCE in Makefiles.
+
+
+2002/11/28 09:03:40  phil
+Fixed bug in handling of char * class variables introduced in the previous fix.
+
+
+2002/11/26 12:46:01  phil
+Make sure that flex and bison generated files have later timestamps than their
+sources.
+Removed the automatic test for -fno-exceptions and added the -f flag to the
+build system so that it can be explicitly set.
+
+
+2002/11/25 16:51:50  phil
+Fixed generated code for char and unsigned char class variables - thanks to
+Toby Sargeant.
+
+
+2002/11/14 22:31:28  phil
+Minor build changes for Windows.
+
+
+2002/11/06 23:56:10  phil
+The weak reference protection now works if the slot is a wrapped method as well
+as a user written Python method.
+The type name of the sipThis object is now "sip.wrapper" rather than being the
+name of the wrapped class.
+Deprecated the 'C' format character for sipParseArgs().
+Added the 'X' format character for sipParseArgs().
+Added /Constrained/ support for float and double types.
+
+
+2002/11/05 15:08:18  phil
+Addition of new licenses to the internal build system.
+The TODO files is now added to the distribution.
+
+
+2002/10/18 17:29:36  phil
+More build system changes to fix directory names containing spaces.
+
+
+2002/10/12 23:47:08  phil
+Added the 'x' format character to sipParseArgs() to convert sequence indices.
+Added sipConvertFromSequenceIndex().
+
+
+2002/10/11 14:12:52  phil
+Fixed the build system where the Python directory path contained spaces.
+
+
+2002/10/05 13:35:06  phil
+Changed the internal build system so that internal development versions are
+marked as such.
+The user build system now handles conflicting licenses.
+
+
+2002/09/21 17:58:53  phil
+Added the NC version to allow others to build modules that conform to the Qt
+non-commercial license.
+
+
+2002/09/18 18:48:17  phil
+Fixed a phantom exception raised when connecting a signal to a wrapped method
+(rather than using SLOT() on the method).
+
+
+2002/09/18 00:30:09  phil
+"unsigned int" is now supported.
+
+
+2002/09/10 12:38:35  phil
+Minor documentation changes.
+Released as v3.4.
+
+
+2002/09/08 21:36:16  phil
+Fixed a couple of code generation bugs related to structs.
+
+
+2002/09/08 12:20:14  phil
+The user now has to explicitly accept any non-GPL license.
+
+
+2002/09/07 20:49:31  phil
+Added support for defining structs.
+
+
+2002/09/06 17:48:08  phil
+Added the new licenses and changed the internal build process to support them.
+Changed %License so that the timestamp is now a string.
+Updated the NEWS file.
+
+
+2002/09/02 12:03:37  phil
+Added sipAddLicense() to the SIP module.
+Added the %License keyword.
+
+
+2002/08/27 19:06:05  phil
+Added the %OptionalInclude directive that does the same as %Include but doesn't
+complain if the file doesn't exist.
+Added a delay to the build system before running make to avoid potential
+timestamp problems.
+
+
+2002/08/17 00:44:57  phil
+Brought the NEWS file up to date.
+Added Fredrik Juhlin's patch to the build system to support debug builds.
+
+
+2002/08/06 18:35:53  phil
+Fixes to the build system for Python 1.5.
+
+
+2002/08/06 17:49:12  phil
+Fixed a bug where const wasn't being taken into account when comparing argument
+types.
+
+
+2002/07/14 16:09:40  phil
+Added the -e flag to the build system to allow the destination directory of the
+SIP header files to be explicitly specified.
+
+
+2002/07/12 13:03:59  phil
+Fixed a problem with detecting the Qt version in the build system.
+Released as 3.3.2.
+
+
+2002/07/11 22:53:30  phil
+More minor changes to the internal build system.
+
+
+2002/07/11 20:57:32  phil
+Internal build system changes.
+
+
+2002/07/09 22:06:42  phil
+Added support for Qt 3.0.5.
+Released as 3.3.1.
+
+
+2002/07/07 19:20:11  phil
+Windows fixes for the build system.
+Released as 3.3.
+
+
+2002/07/05 08:55:37  phil
+The build system now ignores qmake if present when building for Qt 1.x and 2.x.
+
+
+2002/07/03 17:41:37  phil
+Build system changes for Windows.
+Fixed a thread problem for Python 2.0.x and earlier.  (Untested.)
+Released as 3.3rc3.
+
+
+2002/07/02 18:33:59  phil
+Fixed a probably false exception in sipTransferSelf().
+Fixed a bug in the -z flag handling.
+
+
+2002/07/02 15:00:16  phil
+Added the -x flag to specify a disabled feature.
+Removed all of the version handling as it is now all dealt with in the parser.
+Removed the -f flag and all support for the helper program as it is no longer
+needed.
+Removed %FeatureCode and %ExportedFeaturesCode.
+Added the -z flag to specify a file from which subsequent arguments are read
+from.
+
+
+2002/06/30 16:20:48  phil
+Minor changes to the build system messages.
+Removed support for the -r flag in the build system as tmake handles -fno-rtti.
+
+
+2002/06/29 18:53:49  phil
+The build system now determines the Qt version by parsing qglobal.h rather than
+compiling and running a program (which is no good when cross compiling).
+Added the 'K' format character to sipParseArgs().
+
+
+2002/06/28 22:46:20  phil
+More build.py fixes.
+Changed the build system so that project files are restored to their original
+contents.
+
+
+2002/06/28 12:41:10  phil
+Fixed a bug in the build system where the path to tmake was explicitly
+specified.
+Added the -r flag to the build system to explicitly enable -rno-rtti.
+Released as 3.3rc2.
+
+
+2002/06/23 19:45:33  phil
+Added support for the evaluation version of Qt to the build system.
+
+
+2002/06/22 14:25:14  phil
+Reverted the change that stopped abstract classes from being created (because
+it also stopped them from being sub-classed).
+Released as 3.3rc1.
+
+
+2002/06/22 00:56:29  phil
+Fixed typo in build.py.
+
+
+2002/06/22 00:49:59  phil
+Updated the TODO list.
+Fixed a bug where abstract classes weren't being detected properly.
+An exception is now raised when attempting to explicitly instanciate an
+abstract class.
+Methods are now generated for pure virtual methods.
+The default installation directory for sip under UNIX/Linux is now
+/usr/local/bin rather than where the Python executable is installed.
+Added the -i flag to build.py to allow the directory containing the Qt header
+files to be explicitly specified.
+
+
+2002/06/20 18:50:49  phil
+Changes to the build system to support Qt/Embedded.
+Changes to the build system to handle the lack of site-packages under Windows
+before Python v2.2.
+
+
+2002/06/19 07:51:59  phil
+Fixed a bug that prevented SIP being built with support for Qt v2.x.
+
+
+2002/06/17 08:35:34  phil
+Fix for the build process for when Qt support is disabled.
+
+
+2002/06/16 23:14:29  phil
+Implemented the new build system based on tmake/qmake.
+Removed all vestiges of the old build system.
+
+
+2002/06/16 15:18:37  phil
+Changed the build-common target to dist.
+Fixed the build script to cope with an apparent feature of tmake v1.8.
+
+
+2002/06/14 16:34:53  phil
+The SIP module now works with Python versions earlier than 1.6 again.
+
+
+2002/06/13 21:26:06  phil
+Fixed a bug in the generation of the proxy header file.
+
+
+2002/06/13 16:22:40  phil
+Forgot to add the new versions.c source file.
+
+
+2002/06/13 16:21:52  phil
+Slightly changed the version number format in generated code so that it looks
+better with snapshots.
+The helper program now takes an optional argument which is the output file to
+use instead of stdout.
+Changed the internal implementation of versions so that it is more flexible.
+The proxy header file is now moc-ed and linked separately.
+
+
+2002/05/25 16:45:12  phil
+Updated the (private) TODO list.
+
+
+2002/05/25 16:23:27  phil
+Further minor tweaks for the new build system.
+Set the version number to v3.2.4 - but this is actually slightly later than
+that version.
+
+
+2002/05/25 11:02:57  phil
+More work on the new build system.  Untested on Windows.
+
+
+2002/05/25 09:49:43  phil
+Initial import of SIP into the Riverbank CVS repositiory.
+
+
+2002/05/21 16:09:57  phil
+Whoops - left a debug statement in.
+
+
+2002/05/21 14:38:36  phil
+Fixed a bug in sipParseArgs() using stdarg functions badly.  It only seemed to
+cause a problem on some platforms (eg. Linux PPC).
+
+
+2002/05/17 19:02:28  phil
+Minor documentation changes.
+Released as v3.2.4.
+
+
+2002/05/16 15:19:42  phil
+Removed MacOS X support.
+
+
+2002/05/15 17:17:36  phil
+A final (I think) fix for the problem with maintaining the extra reference for
+instances where C++ owns the wrapped object and also when objects are
+re-wrapped while their dtor chain is being executed.
+The .spec file now works out the Python directories rather than them being
+hardcoded.
+
+
+2002/05/13 08:48:56  phil
+Fixed a bug where /TransferThis/ wasn't increasing the reference count of the
+Python instance being transferred.
+Released as v3.2.3.
+
+
+2002/05/11 17:30:22  phil
+Final documentation changes.
+Released as v3.2.2.
+
+
+2002/05/09 00:18:32  phil
+Fixed a bug where threads weren't being handled properly when calling Qt
+emitters.
+
+
+2002/05/07 21:14:57  phil
+Added information about "--without-x" to the MacOS installation notes.
+Fixed a bug in the object map code that was trying to free non-malloc'ed
+memory.
+Keep a separate flag as to whether C++ has an extra reference to the Python
+instance rather than assume is does if the C++ object is not owned by Python.
+This should fix a very obscure memory leak that happends when C++ objects get
+re-wrapped while they are being destroyed.
+
+
+2002/05/05 13:45:13  phil
+Fixed a bug where the sizes of attribute tables were wrong when optional
+features were disabled.
+Released as v3.2.1.
+
+
+2002/05/04 14:17:39  phil
+Minor tweak to fix a build problem with Windows.
+Released as v3.2.
+
+
+2002/05/03 22:34:37  phil
+Added INSTALL.MacX.
+
+
+2002/05/03 09:23:11  phil
+Fixed NULL pointer bug in sub-class conversions.
+
+
+2002/05/01 22:51:46  phil
+Fixed sip.pro to revert to generating libsip.dll rather than sip.dll.
+Replaced the use of PyCObject with the new sip.voidptr type.
+
+
+2002/04/30 07:54:59  phil
+configure will now search for Qt v3.0.4.
+
+
+2002/04/29 18:09:16  phil
+Fixed a bug where sub-class convertors were being generated for imported
+classes.
+
+
+2002/04/29 10:16:29  phil
+configure doesn't search for X11 for Qt/E.
+Fixed the bug where the class object for namespaces was being incorrectly
+exported.
+
+
+2002/04/27 14:16:25  phil
+Fixed a bug in the SIP library Makefile.am.
+Fixed the bug in the thread support that was causing the problem with the PyQt
+semaphore.py example.
+Changed the way %ConvertToSubClassCode worked so it is closer to the old
+implementation and won't break if it comes across internal classes that it
+doesn't recognise.
+
+
+2002/04/23 09:09:07  phil
+Fix to SIP_[UN]BLOCK_THREADS for when thread support is disabled.
+
+
+2002/04/22 21:31:05  phil
+Explicitly include pythread.h.
+Changed the Windows installation instructions to put things in site-packages.
+Added -module to the libtool flags.
+Added sipMapStringToClass() and sipMapIntToClass() for %ConvertToSubClassCode.
+
+
+2002/04/21 19:08:02  phil
+Added support for the pseudo-type SIP_PYOBJECT.
+Added the 'P' format character to sipParseArgs().
+
+
+2002/04/18 23:16:29  phil
+Allow '!' to be applied to platforms.
+
+
+2002/04/18 12:09:27  phil
+configure no longer fails if X11 couldn't be found (for MacOS X).
+Fixed a bug in the parsing of namespaces.
+
+
+2002/04/16 18:56:33  phil
+Fixed a problem building under Windows.
+
+
+2002/04/16 18:16:55  phil
+Minor build portability change for MacOS/X.
+
+
+2002/04/16 14:23:21  phil
+Replaced all the old thread support with explicit support for classes that can
+create new threads.
+Removed /ReleaseLock/ - the Python lock is released for any call to C++, not
+just selected ones.
+Added /CreatesThread/ and /NewThread/.
+SIP_USE_DLL is no longer needed, but SIP_MAKE_MODULE_DLL is now needed when
+compiling a SIP generated module under Windows.
+
+
+2002/03/30 00:48:46  phil
+Sub-class convertors are now called for any sub-class of the base class - even
+if they don't provide their own convertor.
+
+
+2002/03/24 22:19:28  phil
+Added support for modules registering sub-class convertors.
+
+
+2002/03/22 10:39:23  phil
+Released as v3.1.
+configure will now use qt-mt in preference to qt if it finds both.
+
+
+2002/03/20 15:57:54  phil
+configure now handles Qt v3.0.3.
+
+
+2002/03/19 00:19:10  phil
+Fixed typo in INSTALL.win32.
+Documentation changes prior to the release of v3.1.
+
+
+2002/03/17 17:36:30  phil
+Fixed bug where functions defined in a namespace weren't being generated.
+
+
+2002/03/12 19:29:19  phil
+Upgraded to autoconf-2.53 and automake-1.6.
+
+
+2002/03/09 18:17:55  phil
+Various build changes for Windows.
+The variables that hold the values parsed by sipParseArgs() are no longer
+declared as const if there is no default value.
+The %PrePythonCode is now generated before the import of a maodule's C++ code.
+
+
+2002/03/04 21:06:37  phil
+Made sure all the autoconf/automake/libtool generated files are updated.
+
+
+2002/03/04 20:57:46  phil
+SIP now compiles again.
+Fixed the bug where exceptions sometimes appeared to be raised by Python
+re-implementations of C++ virtual methods.
+
+
+2002/03/04 17:17:12  phil
+Using /TransferThis/ in a non-ctor is now detected as an error.
+
+
+2002/02/25 16:24:35  phil
+Method and enum tables are now sorted and searched with a binary search instead
+of a linear search.
+Individual values of enums are now under version control.
+
+
+2002/02/24 14:59:04  phil
+Ctors now support /ReleaseLock/.
+
+
+2002/02/24 01:30:02  phil
+configure now searches for Qt v3.0.2.
+SIP now handles protected static methods.
+Added the /NonLazy/ option.
+Added the 'n' format character to sipParseArgs() to support non-lazy methods.
+Removed the __sipDtor__ and __sipStr__ builtins.
+The __del__ method is created by the SIP module at run-time when needed.
+Removed all of the special method handling.
+
+
+2002/02/08 15:52:55  phil
+The AutoGen option now takes an optional feature name (needed for PyKDE2).
+
+
+2002/01/28 11:07:47  phil
+The sip library is now a Python module.
+
+
+2002/01/09 00:37:16  phil
+Class enums are now lazy.
+
+
+2002/01/08 20:15:47  phil
+The SIP library now uses PyObject_Del() rather than PyMem_DEL() for Python v1.6
+and later.
+Fixed a code generator bug related to nested features.
+
+
+2002/01/03 01:02:02  phil
+Fixed a bug where feature tests were being generated when thay should have been
+unconditional.
+Added the -f flag to specifically generate the helper program.
+Added %ExportedFeaturesCode.
+Added the $B and $H macros.
+The %Makefile object file extension is now optional and defaults to ".o".
+
+
+2001/12/27 12:15:44  phil
+Replaced %SecondaryVersion with %Platforms and %Feature.
+Removed %ImportWithTimeline.
+Added support for Qt/Embedded.
+Replaced %VersionCode with %FeatureCode.
+%If now supports logical ors or platforms and/or features.
+
+
+2001/12/09 11:39:57  phil
+configure now looks for Qt v3.0.1.
+
+
+2001/12/01 18:35:59  phil
+Used AC_HELP_STRING throughout configure.ac.
+
+
+2001/11/25 18:24:55  phil
+Upgraded libtool to v1.4.2.
+Fix for attribute lookup for classes with no attributes (eg. namespaces).
+
+
+2001/11/17 17:11:37  phil
+Fixed bugs in operators for "setitem" and "getslice" for sequence methods.
+
+
+2001/11/17 14:41:38  phil
+%ConvertToTypeCode must now handle None objects.
+sipConvertToCpp() now handles None objects.
+Fixes to configure.ac.
+The module name is now passed in at runtime rather than being hardcoded (thanks
+to Andreas Gerstlauer).
+Ownership is only transferred if it really has changed.
+
+
+2001/11/11 19:05:36  phil
+configure will search for Qt v2.3.2.
+Fixed the memory leak when calling Python slots (thanks to Andreas Gerstlauer).
+Another attempt at fixing the problem with generating the right Python super
+classes for PyKDE2.
+Generate an error message if handwritten code is provided for signals.
+
+
+2001/10/28 10:32:47  phil
+Backed out the change to use __sipThis rather than sipThis.
+
+
+2001/10/26 23:37:26  phil
+ALtered the lexer/parser so that C++ methods can have names starting with "__",
+which means that .sip files that define special methods must also be changed.
+The library now uses the C API for weak references for Python v2.2 and later.
+Added the %PostInitialisationC++Code directive.
+Replaced "sipThis" with "__sipThis".
+Added __sipStr__ to replace str() in __str__() methods so that unicode() on a
+QString works properly.
+
+
+2001/10/21 13:54:14  phil
+Fixed bug where all the fields of a mapped argument type weren't being
+initialised.
+Fixed bug where the sipCpp pointer has the wrong type for a protected method of
+a class in a namespace.
+
+
+2001/10/19 23:29:46  phil
+Added the 'N' format character to sipParseArgs().
+
+
+2001/10/12 22:49:23  phil
+Literal strings are no longer cached because their contents are used in the
+cache name but they might not be valid characters for an identifier.
+Fixed a bug where %ImportWithTimeLine on a module that has already been
+imported didn't inherit the time line.
+Fixed a bad bug where the "object is on the heap" flag wasn't being
+initialised.
+
+
+2001/10/07 18:48:39  phil
+Fixed generation of proxy object for modules without signals.
+Fix possible bug with handling protected enums (my version of gcc doesn't
+complain).
+
+
+2001/10/06 18:17:23  phil
+configure now handles multi-threaded Qt.
+Correct header files now generated for mapped types based on the same template
+being defined in different modules.
+
+
+2001/10/04 21:30:10  phil
+By default, a class inherits its header code from the enclosing scope.
+Mapped types based on templates now automatically include the header files for
+the types of the template parameters.
+
+
+2001/09/30 10:44:26  phil
+Bug fixing of the new sipParseArgs() code.
+
+
+2001/09/28 23:11:43  phil
+Many changes to sipParseArgs(): it now returns the number of successfully
+parsed arguments; the '-' and 'I' formatting characters are no longer
+supported; the 'm', 'p', 't', 'q', 'Q', 'y', 'Y', 'J' and 'M' formtting
+characters have been added; it now does all argument conversions.
+Static and non-static methods can now be mixed.
+Removed the %CanConvertToType directive.
+
+
+2001/09/23 19:55:51  phil
+Fixed bug in adding a scope to enum values.
+
+
+2001/09/23 14:21:53  phil
+Fixed code generation bug with const signal arguments.
+Fixed generation of calls to sipForceConvertTo_*() functions.
+Header code is now generated before used includes in interface files.
+Protected enums are now handled properly again.
+
+
+2001/09/16 18:08:19  phil
+Changed the method of preventing moc generated files being included with the
+distribution - needed by the latest automake.
+
+
+2001/09/14 15:18:05  phil
+Added the /AutoGen/ options and removed the hardcoded handling of moc generated
+methods.
+Fixed the #include of a non-existent interface file in the main module.
+Fixed a bug where a cached name was being associated with the wrong module.
+Fixed an indentation bug when generating Python code for namespaces.
+Fixed a bug where global enums after a class definition were incorrectly
+generating errors.
+
+
+2001/09/07 16:04:49  phil
+Fixed a bug where a bad number methods table was being generated.
+Upgraded to libtool-1.4.1.
+
+
+2001/09/02 16:39:48  phil
+Fixed bug where the header file for a class's super classes wheren't being
+included if the class was in an imported module.
+
+
+2001/09/01 02:37:46  phil
+The first parameter of sipConvertFrom_*() for mapped types is no longer const.
+Upgraded to autoconf-2.52 and automake-1.5.
+
+
+2001/08/10 17:52:30  phil
+Fixed missing popVersion() in gencode.c.
+
+
+2001/08/10 14:59:17  phil
+Python classes that have to be imported are done so at the start of the module,
+not immediately before they are first needed.
+
+
+2001/08/06 20:08:19  phil
+Fixed a problem registering a class that doesn't exist in a particular
+secondary version.
+
+
+2001/08/01 22:17:47  phil
+More build changes for Qt-NC.
+tr() is now properly handled for Qt v2.3.0 and earlier.
+
+
+2001/07/30 22:48:21  phil
+The contents of namespaces are now effectively public.
+Changed AMTAR to TAR.
+Generated Windows Makefiles that support Qt-NC (untested).
+
+
+2001/07/28 22:40:44  phil
+Fixed bug in sipRegisterClass()'s handling of nested scopes.
+
+
+2001/07/28 06:45:41  phil
+Changed sipRegisterClasses() to handle nested classes and namespaces.
+The sipClassDef structure now has an extra field to identify the enclosing
+scope.
+
+
+2001/07/27 22:28:19  phil
+sipConvertFrom_*() for mapped types now leaves the handling of a NULL pointer
+to the handwritten code rather than converting it to None.
+The same namespace can be defined many times, so long as they are in the same
+module.
+Fixed a problem testing for -fno-exceptions.
+Fixed problem building with Qt support disabled.
+Fixed small code generation bug for virtual handlers and nested classes.
+Fixed an extraneous const that Windows MSVC doesn't like.
+
+
+2001/07/21 15:57:20  phil
+Replaced %PrimaryVersion and %PrimaryOrder with %Timeline.
+Added %ImportWithTimeline.
+The -t switch can now be given any number of times.
+These changes now means that version control works properly across modules so
+that (for example) SIP doesn't try to generate bindings that support invalid
+combinations like Qt v1.x and KDE v2.x.
+
+
+2001/07/20 23:35:04  phil
+Completed the support for namespaces and nested classes.
+sipCallCtor() now handles namespaces.
+Added the SIP_SIGNAL pseudo-type.
+Replaced %Version and %PrimaryVersions with %PrimaryVersion, %SecondaryVersion
+and %PrimaryOrder.
+
+
+2001/07/17 07:39:58  phil
+Added the %MappedType directive - particularly for templates.
+Added support for namespaces and nested classes - not yet finished.
+Removed the Version keyword so that it can be used for class names.
+
+
+2001/07/01 14:31:35  phil
+configure now looks for Qt v2.3.1.
+
+
+2001/06/05 21:41:39  phil
+Added the relevant files to build sip.exe under Windows (not tested yet).
+The Windows Makefiles (now Borland as well as MSVC) are created automatically
+as part of the "make dist" process.
+
+
+2001/06/04 21:38:18  phil
+Some Windows portability changes.
+
+
+2001/06/02 17:00:21  phil
+C-style comments can now be used in .sip files.
+Methods automatically generated by moc (particularly tr()) are now handled
+properly.
+
+
+2001/05/30 21:20:07  phil
+Added the /Constraint/ option and support for it to sipParseArgs().
+
+
+2001/05/23 22:25:54  phil
+QObject.blockSignals() now blocks Python signals as well as Qt signals.
+
+
+2001/05/23 21:13:18  phil
+Fixed problems when default arguments are function calls.
+Added support for QObject.sender() to be able to be implemented properly.
+Fixed the problem when a slot disconnects itself.
+
+
+2001/04/29 16:23:09  phil
+Minor configuration changes.
+
+
+2001/04/22 15:22:52  phil
+Upgraded to automake v1.4d.
+
+
+2001/04/19 22:09:32  phil
+Final changes for the release of v2.4.
+
+
+2001/04/08 13:39:02  phil
+Upgraded to libtool v1.3d.
+
+
+2001/03/10 00:43:37  phil
+Fixed compile problems with Python earlier then v2.1.
+
+
+2001/03/07 20:17:47  phil
+The library now tidies itself up when Py_Finalize() is called.
+
+
+2001/03/06 09:29:05  phil
+Fixed minor code generation bugs with Python special methods.
+
+
+2001/03/05 23:16:12  phil
+Added support for Python v2.1 rich comparison operators.
+
+
+2001/03/05 16:42:18  phil
+Added support for the in-place operators introduced in Python v2.0.
+Python slots are now wrapped in weak references which means that when the
+programmer forgets to keep a slot alive it won't core dump.
+
+
+2001/03/01 19:21:58  phil
+configure now uses the Python executable to determine where Python is
+installed.
+
+
+2001/02/10 12:09:11  phil
+Fixed bug in sipCommonDtor() so that it acquires the Python lock before calling
+Python library functions.
+
+
+2001/02/04 14:37:10  phil
+Configure now checks for Qt v2.2.4 and Python v2.1.
+Released as v2.3.
+
+
+2001/01/23 23:36:51  phil
+Added the -p switch and the $m macro.
+
+
+2001/01/09 16:07:55  phil
+The library will raise an exception if a program tries to inherit from more
+than one wrapped class.
+
+
+2000/12/24 18:30:09  phil
+Fixed a bug that meant some signal proxies were not being generated properly
+(only affected QMovie).
+When a C++ instance takes ownership, it also takes a reference to the Python
+object as well.
+Updated the documentation for v2.3.
+
+
+2000/12/19 14:48:31  phil
+Added the ability to add pre- and post-call hooks. Added the sipCallHook()
+function to implement them.
+
+
+2000/12/15 11:18:00  phil
+Added a couple of missing Python exceptions.
+
+
+2000/12/13 10:41:12  phil
+Updated the configuration to look for Qt v2.2.3.
+
+
+2000/12/12 17:48:53  phil
+Changed sipParseArgs() to take an extra parameter to enable better error
+messages to be reported.
+Changed the sipNo*() functions to report the better messages.
+Changed the code generator to use the changed sipParseArgs().
+
+
+2000/11/05 20:56:28  phil
+Added the $P macro.
+Backed out the change making the wrapper class dtors virtual (causes problems
+under Windows).
+Released v2.2.
+
+
+2000/11/04 11:06:11  phil
+Made the wrapper class dtor virtual to avoid compiler warning messages.
+Fixed proxy class generation for modules that don't define any new signals.
+
+
+2000/11/02 15:03:13  phil
+Minor compile fixes (why is it always RedHat?).
+Added the %Copying directive.
+Clarified the license regarding generated code.
+
+
+2000/10/18 16:20:53  phil
+Final tidying up for the release of v2.1.
+
+
+2000/10/15 20:41:24  phil
+Finally fixed the problem with signal signatures defined with SIP_CON_SLOT.
+Updated the documentation for v2.1pre1.
+
+
+2000/10/13 19:00:17  phil
+Fixed really nasty segv with complex Python expressions where the wrapped
+object was (legitimately) outliving the class instance.
+
+
+2000/10/11 17:23:05  phil
+Slot types that are only specified by SIP_CON_SLOT (and not as a signal) are
+now handled properly.
+
+
+2000/10/11 13:34:03  phil
+Added the ability to provide handwritten code for dtors.
+Added the sipGetThisWrapper() function to the SIP library.
+
+
+2000/10/02 21:46:56  phil
+Fixed the bad code generated for Python special methods (ie. operators).
+
+
+2000/10/01 12:32:19  phil
+Slots that take fewer arguments than the number supplied by a signal will not
+cause an exception - just like Qt.
+
+
+2000/10/01 00:44:57  phil
+Fixed the signal handling bug introduced a couple of days ago while trying to
+fix another signal handling bug.
+
+
+2000/09/29 22:28:26  phil
+When a wrapped class instance is deleted it is now guaranteed that the
+underlying object will be deleted after all of the instances variables.  This
+avoids some potentially very subtle bugs.
+
+
+2000/09/23 18:07:05  phil
+Connecting Python signals to Qt slots (expressed using SLOT()) now works.
+Increased the library version number to 3.0.1.
+
+
+2000/09/20 10:57:10  phil
+Tidy up after moving the CVS tree to theKompany.com CVS repository.
