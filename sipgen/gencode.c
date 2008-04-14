@@ -143,6 +143,8 @@ static void generateNumberSlotCall(overDef *od, char *op, FILE *fp);
 static void generateVariableHandler(classDef *, varDef *, FILE *);
 static int generateObjToCppConversion(argDef *, FILE *);
 static void generateVarClassConversion(varDef *, FILE *);
+static void generateGetter(varDef* vd, int needsNew, FILE* fp);
+static void generateSetter(varDef* vd, FILE* fp);   
 static void generateVarMember(varDef *vd, FILE *fp);
 static int generateVoidPointers(sipSpec *pt, moduleDef *mod, classDef *cd,
         FILE *fp);
@@ -3738,15 +3740,34 @@ static void generateVariableHandler(classDef *context, varDef *vd, FILE *fp)
     else
     {
         int pyobj = FALSE;
+        int needsNew = FALSE;
 
-        prcode(fp,
-"        sipVal = %s", (((atype == class_type || atype == mapped_type) && vd->type.nrderefs == 0) ? "&" : ""));
+        /* See if we need to make a copy of the result on the heap. */
+        if ((atype == class_type || atype == mapped_type) &&
+            !isReference(&vd->type) &&
+            vd->type.nrderefs == 0)
+        {
+            needsNew = TRUE;
+//            resetIsConstArg(res);
+        }
+        else
+            needsNew = FALSE;
 
-        generateVarMember(vd, fp);
+        if (isProperty(vd) && needsNew)
+            prcode(fp,"        sipVal = new %b(", &vd->type);
+        else
+            prcode(fp,
+        "        sipVal = %s", (((atype == class_type || atype == mapped_type) && vd->type.nrderefs == 0) ? "&" : ""));
 
-        prcode(fp, ";\n"
-"\n"
-            );
+        if (isProperty(vd))
+        {
+            generateGetter(vd, needsNew, fp);
+        } 
+        else
+        {
+            generateVarMember(vd, fp);
+        }
+        prcode(fp, "%s;\n\n", (isProperty(vd) && needsNew ? ")" : ""));
 
         switch (atype)
         {
@@ -3991,10 +4012,28 @@ static void generateVariableHandler(classDef *context, varDef *vd, FILE *fp)
         prcode(fp,
 "    ");
 
-        generateVarMember(vd, fp);
+        if (isProperty(vd))
+        {
+            if (vd->setter != NULL)
+            {
+                generateSetter(vd, fp);
+                prcode(fp, "(%ssipVal);\n", deref);
+            }
+            else
+            {
+                prcode(fp, 
+"PyErr_SetString(PyExc_AttributeError, \"%s is a read only property\");\n"
+"return NULL;\n",
+                       vd->pyname->text);
+            }
+        }
+        else
+        {
+            generateVarMember(vd, fp);
 
-        prcode(fp, " = %ssipVal;\n"
-            , deref);
+            prcode(fp, " = %ssipVal;\n"
+                , deref);
+        }
 
         /* Note that wchar_t * leaks here. */
 
@@ -4018,6 +4057,28 @@ static void generateVariableHandler(classDef *context, varDef *vd, FILE *fp)
         );
 }
 
+static void generateGetter(varDef* vd, int needsNew, FILE* fp)
+{
+    /* See if we need to make a copy of the result on the heap. */
+    
+    printf("generateGetter(%s) needsNew: %d\n", vd->pyname->text, needsNew);
+    if (isStaticVar(vd))
+        prcode(fp, "%S::", classFQCName(vd->ecd));
+    else
+        prcode(fp, "sipCpp->");
+    
+    prcode(fp, "%s()", vd->getter);
+}
+
+static void generateSetter(varDef* vd, FILE* fp)
+{
+    if (isStaticVar(vd))
+        prcode(fp, "%S::", classFQCName(vd->ecd));
+    else
+        prcode(fp, "sipCpp->");
+    
+    prcode(fp, "%s", vd->getter);
+}
 
 /*
  * Generate the member variable of a class.
@@ -4611,6 +4672,7 @@ static nameDef* makeAccessorNameDef(moduleDef* module, overDef* over)
 static void addGetter(sipSpec* pt, moduleDef* module, classDef* cd, overDef* over)
 {
     varDef* var = sipMalloc(sizeof(varDef));
+    var->getter = over->cppname;
     var->pyname = makeAccessorNameDef(module, over);
     
     scopedNameDef *varname = text2scopePart(var->pyname->text);
@@ -4628,13 +4690,17 @@ static void addGetter(sipSpec* pt, moduleDef* module, classDef* cd, overDef* ove
     var->setcode = 0;
     var->next = 0;
     
+    printf("for getter %s:\n", var->getter);
+    printf("  argflags: %d\n  nrderefs: %d\n", var->type.argflags, var->type.nrderefs);
+    
+    setIsProperty(var);
     setNeedsHandler(var);
     setHasVarHandlers(cd);
     
     if (isStatic(over))
         setIsStaticVar(var);
 
-    if (0 != strcmp(var->pyname->text, "Position"))
+    if (0 != strcmp(var->pyname->text, "Size"))
         return;
         
     printf("adding getter called '%s'\n", var->pyname->text);
@@ -4678,13 +4744,13 @@ static void generateProperties(sipSpec *pt, moduleDef *mod, classDef *cd, FILE *
     {
         if (isGetter(mod, cd, over))
         {
-            if (strcmp(cd->pyname, "Caret") == 0)
-            {
+//            if (strcmp(cd->pyname, "Rect") == 0)
+//            {
                 addGetter(pt, mod, cd, over);
-            }
+//            }
         }
-        else if (0 && isSetter(mod, cd, over))
-            printf("found setter: %s\n", over->cppname);
+//        else if (0 && isSetter(mod, cd, over))
+//           printf("found setter: %s\n", over->cppname);
     }
 }
 
