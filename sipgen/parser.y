@@ -4310,6 +4310,11 @@ static const char *getPythonName(optFlags *optflgs, const char *cname)
 
     if ((of = findOptFlag(optflgs, "PyName", name_flag)) != NULL)
         pname = of -> fvalue.sval;
+    else if (optFind(currentSpec, "RenameWx") && 
+             strlen(cname) > 2 &&
+             cname[0] == 'w' &&
+             cname[1] == 'x')
+        pname = cname + 2;
     else
         pname = cname;
 
@@ -5105,6 +5110,14 @@ int optRegisterTypes(sipSpec *pt)
 int optQ_OBJECT4(sipSpec *pt)
 {
     return optFind(pt, "Qt4Q_OBJECT");
+}
+
+/*
+ * Return TRUE if property auto generation is enabled.
+ */
+int optAutoProperties(sipSpec *pt)
+{
+    return optFind(pt, "AutoProperties");
 }
 
 

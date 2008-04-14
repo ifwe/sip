@@ -120,7 +120,6 @@ static void generateVirtHandlerErrorReturn(argDef *res, FILE *fp);
 static void generateVirtualCatcher(moduleDef *mod, classDef *cd, int virtNr,
         virtOverDef *vod, FILE *fp);
 static void generateUnambiguousClass(classDef *cd, classDef *scope, FILE *fp);
-static void generateProperties(sipSpec *pt, moduleDef *mod, classDef *cd, FILE *fp);
 static void generateProtectedEnums(sipSpec *, classDef *, FILE *);
 static void generateProtectedDeclarations(classDef *, FILE *);
 static void generateProtectedDefinitions(classDef *, FILE *);
@@ -3261,8 +3260,6 @@ static void generateClassCpp(classDef *cd, sipSpec *pt, FILE *fp)
     moduleDef *mod = cd->iff->module;
 
     /* Generate any local class code. */
-    generateProperties(pt, mod, cd, fp);
-
     generateCppCodeBlock(cd->cppcode, fp);
 
     generateClassFunctions(pt, mod, cd, fp);
@@ -3760,13 +3757,10 @@ static void generateVariableHandler(classDef *context, varDef *vd, FILE *fp)
         "        sipVal = %s", (((atype == class_type || atype == mapped_type) && vd->type.nrderefs == 0) ? "&" : ""));
 
         if (isProperty(vd))
-        {
             generateGetter(vd, needsNew, fp);
-        } 
         else
-        {
             generateVarMember(vd, fp);
-        }
+
         prcode(fp, "%s;\n\n", (isProperty(vd) && needsNew ? ")" : ""));
 
         switch (atype)
@@ -4059,13 +4053,10 @@ static void generateVariableHandler(classDef *context, varDef *vd, FILE *fp)
 
 static void generateGetter(varDef* vd, int needsNew, FILE* fp)
 {
-    /* See if we need to make a copy of the result on the heap. */
-    
-    printf("generateGetter(%s) needsNew: %d\n", vd->pyname->text, needsNew);
     if (isStaticVar(vd))
-        prcode(fp, "%S::", classFQCName(vd->ecd));
+        prcode(fp, "/* GETTER */ %S::", classFQCName(vd->ecd));
     else
-        prcode(fp, "sipCpp->");
+        prcode(fp, "/* GETTER */ sipCpp->");
     
     prcode(fp, "%s()", vd->getter);
 }
@@ -4630,128 +4621,6 @@ static void generateSlot(moduleDef *mod, classDef *cd, enumDef *ed,
     prcode(fp,
 "}\n"
         );
-}
-
-static void printOverDef(overDef* over)
-{
-    printf("%s\n", over->cppname);
-    printf("  exceptions: %p\n", over->exceptions);
-    printf("  methodcode: %p\n", over->methodcode);
-    printf("  virthandler: %p\n", over->virthandler);
-}
-
-
-static int countVars(varDef* var)
-{
-    int count = 0;
-    while(var = var->next) ++count;
-    return count;
-}
-
-static const char* stringCopy(const char* s)
-{
-    const char* newstr = sipMalloc(sizeof(char*) * strlen(s));
-    strcpy(newstr, s);
-    return newstr;
-}
-
-static nameDef* makeAccessorNameDef(moduleDef* module, overDef* over)
-{
-    nameDef* pyname = sipMalloc(sizeof(nameDef));
-    pyname->nameflags = 0;
-    pyname->module = module;
-    pyname->text = stringCopy(over->cppname + 3);
-    pyname->next = 0;
-    
-    return pyname;
-}
-
-/*
- * Add a variable for a given Getter method.
- */
-static void addGetter(sipSpec* pt, moduleDef* module, classDef* cd, overDef* over)
-{
-    varDef* var = sipMalloc(sizeof(varDef));
-    var->getter = over->cppname;
-    var->pyname = makeAccessorNameDef(module, over);
-    
-    scopedNameDef *varname = text2scopePart(var->pyname->text);
-    scopedNameDef *scopedname = copyScopedName(classFQCName(cd));
-    appendScopedName(&scopedname, varname);
-    
-    var->fqcname = scopedname;
-    var->ecd = cd;
-    var->module = module;
-    var->varflags = 0;
-
-    var->type = over->cppsig->result;
-    var->accessfunc = 0;
-    var->getcode = 0;
-    var->setcode = 0;
-    var->next = 0;
-    
-    printf("for getter %s:\n", var->getter);
-    printf("  argflags: %d\n  nrderefs: %d\n", var->type.argflags, var->type.nrderefs);
-    
-    setIsProperty(var);
-    setNeedsHandler(var);
-    setHasVarHandlers(cd);
-    
-    if (isStatic(over))
-        setIsStaticVar(var);
-
-    if (0 != strcmp(var->pyname->text, "Size"))
-        return;
-        
-    printf("adding getter called '%s'\n", var->pyname->text);
-
-    /* Append the new variable to the module. */
-    var->next = pt->vars;
-    pt->vars = var;
-}
-
-static int isGetter(moduleDef* module, classDef* cd, overDef* over)
-{
-    if (0 == strncmp(over->cppname, "Get", 3) &&
-        isPublic(over) &&
-        0 == over->cppsig->nrArgs &&
-        0 == over->methodcode &&
-        0 == over->virthandler)
-    {
-        return 1;
-    } 
-    
-    return 0;
-}
-
-static int isSetter(moduleDef* module, classDef* cd, overDef* over)
-{
-    if (0 == strncmp(over->cppname, "Set", 3) &&
-        1 == over->cppsig->nrArgs &&
-        0 == over->methodcode &&
-        0 == over->virthandler)
-    {
-        return 1;
-    }
-    
-    return 0;
-}
-
-static void generateProperties(sipSpec *pt, moduleDef *mod, classDef *cd, FILE *fp)
-{
-    overDef* over;
-    for (over = cd->overs; over != NULL; over = over->next)
-    {
-        if (isGetter(mod, cd, over))
-        {
-//            if (strcmp(cd->pyname, "Rect") == 0)
-//            {
-                addGetter(pt, mod, cd, over);
-//            }
-        }
-//        else if (0 && isSetter(mod, cd, over))
-//           printf("found setter: %s\n", over->cppname);
-    }
 }
 
 

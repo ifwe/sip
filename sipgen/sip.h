@@ -1027,6 +1027,7 @@ ifaceFileDef *findIfaceFile(sipSpec *pt, moduleDef *mod, scopedNameDef *fqname, 
 int optNoEmitters(sipSpec *pt);
 int optRegisterTypes(sipSpec *pt);
 int optQ_OBJECT4(sipSpec *pt);
+int optAutoProperties(sipSpec *pt);
 void yywarning(char *);
 nameDef *cacheName(sipSpec *pt, const char *name);
 

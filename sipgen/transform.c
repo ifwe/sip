@@ -82,6 +82,8 @@ static void addComplementarySlots(sipSpec *pt, classDef *cd);
 static void addComplementarySlot(sipSpec *pt, classDef *cd, memberDef *md,
         slotType cslot, const char *cslot_name);
 
+static void generateProperties(sipSpec *pt, moduleDef *mod, classDef *cd);
+
 
 /*
  * Transform the parse tree.
@@ -286,6 +288,12 @@ void transform(sipSpec *pt)
         for (cd = pt->classes; cd != NULL; cd = cd->next)
             if (generatingCodeForModule(pt, cd->iff->module))
                 registerMetaType(cd);
+                
+    /* Autogenerate properties */
+    if (optAutoProperties(pt))
+        for (cd = pt->classes; cd != NULL; cd = cd->next)
+            if (generatingCodeForModule(pt, cd->iff->module))
+                generateProperties(pt, cd->iff->module, cd);
 }
 
 
@@ -3028,4 +3036,112 @@ static int generatingCodeForModule(sipSpec *pt, moduleDef *mod)
         return (pt->module == mod->container);
 
     return (pt->module == mod);
+}
+
+
+static const char* stringCopy(const char* s)
+{
+    const char* newstr = sipMalloc(sizeof(char*) * strlen(s));
+    strcpy(newstr, s);
+    return newstr;
+}
+
+static void printOverload(classDef* cd, overDef* over)
+{
+    printf("overDef in class %s\n", cd->pyname);
+    printf("  cppname       %s\n", over->cppname);
+    printf("  overflags     %d\n", over->overflags);
+    printf("  cppsig : signatureDef\n");
+    
+    argDef* argdef = &over->cppsig->result;
+    printf("    result : argDef\n");
+    printf("      atype     %d\n", argdef->atype);
+    printf("      name      %s\n", argdef->name);
+    printf("      argflags  %d\n", argdef->argflags);
+    printf("      nrdefrefs %d\n", argdef->nrderefs);
+    printf("      defval    %p\n", argdef->defval);
+    printf("    nrArgs      %d\n", over->cppsig->nrArgs);  
+}
+
+/*
+ * Add a variable for a given Getter method.
+ */
+static void addGetter(sipSpec* pt, moduleDef* module, classDef* cd, overDef* over)
+{
+    varDef* var = sipMalloc(sizeof(varDef));
+    var->getter = over->cppname;
+    var->pyname = cacheName(pt, over->cppname + 3);
+    setIsUsedName(var->pyname);
+    
+    scopedNameDef *varname = text2scopePart(var->pyname->text);
+    scopedNameDef *scopedname = copyScopedName(classFQCName(cd));
+    appendScopedName(&scopedname, varname);
+    
+    var->fqcname = scopedname;
+    var->ecd = cd;
+    var->module = module;
+    var->varflags = 0;
+
+    var->type = over->cppsig->result;
+    var->accessfunc = 0;
+    var->getcode = 0;
+    var->setcode = 0;
+    var->next = 0;
+    
+    setIsProperty(var);
+    setNeedsHandler(var);
+    setHasVarHandlers(cd);
+    
+    if (isStatic(over))
+        setIsStaticVar(var);
+        
+    printOverload(cd, over);
+
+    /* Append the new variable to the module. */
+    var->next = pt->vars;
+    pt->vars = var;
+}
+
+static int isGetter(moduleDef* module, classDef* cd, overDef* over)
+{
+    if (0 == strncmp(over->cppname, "Get", 3) &&
+        isPublic(over) &&
+        0 == over->cppsig->nrArgs &&
+        0 == over->methodcode &&
+        0 == over->virthandler)
+    {
+        return 1;
+    } 
+    
+    return 0;
+}
+
+static int isSetter(moduleDef* module, classDef* cd, overDef* over)
+{
+    if (0 == strncmp(over->cppname, "Set", 3) &&
+        1 == over->cppsig->nrArgs &&
+        0 == over->methodcode &&
+        0 == over->virthandler)
+    {
+        return 1;
+    }
+    
+    return 0;
+}
+
+static void generateProperties(sipSpec *pt, moduleDef *mod, classDef *cd)
+{
+    overDef* over;
+    for (over = cd->overs; over != NULL; over = over->next)
+    {
+        if (isGetter(mod, cd, over))
+        {
+//            if (strcmp(cd->pyname, "Rect") == 0)
+//            {
+                addGetter(pt, mod, cd, over);
+//            }
+        }
+//        else if (0 && isSetter(mod, cd, over))
+//           printf("found setter: %s\n", over->cppname);
+    }
 }
