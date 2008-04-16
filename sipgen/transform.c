@@ -2016,6 +2016,9 @@ static int supportedType(classDef *cd,overDef *od,argDef *ad,int outputs)
         }
 
         break;
+        
+    default:
+        break;
     }
 
     /* Unsupported if we got this far. */
@@ -2312,6 +2315,9 @@ int sameBaseType(argDef *a1,argDef *a2)
         if (a1 -> u.mtd != a2 -> u.mtd)
             return FALSE;
 
+        break;
+        
+    default:
         break;
     }
 
@@ -3063,86 +3069,155 @@ static void printOverload(classDef* cd, overDef* over)
     printf("    nrArgs      %d\n", over->cppsig->nrArgs);  
 }
 
-/*
- * Add a variable for a given Getter method.
- */
-static void addGetter(sipSpec* pt, moduleDef* module, classDef* cd, overDef* over)
+static void exitmsg(char* msg)
 {
-    varDef* var = sipMalloc(sizeof(varDef));
-    var->getter = over->cppname;
-    var->pyname = cacheName(pt, over->cppname + 3);
-    setIsUsedName(var->pyname);
+    fprintf(stderr, msg);
+    exit(-1);
+}
+
+/*
+ * Add a varDef representing a property for a given getter or setter method.
+ */
+static varDef* addOrFindProperty(sipSpec* pt, moduleDef* module, classDef* cd, overDef* over)
+{
+    if (over->cppname == NULL || strlen(over->cppname) < 4)
+        exitmsg("error creating property");
+    else if (strncmp("Get", over->cppname, 3) && strncmp("Set", over->cppname, 3))
+        exitmsg("error creating property");
+
+    /* Propertes must start with Get or Set */
+    nameDef* propertyName = cacheName(pt, over->cppname + 3);
+        
+    /* Find the property if it already exists. */
+    varDef* var;
+    for(var = pt->vars; var != NULL; var = var->next)
+    {
+        if(var->ecd == cd &&
+           var->module == module &&
+           var->pyname == propertyName)
+        {
+           if (!isProperty(var))
+               exitmsg("existing property");
+           return var;
+        }
+    }
     
-    scopedNameDef *varname = text2scopePart(var->pyname->text);
+    /* We didn't find one, so make a new one. */
+    var = sipMalloc(sizeof(varDef));
+    setIsUsedName(propertyName);
+    var->pyname = propertyName;
+    
+    /* Create a scoped name for the property. */
+    scopedNameDef *varname = text2scopePart(propertyName->text);
     scopedNameDef *scopedname = copyScopedName(classFQCName(cd));
     appendScopedName(&scopedname, varname);
-    
     var->fqcname = scopedname;
+
+    /* TODO: use newVar from parser.c if possible here. */
+    var->type = over->cppsig->result;
     var->ecd = cd;
     var->module = module;
+
     var->varflags = 0;
-
-    var->type = over->cppsig->result;
-
     var->accessfunc = 0;
     var->getcode = 0;
     var->setcode = 0;
-    var->next = 0;
-    
+
+    var->getter = 0;
+    var->setter = 0;
+
+    /* Set properties on the new varDef. */
     setIsProperty(var);
     setNeedsHandler(var);
     setHasVarHandlers(cd);
-    
     if (isStatic(over))
         setIsStaticVar(var);
-        
-    //printOverload(cd, over);
-
+                
     /* Append the new variable to the module. */
     var->next = pt->vars;
     pt->vars = var;
+    return var;
 }
 
+static void addGetter(sipSpec* pt, moduleDef* module, classDef* cd, overDef* over)
+{
+    varDef* prop = addOrFindProperty(pt, module, cd, over);
+    if (prop->getter == NULL)
+    {
+        prop->getter = over->cppname;
+    }
+}
+
+static void addSetter(sipSpec* pt, moduleDef* module, classDef* cd, overDef* over)
+{
+    varDef* prop = addOrFindProperty(pt, module, cd, over);
+    if (prop->setter == NULL)
+    {
+        printf("added setter %s::%s\n", cd->pyname, over->cppname);
+        prop->setter = over->cppname;
+    }
+}
+
+static int isAccessor(overDef* over)
+{
+    return isPublic(over) &&
+        0 == over->methodcode &&
+        0 == over->virthandler &&
+        over->cppname != NULL &&
+        strlen(over->cppname) > 3;
+}
+
+//
+// TODO: make these actually check for collisions with existing methods
+//
 static int isGetter(moduleDef* module, classDef* cd, overDef* over)
 {
-    if (0 == strncmp(over->cppname, "Get", 3) &&
-        isPublic(over) &&
-        0 == over->cppsig->nrArgs &&
-        0 == over->methodcode &&
-        0 == over->virthandler)
-    {
-        return 1;
-    } 
-    
-    return 0;
+    return 0 == strncmp(over->cppname, "Get", 3) &&   /* starts with Get */
+        isAccessor(over) &&                           /* looks like an accessor */
+        0 == over->cppsig->nrArgs;                    /* has no arguments */
 }
 
 static int isSetter(moduleDef* module, classDef* cd, overDef* over)
 {
-    if (0 == strncmp(over->cppname, "Set", 3) &&
-        1 == over->cppsig->nrArgs &&
-        0 == over->methodcode &&
-        0 == over->virthandler)
-    {
-        return 1;
-    }
-    
-    return 0;
+    return 0 == strncmp(over->cppname, "Set", 3) && 
+        isAccessor(over) &&
+        1 == over->cppsig->nrArgs;
 }
 
 static void generateProperties(sipSpec *pt, moduleDef *mod, classDef *cd)
-{
+{    
+    /* Create necessary getters and setters */
     overDef* over;
     for (over = cd->overs; over != NULL; over = over->next)
     {
         if (isGetter(mod, cd, over))
+            addGetter(pt, mod, cd, over);
+        else if (isSetter(mod, cd, over))
+            addSetter(pt, mod, cd, over);
+    }
+    
+    /* Clear out properties without getters. */
+    varDef* var = pt->vars;
+    varDef* next;
+    varDef* prev;
+    while (var != NULL)
+    {
+        next = var->next;
+        
+        if (isProperty(var) && var->getter == NULL)
         {
-//            if (strcmp(cd->pyname, "Rect") == 0)
-//            {
-                addGetter(pt, mod, cd, over);
-//            }
+            if (pt->vars == var)
+                pt->vars = next;
+            else
+                prev->next = next;
+                
+            free(var);
         }
-//        else if (0 && isSetter(mod, cd, over))
-//           printf("found setter: %s\n", over->cppname);
+        else
+        {
+            prev = var;
+        }
+                
+        var = next;
     }
 }

@@ -1518,6 +1518,8 @@ static void generateCpp(sipSpec *pt, moduleDef *mod, const char *codeDir,
                 if (td->type.u.mtd->iff->module != mod)
                     tdmname = td->type.u.mtd->iff->module->fullname;
                 break;
+            default:
+                break;
             }
 
             prcode(fp,
@@ -3756,7 +3758,14 @@ static void generateVariableHandler(classDef *context, varDef *vd, FILE *fp)
         "        sipVal = %s", (((atype == class_type || atype == mapped_type) && vd->type.nrderefs == 0) ? "&" : ""));
 
         if (isProperty(vd))
+        {
+            if (!vd->getter)
+            {
+                fprintf(stderr, "varDef is marked as a property but has no getter\n");
+                exit(-1);
+            }
             generateGetter(vd, needsNew, fp);
+        }
         else
             generateVarMember(vd, fp);
 
@@ -3909,6 +3918,8 @@ static void generateVariableHandler(classDef *context, varDef *vd, FILE *fp)
                 );
             pyobj = TRUE;
             break;
+        default:
+            break;
         }
 
         prcode(fp,
@@ -4007,7 +4018,7 @@ static void generateVariableHandler(classDef *context, varDef *vd, FILE *fp)
 
         if (isProperty(vd))
         {
-            if (vd->setter != NULL)
+            if (vd->setter != NULL && vd->getter != NULL)
             {
                 generateSetter(vd, fp);
                 prcode(fp, "(%ssipVal);\n", deref);
@@ -4051,7 +4062,7 @@ static void generateVariableHandler(classDef *context, varDef *vd, FILE *fp)
 }
 
 static void generateGetter(varDef* vd, int needsNew, FILE* fp)
-{
+{    
     if (isStaticVar(vd))
         prcode(fp, "/* GETTER */ %S::", classFQCName(vd->ecd));
     else
@@ -4067,7 +4078,7 @@ static void generateSetter(varDef* vd, FILE* fp)
     else
         prcode(fp, "sipCpp->");
     
-    prcode(fp, "%s", vd->getter);
+    prcode(fp, "%s", vd->setter);
 }
 
 /*
@@ -4271,6 +4282,8 @@ static int generateObjToCppConversion(argDef *ad,FILE *fp)
     case pyslice_type:
     case pytype_type:
         rhs = "sipPy";
+        break;
+    default:
         break;
     }
 
@@ -6389,6 +6402,8 @@ static void generateParseResultExtraArgs(argDef *ad, int isres, FILE *fp)
         if (ad->u.ed->fqcname != NULL)
             prcode(fp,",sipEnum_%C",ad->u.ed->fqcname);
         break;
+    default:
+        break;
     }
 }
 
@@ -6513,6 +6528,8 @@ static const char *getParseResultFormat(argDef *ad, int isres, int xfervh)
     case pyslice_type:
     case pytype_type:
         return (isAllowNone(ad) ? "N" : "T");
+    default:
+        break;
     }
 
     /* We should never get here. */
@@ -6684,6 +6701,8 @@ static void generateTupleBuilder(signatureDef *sd,FILE *fp)
         case pytype_type:
             fmt = "S";
             break;
+        default:
+            break;
         }
 
         prcode(fp,fmt);
@@ -6723,6 +6742,8 @@ static void generateTupleBuilder(signatureDef *sd,FILE *fp)
         case struct_type:
         case void_type:
             --derefs;
+            break;
+        default:
             break;
         }
 
@@ -7551,6 +7572,8 @@ static void generateNamedBaseType(classDef *context, argDef *ad, char *name,
     case ellipsis_type:
         prcode(fp, "PyObject *");
         break;
+    default:
+        break;
     }
 
     if (nr_derefs > 0)
@@ -7685,6 +7708,8 @@ static void generateVariable(classDef *context, argDef *ad, int argnr,
             generateDefaultValue(ad, argnr, fp);
             prcode(fp, ";\n"
                 );
+            break;
+        default:
             break;
         }
 }
@@ -9307,6 +9332,8 @@ static void generateHandleResult(overDef *od,int isNew,char *prefix,FILE *fp)
             ,prefix,vname);
 
         break;
+    default:
+        break;
     }
 }
 
@@ -9403,6 +9430,8 @@ static char getBuildResultFormat(argDef *ad)
     case pyslice_type:
     case pytype_type:
         return 'R';
+    default:
+        break;
     }
 
     /* We should never get here. */
@@ -9782,6 +9811,9 @@ static void generateFunctionCall(classDef *cd,classDef *ocd,overDef *od,
 "                sipRes = 0");
 
             break;
+        
+        default:
+            break;
         }
 
         if (needsNew && !generating_c)
@@ -10054,6 +10086,9 @@ static int generateArgParser(signatureDef *sd, classDef *cd, ctorDef *ct,
         case slotdis_type:
             slotdisarg = a;
             break;
+        
+        default:
+            break;
         }
 
         if (isArraySize(ad))
@@ -10284,6 +10319,9 @@ static int generateArgParser(signatureDef *sd, classDef *cd, ctorDef *ct,
 
         case ellipsis_type:
             fmt = "W";
+            break;
+        
+        default:
             break;
         }
 
@@ -11182,6 +11220,9 @@ static void prTypeName(FILE *fp,argDef *ad,int intmpl)
 
             break;
         }
+    
+    default:
+        break;
     }
 }
 
