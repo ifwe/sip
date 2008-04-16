@@ -331,6 +331,9 @@ static void addComplementarySlots(sipSpec *pt, classDef *cd)
         case ne_slot:
             addComplementarySlot(pt, cd, md, eq_slot, "__eq__");
             break;
+            
+        default:
+            break;
         }
 }
 
@@ -1819,6 +1822,9 @@ static void resolveVariableType(sipSpec *pt, varDef *vd)
         if (!isReference(vtype) && vtype->nrderefs == 1)
             bad = FALSE;
         break;
+    
+    default:
+        break;
     }
 
     if (bad && (vd->getcode == NULL || vd->setcode == NULL))
@@ -3075,6 +3081,24 @@ static void exitmsg(char* msg)
     exit(-1);
 }
 
+static varDef* findProperty(sipSpec *pt, moduleDef *module, classDef *cd, overDef *over, nameDef* propertyName)
+{
+    varDef *var = NULL;
+    for(var = pt->vars; var != NULL; var = var->next)
+    {
+        if(var->ecd == cd &&
+           var->module == module &&
+           var->pyname == propertyName)
+        {
+           if (!isProperty(var))
+               exitmsg("found property-like overload with no property flag set!");
+           return var;
+        }
+    }
+    
+    return NULL;
+}
+
 /*
  * Add a varDef representing a property for a given getter or setter method.
  */
@@ -3089,18 +3113,9 @@ static varDef* addOrFindProperty(sipSpec* pt, moduleDef* module, classDef* cd, o
     nameDef* propertyName = cacheName(pt, over->cppname + 3);
         
     /* Find the property if it already exists. */
-    varDef* var;
-    for(var = pt->vars; var != NULL; var = var->next)
-    {
-        if(var->ecd == cd &&
-           var->module == module &&
-           var->pyname == propertyName)
-        {
-           if (!isProperty(var))
-               exitmsg("existing property");
-           return var;
-        }
-    }
+    varDef* var = findProperty(pt, module, cd, over, propertyName);
+    if (var != NULL)
+        return var;
     
     /* We didn't find one, so make a new one. */
     var = sipMalloc(sizeof(varDef));
@@ -3114,7 +3129,16 @@ static varDef* addOrFindProperty(sipSpec* pt, moduleDef* module, classDef* cd, o
     var->fqcname = scopedname;
 
     /* TODO: use newVar from parser.c if possible here. */
-    var->type = over->cppsig->result;
+    /* also actually verify Get/Set pair takes and receives the same type of argument */
+    if (over->cppsig->nrArgs == 1)
+        /* its a setter */
+        var->type = over->cppsig->args[0];
+    else if (over->cppsig->nrArgs == 0)
+        /* its a getter */
+        var->type = over->cppsig->result;
+    else
+        exitmsg("nrArgs was not 1 or 0");
+        
     var->ecd = cd;
     var->module = module;
 
@@ -3174,7 +3198,7 @@ static int isGetter(moduleDef* module, classDef* cd, overDef* over)
 {
     return 0 == strncmp(over->cppname, "Get", 3) &&   /* starts with Get */
         isAccessor(over) &&                           /* looks like an accessor */
-        0 == over->cppsig->nrArgs;                    /* has no arguments */
+        0 == over->cppsig->nrArgs;                   /* has no arguments */
 }
 
 static int isSetter(moduleDef* module, classDef* cd, overDef* over)
@@ -3184,18 +3208,8 @@ static int isSetter(moduleDef* module, classDef* cd, overDef* over)
         1 == over->cppsig->nrArgs;
 }
 
-static void generateProperties(sipSpec *pt, moduleDef *mod, classDef *cd)
-{    
-    /* Create necessary getters and setters */
-    overDef* over;
-    for (over = cd->overs; over != NULL; over = over->next)
-    {
-        if (isGetter(mod, cd, over))
-            addGetter(pt, mod, cd, over);
-        else if (isSetter(mod, cd, over))
-            addSetter(pt, mod, cd, over);
-    }
-    
+static void filterPropertiesWithoutGetters(sipSpec *pt)
+{
     /* Clear out properties without getters. */
     varDef* var = pt->vars;
     varDef* next;
@@ -3220,4 +3234,24 @@ static void generateProperties(sipSpec *pt, moduleDef *mod, classDef *cd)
                 
         var = next;
     }
+}
+
+static void generateProperties(sipSpec *pt, moduleDef *mod, classDef *cd)
+{    
+    /* Create necessary getters and setters */
+    overDef* over;
+    for (over = cd->overs; over != NULL; over = over->next)
+    {
+        if (isGetter(mod, cd, over))
+            addGetter(pt, mod, cd, over);
+        else if (isSetter(mod, cd, over))
+            addSetter(pt, mod, cd, over);
+    }
+    
+    filterPropertiesWithoutGetters(pt);
+    
+    varDef* var;
+    for (var = pt->vars; var != NULL; var = var->next)
+        if (isProperty(var))
+            printf("property: %s::%s\n", var->ecd->pyname, var->pyname->text);
 }
