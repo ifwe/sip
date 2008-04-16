@@ -3741,11 +3741,10 @@ static void generateVariableHandler(classDef *context, varDef *vd, FILE *fp)
 
         /* See if we need to make a copy of the result on the heap. */
         if ((atype == class_type || atype == mapped_type) &&
-            !isReference(&vd->type) &&
-            vd->type.nrderefs == 0)
+            (!isReference(&vd->type) && vd->type.nrderefs == 0))
         {
             needsNew = TRUE;
-//            resetIsConstArg(res);
+            resetIsConstArg(&vd->type);
         }
         else
             needsNew = FALSE;

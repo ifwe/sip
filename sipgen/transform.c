@@ -3083,6 +3083,7 @@ static void addGetter(sipSpec* pt, moduleDef* module, classDef* cd, overDef* ove
     var->varflags = 0;
 
     var->type = over->cppsig->result;
+
     var->accessfunc = 0;
     var->getcode = 0;
     var->setcode = 0;
@@ -3095,7 +3096,7 @@ static void addGetter(sipSpec* pt, moduleDef* module, classDef* cd, overDef* ove
     if (isStatic(over))
         setIsStaticVar(var);
         
-    printOverload(cd, over);
+    //printOverload(cd, over);
 
     /* Append the new variable to the module. */
     var->next = pt->vars;

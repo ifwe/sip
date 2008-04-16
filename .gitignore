@@ -1,4 +1,7 @@
 *.pyc
 *.o
+*.so
 Makefile
+sip
+sip.so
 

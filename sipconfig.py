@@ -34,7 +34,7 @@ _pkg_config = {
     'py_lib_dir':       '/System/Library/Frameworks/Python.framework/Versions/2.5/lib/python2.5/config',
     'py_version':       0x020501,
     'sip_bin':          '/System/Library/Frameworks/Python.framework/Versions/2.5/bin/sip',
-    'sip_config_args':  '',
+    'sip_config_args':  '-u',
     'sip_inc_dir':      '/System/Library/Frameworks/Python.framework/Versions/2.5/include/python2.5',
     'sip_mod_dir':      '/Library/Python/2.5/site-packages',
     'sip_version':      0x040704,
