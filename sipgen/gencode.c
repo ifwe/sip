@@ -142,8 +142,6 @@ static void generateNumberSlotCall(overDef *od, char *op, FILE *fp);
 static void generateVariableHandler(classDef *, varDef *, FILE *);
 static int generateObjToCppConversion(argDef *, FILE *);
 static void generateVarClassConversion(varDef *, FILE *);
-static void generateGetter(varDef* vd, int needsNew, FILE* fp);
-static void generateSetter(varDef* vd, FILE* fp);   
 static void generateVarMember(varDef *vd, FILE *fp);
 static int generateVoidPointers(sipSpec *pt, moduleDef *mod, classDef *cd,
         FILE *fp);
@@ -1517,8 +1515,6 @@ static void generateCpp(sipSpec *pt, moduleDef *mod, const char *codeDir,
 
                 if (td->type.u.mtd->iff->module != mod)
                     tdmname = td->type.u.mtd->iff->module->fullname;
-                break;
-            default:
                 break;
             }
 
@@ -3253,6 +3249,7 @@ static void generateMappedTypeCpp(mappedTypeDef *mtd,FILE *fp)
         , &mtd->type);
 }
 
+
 /*
  * Generate the C++ code for a class.
  */
@@ -3262,6 +3259,7 @@ static void generateClassCpp(classDef *cd, sipSpec *pt, FILE *fp)
     moduleDef *mod = cd->iff->module;
 
     /* Generate any local class code. */
+
     generateCppCodeBlock(cd->cppcode, fp);
 
     generateClassFunctions(pt, mod, cd, fp);
@@ -3657,12 +3655,61 @@ static void generateConvertToDefinitions(mappedTypeDef *mtd,classDef *cd,
         );
 }
 
+/*
+ * Generate a property handler.
+ */
+static void generatePropertyHandler(classDef* context, varDef *vd, FILE *fp)
+{
+    prcode(fp, "\n\n");
+    if (!generating_c)
+        prcode(fp, "extern \"C\" {static PyObject *var_%C(PyObject *, PyObject *);}\n"
+                    , vd->fqcname);
+    prcode(fp,
+        "static PyObject *var_%C(PyObject *%s,PyObject *sipPy)\n"
+        "{\n", vd->fqcname, "sipSelf"); // always need self? (isStaticVar(vd) ? "" : "sipSelf"));
+        
+    prcode(fp,
+        "    if (sipPy == NULL)\n"
+        "    {\n"
+        "        PyObject* args = PyTuple_New(0);\n"
+        "        PyObject* res = meth_");
+        
+    /* getter */
+    prcode(fp, "%s_%s(sipSelf, args);\n", classBaseName(context), vd->getter->cppname);
+    
+    prcode(fp,
+        "        Py_DECREF(args);\n"
+        "        return res;\n"
+        "    }\n\n");
+    
+    if (vd->setter != NULL)
+    {
+        /* setter */
+        prcode(fp,  "    return meth_");
+        prcode(fp, "%s_%s(sipSelf, sipPy);\n", classBaseName(context), vd->setter->cppname);
+    }
+    else
+    {
+        /* no setter--raise an attribute error */
+        prcode(fp, "    PyErr_SetString(PyExc_AttributeError, \"%s is a read-only property\");  \n", 
+            vd->pyname->text);
+        prcode(fp, "    return NULL;\n");
+    }
+        
+    prcode(fp, "}\n\n");
+}
 
 /*
  * Generate a variable handler.
  */
 static void generateVariableHandler(classDef *context, varDef *vd, FILE *fp)
 {
+    if (isProperty(vd))
+    {
+        generatePropertyHandler(context, vd, fp);
+        return;
+    }
+    
     argType atype = vd->type.atype;
 
     prcode(fp,
@@ -3739,74 +3786,15 @@ static void generateVariableHandler(classDef *context, varDef *vd, FILE *fp)
     else
     {
         int pyobj = FALSE;
-        int needsNew = FALSE;
 
-        argDef* type;
-        if (isProperty(vd))
-            type = &(vd->getter->cppsig->result);
-        else
-            type = &vd->type;
-            
-        atype = type->atype;
+        prcode(fp,
+"        sipVal = %s", (((atype == class_type || atype == mapped_type) && vd->type.nrderefs == 0) ? "&" : ""));
 
-        /* See if we need to make a copy of the result on the heap. */
-        //needsNew = needNewInstance(type);
-        
-        
-        /*
-        if ((type == class_type || type == mapped_type) &&
-            (!isReference(type) && type->nrderefs == 0))
-        {
-            needsNew = TRUE;
-            resetIsConstArg(type);
-        }
-        else
-            needsNew = FALSE;
-        */
-        
-/*      printf("checking needsNew for %s:\n", vd->getter->cppname);
-        printf("  type == class_type: %d\n", type == class_type);
-        printf("  isReference(type):  %d\n", isReference(type));
-        printf("  type->nrderefs:     %d\n", type->nrderefs);
-       */         
-        if ((atype == class_type || atype == mapped_type) &&
-            !isReference(type) && type->nrderefs == 0)
-        {
-            needsNew = TRUE;
-        }
-        else
-            needsNew = FALSE;
-//        printf("%s needNewInstance: %d\n", vd->getter->cppname, needsNew);
+        generateVarMember(vd, fp);
 
-
-        if (isProperty(vd) && needsNew)
-        {
-            prcode(fp,"        sipVal = new %b(", type);
-        }
-        else
-        {        
-            const char* get_deref;          
-            
-            if ((atype == class_type || atype == mapped_type) && type->nrderefs == 0)
-                get_deref = "&";
-            else
-                get_deref = "";
-            prcode(fp, "        sipVal = %s", get_deref);
-        }
-
-        if (isProperty(vd))
-        {
-            if (!vd->getter)
-            {
-                fprintf(stderr, "varDef is marked as a property but has no getter\n");
-                exit(-1);
-            }
-            generateGetter(vd, needsNew, fp);
-        }
-        else
-            generateVarMember(vd, fp);
-
-        prcode(fp, "%s;\n\n", (isProperty(vd) && needsNew ? ")" : ""));
+        prcode(fp, ";\n"
+"\n"
+            );
 
         switch (atype)
         {
@@ -3955,8 +3943,6 @@ static void generateVariableHandler(classDef *context, varDef *vd, FILE *fp)
                 );
             pyobj = TRUE;
             break;
-        default:
-            break;
         }
 
         prcode(fp,
@@ -4053,28 +4039,10 @@ static void generateVariableHandler(classDef *context, varDef *vd, FILE *fp)
         prcode(fp,
 "    ");
 
-        if (isProperty(vd))
-        {
-            if (vd->setter != NULL && vd->getter != NULL)
-            {
-                generateSetter(vd, fp);
-                prcode(fp, "(%ssipVal);\n", deref);
-            }
-            else
-            {
-                prcode(fp, 
-"PyErr_SetString(PyExc_AttributeError, \"%s is a read only property\");\n"
-"return NULL;\n",
-                       vd->pyname->text);
-            }
-        }
-        else
-        {
-            generateVarMember(vd, fp);
+        generateVarMember(vd, fp);
 
-            prcode(fp, " = %ssipVal;\n"
-                , deref);
-        }
+        prcode(fp, " = %ssipVal;\n"
+            , deref);
 
         /* Note that wchar_t * leaks here. */
 
@@ -4098,25 +4066,6 @@ static void generateVariableHandler(classDef *context, varDef *vd, FILE *fp)
         );
 }
 
-static void generateGetter(varDef* vd, int needsNew, FILE* fp)
-{    
-    if (isStaticVar(vd))
-        prcode(fp, "/* GETTER */ %S::", classFQCName(vd->ecd));
-    else
-        prcode(fp, "/* GETTER */ sipCpp->");
-    
-    prcode(fp, "%s()", vd->getter->cppname);
-}
-
-static void generateSetter(varDef* vd, FILE* fp)
-{
-    if (isStaticVar(vd))
-        prcode(fp, "%S::", classFQCName(vd->ecd));
-    else
-        prcode(fp, "sipCpp->");
-    
-    prcode(fp, "%s", vd->setter->cppname);
-}
 
 /*
  * Generate the member variable of a class.
@@ -4319,8 +4268,6 @@ static int generateObjToCppConversion(argDef *ad,FILE *fp)
     case pyslice_type:
     case pytype_type:
         rhs = "sipPy";
-        break;
-    default:
         break;
     }
 
@@ -6439,8 +6386,6 @@ static void generateParseResultExtraArgs(argDef *ad, int isres, FILE *fp)
         if (ad->u.ed->fqcname != NULL)
             prcode(fp,",sipEnum_%C",ad->u.ed->fqcname);
         break;
-    default:
-        break;
     }
 }
 
@@ -6565,8 +6510,6 @@ static const char *getParseResultFormat(argDef *ad, int isres, int xfervh)
     case pyslice_type:
     case pytype_type:
         return (isAllowNone(ad) ? "N" : "T");
-    default:
-        break;
     }
 
     /* We should never get here. */
@@ -6738,8 +6681,6 @@ static void generateTupleBuilder(signatureDef *sd,FILE *fp)
         case pytype_type:
             fmt = "S";
             break;
-        default:
-            break;
         }
 
         prcode(fp,fmt);
@@ -6779,8 +6720,6 @@ static void generateTupleBuilder(signatureDef *sd,FILE *fp)
         case struct_type:
         case void_type:
             --derefs;
-            break;
-        default:
             break;
         }
 
@@ -7609,8 +7548,6 @@ static void generateNamedBaseType(classDef *context, argDef *ad, char *name,
     case ellipsis_type:
         prcode(fp, "PyObject *");
         break;
-    default:
-        break;
     }
 
     if (nr_derefs > 0)
@@ -7745,8 +7682,6 @@ static void generateVariable(classDef *context, argDef *ad, int argnr,
             generateDefaultValue(ad, argnr, fp);
             prcode(fp, ";\n"
                 );
-            break;
-        default:
             break;
         }
 }
@@ -9369,8 +9304,6 @@ static void generateHandleResult(overDef *od,int isNew,char *prefix,FILE *fp)
             ,prefix,vname);
 
         break;
-    default:
-        break;
     }
 }
 
@@ -9467,8 +9400,6 @@ static char getBuildResultFormat(argDef *ad)
     case pyslice_type:
     case pytype_type:
         return 'R';
-    default:
-        break;
     }
 
     /* We should never get here. */
@@ -9848,9 +9779,6 @@ static void generateFunctionCall(classDef *cd,classDef *ocd,overDef *od,
 "                sipRes = 0");
 
             break;
-        
-        default:
-            break;
         }
 
         if (needsNew && !generating_c)
@@ -10123,9 +10051,6 @@ static int generateArgParser(signatureDef *sd, classDef *cd, ctorDef *ct,
         case slotdis_type:
             slotdisarg = a;
             break;
-        
-        default:
-            break;
         }
 
         if (isArraySize(ad))
@@ -10356,9 +10281,6 @@ static int generateArgParser(signatureDef *sd, classDef *cd, ctorDef *ct,
 
         case ellipsis_type:
             fmt = "W";
-            break;
-        
-        default:
             break;
         }
 
@@ -10726,10 +10648,9 @@ static FILE *createFile(moduleDef *mod, const char *fname,
 "/*\n"
 " * %s\n"
 " *\n"
-" * Generated by SIP", description);
-//" * Generated by SIP %s on %s"
-//            ,description
-//            ,sipVersion,ctime(&now));
+" * Generated by SIP %s on %s"
+            ,description
+            ,sipVersion,ctime(&now));
 
         if (mod->copying != NULL)
             prcode(fp,
@@ -11257,9 +11178,6 @@ static void prTypeName(FILE *fp,argDef *ad,int intmpl)
 
             break;
         }
-    
-    default:
-        break;
     }
 }
 
