@@ -3168,7 +3168,7 @@ static void addGetter(sipSpec* pt, moduleDef* module, classDef* cd, overDef* ove
     varDef* prop = addOrFindProperty(pt, module, cd, over);
     if (prop->getter == NULL)
     {
-        prop->getter = over->cppname;
+        prop->getter = over;
     }
 }
 
@@ -3178,7 +3178,7 @@ static void addSetter(sipSpec* pt, moduleDef* module, classDef* cd, overDef* ove
     if (prop->setter == NULL)
     {
         printf("added setter %s::%s\n", cd->pyname, over->cppname);
-        prop->setter = over->cppname;
+        prop->setter = over;
     }
 }
 

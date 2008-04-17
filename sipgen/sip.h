@@ -770,8 +770,8 @@ typedef struct _varDef {
     codeBlock *accessfunc;              /* The access function. */
     codeBlock *getcode;                 /* The get code. */
     codeBlock *setcode;                 /* The set code. */
-    char* getter;                       /* The name of the getter function. */
-    char* setter;                       /* The name of the setter function. */
+    struct _overDef* getter;                    /* The name of the getter function. */
+    struct _overDef* setter;                    /* The name of the setter function. */
     struct _varDef *next;               /* Next in the list. */
 } varDef;
 

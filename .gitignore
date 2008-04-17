@@ -5,3 +5,4 @@ Makefile
 sip
 sip.so
 
+.DS_Store

@@ -3741,21 +3741,58 @@ static void generateVariableHandler(classDef *context, varDef *vd, FILE *fp)
         int pyobj = FALSE;
         int needsNew = FALSE;
 
+        argDef* type;
+        if (isProperty(vd))
+            type = &(vd->getter->cppsig->result);
+        else
+            type = &vd->type;
+            
+        atype = type->atype;
+
         /* See if we need to make a copy of the result on the heap. */
-        if ((atype == class_type || atype == mapped_type) &&
-            (!isReference(&vd->type) && vd->type.nrderefs == 0))
+        //needsNew = needNewInstance(type);
+        
+        
+        /*
+        if ((type == class_type || type == mapped_type) &&
+            (!isReference(type) && type->nrderefs == 0))
         {
             needsNew = TRUE;
-            resetIsConstArg(&vd->type);
+            resetIsConstArg(type);
         }
         else
             needsNew = FALSE;
+        */
+        
+/*      printf("checking needsNew for %s:\n", vd->getter->cppname);
+        printf("  type == class_type: %d\n", type == class_type);
+        printf("  isReference(type):  %d\n", isReference(type));
+        printf("  type->nrderefs:     %d\n", type->nrderefs);
+       */         
+        if ((atype == class_type || atype == mapped_type) &&
+            !isReference(type) && type->nrderefs == 0)
+        {
+            needsNew = TRUE;
+        }
+        else
+            needsNew = FALSE;
+//        printf("%s needNewInstance: %d\n", vd->getter->cppname, needsNew);
+
 
         if (isProperty(vd) && needsNew)
-            prcode(fp,"        sipVal = new %b(", &vd->type);
+        {
+            prcode(fp,"        sipVal = new %b(", type);
+        }
         else
-            prcode(fp,
-        "        sipVal = %s", (((atype == class_type || atype == mapped_type) && vd->type.nrderefs == 0) ? "&" : ""));
+        {        
+            const char* get_deref;          
+            
+            if ((atype == class_type || atype == mapped_type) && type->nrderefs == 0)
+                get_deref = "&";
+            else
+                get_deref = "";
+            prcode(fp, "        sipVal = %s", get_deref);
+        }
 
         if (isProperty(vd))
         {
@@ -4068,7 +4105,7 @@ static void generateGetter(varDef* vd, int needsNew, FILE* fp)
     else
         prcode(fp, "/* GETTER */ sipCpp->");
     
-    prcode(fp, "%s()", vd->getter);
+    prcode(fp, "%s()", vd->getter->cppname);
 }
 
 static void generateSetter(varDef* vd, FILE* fp)
@@ -4078,7 +4115,7 @@ static void generateSetter(varDef* vd, FILE* fp)
     else
         prcode(fp, "sipCpp->");
     
-    prcode(fp, "%s", vd->setter);
+    prcode(fp, "%s", vd->setter->cppname);
 }
 
 /*
