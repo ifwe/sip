@@ -3167,19 +3167,15 @@ static void addGetter(sipSpec* pt, moduleDef* module, classDef* cd, overDef* ove
 {
     varDef* prop = addOrFindProperty(pt, module, cd, over);
     if (prop->getter == NULL)
-    {
         prop->getter = over;
-    }
+
 }
 
 static void addSetter(sipSpec* pt, moduleDef* module, classDef* cd, overDef* over)
 {
     varDef* prop = addOrFindProperty(pt, module, cd, over);
     if (prop->setter == NULL)
-    {
-        printf("added setter %s::%s\n", cd->pyname, over->cppname);
         prop->setter = over;
-    }
 }
 
 static int isAccessor(overDef* over)
@@ -3249,9 +3245,4 @@ static void generateProperties(sipSpec *pt, moduleDef *mod, classDef *cd)
     }
     
     filterPropertiesWithoutGetters(pt);
-    
-    varDef* var;
-    for (var = pt->vars; var != NULL; var = var->next)
-        if (isProperty(var))
-            printf("property: %s::%s\n", var->ecd->pyname, var->pyname->text);
 }
