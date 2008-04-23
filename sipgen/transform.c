@@ -3050,31 +3050,9 @@ static int generatingCodeForModule(sipSpec *pt, moduleDef *mod)
     return (pt->module == mod);
 }
 
-
-static const char* stringCopy(const char* s)
-{
-    const char* newstr = sipMalloc(sizeof(char*) * strlen(s));
-    strcpy(newstr, s);
-    return newstr;
-}
-
-static void printOverload(classDef* cd, overDef* over)
-{
-    printf("overDef in class %s\n", cd->pyname);
-    printf("  cppname       %s\n", over->cppname);
-    printf("  overflags     %d\n", over->overflags);
-    printf("  cppsig : signatureDef\n");
-    
-    argDef* argdef = &over->cppsig->result;
-    printf("    result : argDef\n");
-    printf("      atype     %d\n", argdef->atype);
-    printf("      name      %s\n", argdef->name);
-    printf("      argflags  %d\n", argdef->argflags);
-    printf("      nrdefrefs %d\n", argdef->nrderefs);
-    printf("      defval    %p\n", argdef->defval);
-    printf("    nrArgs      %d\n", over->cppsig->nrArgs);  
-}
-
+/*
+ * Fail with a message on stderr.
+ */
 static void exitmsg(char* msg)
 {
     fprintf(stderr, msg);
@@ -3100,10 +3078,30 @@ static varDef* findProperty(sipSpec *pt, moduleDef *module, classDef *cd, overDe
 }
 
 /*
+ * Returns the number of arguments without default values in an array of
+ * argDefs.
+ */
+static int countNonDefaultArgs(argDef args[], int nrArgs)
+{
+    int count = 0;
+    int i;
+    
+    for (i = 0; i < nrArgs; ++i)
+        if (args[i].defval == NULL)
+            ++count;
+        else
+            break;
+    
+    return count;
+}
+
+/*
  * Add a varDef representing a property for a given getter or setter method.
  */
 static varDef* addOrFindProperty(sipSpec* pt, moduleDef* module, classDef* cd, overDef* over)
 {
+    int num_args;
+    
     if (over->cppname == NULL || strlen(over->cppname) < 4)
         exitmsg("error creating property");
     else if (strncmp("Get", over->cppname, 3) && strncmp("Set", over->cppname, 3))
@@ -3130,14 +3128,18 @@ static varDef* addOrFindProperty(sipSpec* pt, moduleDef* module, classDef* cd, o
 
     /* TODO: use newVar from parser.c if possible here. */
     /* also actually verify Get/Set pair takes and receives the same type of argument */
-    if (over->cppsig->nrArgs == 1)
+    num_args = countNonDefaultArgs(over->cppsig->args, over->cppsig->nrArgs);
+    if (num_args == 1)
         /* its a setter */
         var->type = over->cppsig->args[0];
-    else if (over->cppsig->nrArgs == 0)
+    else if (num_args == 0)
         /* its a getter */
         var->type = over->cppsig->result;
     else
-        exitmsg("nrArgs was not 1 or 0");
+    {
+        fprintf("num_args: %d\n", num_args);
+        exitmsg("num_args was not 1 or 0");
+    }
         
     var->ecd = cd;
     var->module = module;
@@ -3187,21 +3189,25 @@ static int isAccessor(overDef* over)
         strlen(over->cppname) > 3;
 }
 
-//
-// TODO: make these actually check for collisions with existing methods
-//
+/*
+    TODO: make these actually check for collisions with existing methods
+*/
 static int isGetter(moduleDef* module, classDef* cd, overDef* over)
 {
-    return 0 == strncmp(over->cppname, "Get", 3) &&   /* starts with Get */
-        isAccessor(over) &&                           /* looks like an accessor */
-        0 == over->cppsig->nrArgs;                   /* has no arguments */
+    /* starts with Get, looks like an accessor, and has no non default 
+       arguments */
+    return 0 == strncmp(over->cppname, "Get", 3) &&
+        isAccessor(over) &&
+        0 == countNonDefaultArgs(over->cppsig->args, over->cppsig->nrArgs);
 }
 
 static int isSetter(moduleDef* module, classDef* cd, overDef* over)
 {
+    /* starts with Set, looks like an accessor, and has one non default 
+       argument */
     return 0 == strncmp(over->cppname, "Set", 3) && 
         isAccessor(over) &&
-        1 == over->cppsig->nrArgs;
+        1 == countNonDefaultArgs(over->cppsig->args, over->cppsig->nrArgs);
 }
 
 static void filterPropertiesWithoutGetters(sipSpec *pt)
