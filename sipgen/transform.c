@@ -3183,7 +3183,7 @@ static void addSetter(sipSpec* pt, moduleDef* module, classDef* cd, overDef* ove
 static int isAccessor(overDef* over)
 {
     return isPublic(over) &&
-        0 == over->methodcode &&
+        /* 0 == over->methodcode && */
         0 == over->virthandler &&
         over->cppname != NULL &&
         strlen(over->cppname) > 3;
