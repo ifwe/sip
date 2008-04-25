@@ -3130,6 +3130,10 @@ static int countNonDefaultArgs(argDef args[], int nrArgs)
 static varDef* addOrFindProperty(sipSpec* pt, moduleDef* module, classDef* cd, overDef* over)
 {
     int num_args;
+    nameDef* propertyName;
+    varDef* var;
+    scopedNameDef* varname;
+    scopedNameDef* scopedname;
     
     if (over->cppname == NULL || strlen(over->cppname) < 4)
         exitmsg("error creating property");
@@ -3137,10 +3141,10 @@ static varDef* addOrFindProperty(sipSpec* pt, moduleDef* module, classDef* cd, o
         exitmsg("error creating property");
 
     /* Propertes must start with Get or Set */
-    nameDef* propertyName = cacheName(pt, over->cppname + 3);
+    propertyName = cacheName(pt, over->cppname + 3);
         
     /* Find the property if it already exists. */
-    varDef* var = findProperty(pt, module, cd, over, propertyName);
+    findProperty(pt, module, cd, over, propertyName);
     if (var != NULL)
         return var;
     
@@ -3150,8 +3154,8 @@ static varDef* addOrFindProperty(sipSpec* pt, moduleDef* module, classDef* cd, o
     var->pyname = propertyName;
     
     /* Create a scoped name for the property. */
-    scopedNameDef *varname = text2scopePart(propertyName->text);
-    scopedNameDef *scopedname = copyScopedName(classFQCName(cd));
+    varname = text2scopePart(propertyName->text);
+    scopedname = copyScopedName(classFQCName(cd));
     appendScopedName(&scopedname, varname);
     var->fqcname = scopedname;
 

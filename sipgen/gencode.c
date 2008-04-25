@@ -3764,13 +3764,15 @@ static void generatePropertyHandler(classDef* context, varDef *vd, FILE *fp)
  */
 static void generateVariableHandler(classDef *context, varDef *vd, FILE *fp)
 {
+    argType atype;
+
     if (isProperty(vd))
     {
         generatePropertyHandler(context, vd, fp);
         return;
     }
     
-    argType atype = vd->type.atype;
+    atype = vd->type.atype;
 
     prcode(fp,
 "\n"
