@@ -2,8 +2,7 @@
 # extension modules created with SIP.  It provides information about file
 # locations, version numbers etc., and provides some classes and functions.
 #
-# Copyright (c) 2008
-# 	Phil Thompson <phil@river-bank.demon.co.uk>
+# Copyright (c) 2008 Riverbank Computing Limited <info@riverbankcomputing.com>
 # 
 # This file is part of SIP.
 # 
@@ -37,8 +36,8 @@ _pkg_config = {
     'sip_config_args':  '-u',
     'sip_inc_dir':      '/System/Library/Frameworks/Python.framework/Versions/2.5/include/python2.5',
     'sip_mod_dir':      '/Library/Python/2.5/site-packages',
-    'sip_version':      0x040704,
-    'sip_version_str':  '4.7.4',
+    'sip_version':      0x040705,
+    'sip_version_str':  '4.7.5-snapshot-20080424',
     'universal':        ''
 }
 
@@ -607,6 +606,7 @@ class Makefile:
 
             if self.config.qt_version >= 0x040000:
                 for mod in self._qt:
+                    # Note that qmake doesn't define anything for QtHelp.
                     if mod == "QtCore":
                         defines.append("QT_CORE_LIB")
                     elif mod == "QtGui":
@@ -621,8 +621,14 @@ class Makefile:
                         defines.append("QT_SQL_LIB")
                     elif mod == "QtTest":
                         defines.append("QT_TEST_LIB")
+                    elif mod == "QtWebKit":
+                        defines.append("QT_WEBKIT_LIB")
                     elif mod == "QtXml":
                         defines.append("QT_XML_LIB")
+                    elif mod == "QtXmlPatterns":
+                        defines.append("QT_XMLPATTERNS_LIB")
+                    elif mod == "phonon":
+                        defines.append("QT_PHONON_LIB")
             elif self._threaded:
                 defines.append("QT_THREAD_SUPPORT")
 
@@ -643,17 +649,21 @@ class Makefile:
 
                 # For Windows: the dependencies between Qt libraries.
                 qdepmap = {
-                    "QtAssistant":  ("QtCore", "QtGui", "QtNetwork"),
-                    "QtGui":        ("QtCore", ),
-                    "QtNetwork":    ("QtCore", ),
-                    "QtOpenGL":     ("QtCore", "QtGui"),
-                    "QtScript":     ("QtCore", ),
-                    "QtSql":        ("QtCore", ),
-                    "QtSvg":        ("QtCore", "QtGui", "QtXml"),
-                    "QtTest":       ("QtCore", "QtGui"),
-                    "QtXml":        ("QtCore", ),
-                    "QtDesigner":   ("QtCore", "QtGui"),
-                    "QAxContainer": ("QtCore", "QtGui")
+                    "QtAssistant":      ("QtCore", "QtGui", "QtNetwork"),
+                    "QtGui":            ("QtCore", ),
+                    "QtHelp":           ("QtCore", "QtGui", "QtSql"),
+                    "QtNetwork":        ("QtCore", ),
+                    "QtOpenGL":         ("QtCore", "QtGui"),
+                    "QtScript":         ("QtCore", ),
+                    "QtSql":            ("QtCore", ),
+                    "QtSvg":            ("QtCore", "QtGui", "QtXml"),
+                    "QtTest":           ("QtCore", "QtGui"),
+                    "QtWebKit":         ("QtCore", "QtGui", "QtNetwork"),
+                    "QtXml":            ("QtCore", ),
+                    "QtXmlPatterns":    ("QtCore", ),
+                    "phonon":           ("QtCore", "QtGui"),
+                    "QtDesigner":       ("QtCore", "QtGui"),
+                    "QAxContainer":     ("QtCore", "QtGui")
                 }
 
                 # The QtSql .prl file doesn't include QtGui as a dependency (at
@@ -806,9 +816,10 @@ class Makefile:
                 lib = lib + "_debug"
 
         if sys.platform == "win32" and "shared" in string.split(self.config.qt_winconfig):
-            if (mname in ("QtCore", "QtGui", "QtNetwork", "QtOpenGL",
-                          "QtScript", "QtSql", "QtSvg", "QtTest", "QtXml",
-                          "QtDesigner") or
+            if (mname in ("QtCore", "QtDesigner", "QtGui", "QtHelp",
+                          "QtNetwork", "QtOpenGL", "QtScript", "QtSql",
+                          "QtSvg", "QtTest", "QtWebKit", "QtXml",
+                          "QtXmlPatterns", "phonon") or
                 (self.config.qt_version >= 0x040200 and mname == "QtAssistant")):
                 lib = lib + "4"
 
