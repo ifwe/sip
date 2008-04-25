@@ -1,8 +1,7 @@
 /*
  * The SIP lexer.
  *
- * Copyright (c) 2008
- * 	Phil Thompson <phil@river-bank.demon.co.uk>
+ * Copyright (c) 2008 Riverbank Computing Limited <info@riverbankcomputing.com>
  * 
  * This file is part of SIP.
  * 

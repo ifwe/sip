@@ -1,8 +1,7 @@
 /*
  * The main header file for SIP.
  *
- * Copyright (c) 2008
- * 	Phil Thompson <phil@river-bank.demon.co.uk>
+ * Copyright (c) 2008 Riverbank Computing Limited <info@riverbankcomputing.com>
  * 
  * This file is part of SIP.
  * 
@@ -88,6 +87,7 @@
 #define CLASS_QOBJECT_SUB   0x00800000  /* It is derived from QObject. */
 #define CLASS_DTOR_HOLD_GIL 0x01000000  /* The dtor holds the GIL. */
 #define CLASS_QT_META_TYPE  0x02000000  /* Register as a Qt meta type. */
+#define CLASS_NO_QMETAOBJECT    0x04000000  /* It has no QMetaObject. */
 
 #define hasSigSlots(cd)     ((cd)->classflags & CLASS_HAS_SIGSLOTS)
 #define setHasSigSlots(cd)  ((cd)->classflags |= CLASS_HAS_SIGSLOTS)
@@ -127,6 +127,8 @@
 #define setIsHoldGILDtor(c) ((cd)->classflags |= CLASS_DTOR_HOLD_GIL)
 #define registerQtMetaType(c)   ((cd)->classflags & CLASS_QT_META_TYPE)
 #define setRegisterQtMetaType(c)    ((cd)->classflags |= CLASS_QT_META_TYPE)
+#define noQMetaObject(c)    ((cd)->classflags & CLASS_NO_QMETAOBJECT)
+#define setNoQMetaObject(c) ((cd)->classflags |= CLASS_NO_QMETAOBJECT)
 
 #define isPublicDtor(cd)    ((cd)->classflags & SECT_IS_PUBLIC)
 #define setIsPublicDtor(cd) ((cd)->classflags |= SECT_IS_PUBLIC)
@@ -165,9 +167,12 @@
 /* Handle member flags. */
 
 #define MEMBR_NUMERIC       0x0001      /* It is a numeric slot. */
+#define MEMBR_NO_ARG_PARSER 0x0002      /* Don't generate an argument parser. */
 
 #define isNumeric(m)        ((m)->memberflags & MEMBR_NUMERIC)
 #define setIsNumeric(m)     ((m)->memberflags |= MEMBR_NUMERIC)
+#define noArgParser(m)      ((m)->memberflags & MEMBR_NO_ARG_PARSER)
+#define setNoArgParser(m)   ((m)->memberflags |= MEMBR_NO_ARG_PARSER)
 
 
 /* Handle enum flags.  These are combined with the section flags. */
@@ -292,6 +297,7 @@
 #define ARG_OUT             0x0400  /* It returns a result. */
 #define ARG_CONSTRAINED     0x0800  /* Suppress type conversion. */
 #define ARG_SINGLE_SHOT     0x1000  /* The slot is only ever fired once. */
+#define ARG_RESULT_SIZE     0x2000  /* It defines the result size. */
 
 #define isReference(a)      ((a)->argflags & ARG_IS_REF)
 #define setIsReference(a)   ((a)-> argflags |= ARG_IS_REF)
@@ -321,6 +327,8 @@
 #define setIsConstrained(a) ((a)->argflags |= ARG_CONSTRAINED)
 #define resetIsConstrained(a)   ((a)->argflags &= ~ARG_CONSTRAINED)
 #define isSingleShot(a)     ((a)->argflags & ARG_SINGLE_SHOT)
+#define isResultSize(a)     ((a)->argflags & ARG_RESULT_SIZE)
+#define setResultSize(a)    ((a)->argflags |= ARG_RESULT_SIZE)
 
 
 /* Handle name flags. */
@@ -346,6 +354,14 @@
 #define resetIsDuplicateVH(vh)  ((vh)->vhflags &= ~VH_IS_DUPLICATE)
 #define isTransferVH(vh)    ((vh)->vhflags & VH_TRANSFERS)
 #define setIsTransferVH(vh) ((vh)->vhflags |= VH_TRANSFERS)
+
+
+/* Handle mapped type flags. */
+
+#define MT_NO_RELEASE       0x01    /* Do not generate a release function. */
+
+#define noRelease(mt)       ((mt)->mtflags & MT_NO_RELEASE)
+#define setNoRelease(mt)    ((mt)->mtflags |= MT_NO_RELEASE)
 
 
 /* Slot types. */
@@ -453,7 +469,8 @@ typedef enum {
     cbool_type,
     sstring_type,
     wstring_type,
-    fake_void_type
+    fake_void_type,
+    ssize_type
 } argType;
 
 
@@ -700,6 +717,7 @@ typedef struct _ifaceFileList {
 /* A mapped type. */
 
 typedef struct _mappedTypeDef {
+    int mtflags;                        /* The mapped type flags. */
     argDef type;                        /* The type being mapped. */
     int mappednr;                       /* The mapped type number. */
     ifaceFileDef *iff;                  /* The interface file. */
@@ -999,7 +1017,8 @@ void append(char **, const char *);
 void addToUsedList(ifaceFileList **, ifaceFileDef *);
 int excludedFeature(stringList *,qualDef *);
 int sameSignature(signatureDef *,signatureDef *,int);
-int sameTemplateSignature(signatureDef *sd1, signatureDef *sd2, int deep);
+int sameTemplateSignature(signatureDef *tmpl_sd, signatureDef *args_sd,
+        int deep);
 int sameScopedName(scopedNameDef *,scopedNameDef *);
 int sameBaseType(argDef *,argDef *);
 char *scopedNameTail(scopedNameDef *);

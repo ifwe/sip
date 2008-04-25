@@ -1,8 +1,7 @@
 /*
  * The SIP parser.
  *
- * Copyright (c) 2008
- * 	Phil Thompson <phil@river-bank.demon.co.uk>
+ * Copyright (c) 2008 Riverbank Computing Limited <info@riverbankcomputing.com>
  * 
  * This file is part of SIP.
  * 
@@ -54,7 +53,7 @@ static classDef *findClassWithInterface(sipSpec *pt, ifaceFileDef *iff);
 static classDef *newClass(sipSpec *,ifaceFileType,scopedNameDef *);
 static void finishClass(sipSpec *,moduleDef *,classDef *,optFlags *);
 static exceptionDef *findException(sipSpec *pt, scopedNameDef *fqname, int new);
-static mappedTypeDef *newMappedType(sipSpec *,argDef *);
+static mappedTypeDef *newMappedType(sipSpec *,argDef *, optFlags *);
 static enumDef *newEnum(sipSpec *,moduleDef *,char *,optFlags *,int);
 static void instantiateClassTemplate(sipSpec *pt, moduleDef *mod, classDef *scope, scopedNameDef *fqname, classTmplDef *tcd, templateDef *td);
 static void newTypedef(sipSpec *,moduleDef *,char *,argDef *);
@@ -67,7 +66,7 @@ static void newFunction(sipSpec *, moduleDef *, int, int, int, char *,
         throwArgs *, signatureDef *);
 static optFlag *findOptFlag(optFlags *,char *,flagType);
 static memberDef *findFunction(sipSpec *, moduleDef *, classDef *,
-        const char *, int, int);
+        const char *, int, int, int);
 static void checkAttributes(sipSpec *, moduleDef *, classDef *, const char *,
         int);
 static void newModule(FILE *fp, char *filename);
@@ -515,9 +514,9 @@ raisecode:  TK_RAISECODE codeblock {
         }
     ;
 
-mappedtype: TK_MAPPEDTYPE basetype {
+mappedtype: TK_MAPPEDTYPE basetype optflags {
             if (notSkipping())
-                currentMappedType = newMappedType(currentSpec, &$2);
+                currentMappedType = newMappedType(currentSpec, &$2, &$3);
         } mtdefinition
     ;
 
@@ -2251,6 +2250,9 @@ argtype:    cpptype optname optflags {
             if (findOptFlag(&$3,"Out",bool_flag) != NULL)
                 $$.argflags |= ARG_OUT;
 
+            if (findOptFlag(&$3, "ResultSize", bool_flag) != NULL)
+                $$.argflags |= ARG_RESULT_SIZE;
+
             if (findOptFlag(&$3,"Constrained",bool_flag) != NULL)
             {
                 $$.argflags |= ARG_CONSTRAINED;
@@ -3001,6 +3003,9 @@ static void finishClass(sipSpec *pt, moduleDef *mod, classDef *cd, optFlags *of)
     if ((flg = findOptFlag(of, "TypeFlags", integer_flag)) != NULL)
         cd->userflags = flg->fvalue.ival;
 
+    if (findOptFlag(of, "NoQMetaObject", bool_flag) != NULL)
+        setNoQMetaObject(cd);
+
     if (isOpaque(cd))
     {
         if (findOptFlag(of, "External", bool_flag) != NULL)
@@ -3149,7 +3154,7 @@ static void finishClass(sipSpec *pt, moduleDef *mod, classDef *cd, optFlags *of)
 /*
  * Create a new mapped type.
  */
-static mappedTypeDef *newMappedType(sipSpec *pt, argDef *ad)
+static mappedTypeDef *newMappedType(sipSpec *pt, argDef *ad, optFlags *of)
 {
     mappedTypeDef *mtd;
     scopedNameDef *snd;
@@ -3197,6 +3202,9 @@ static mappedTypeDef *newMappedType(sipSpec *pt, argDef *ad)
     /* Create a new mapped type. */
     mtd = allocMappedType(ad);
 
+    if (findOptFlag(of, "NoRelease", bool_flag) != NULL)
+        setNoRelease(mtd);
+
     mtd->iff = iff;
     mtd->next = pt->mappedtypes;
 
@@ -3215,6 +3223,7 @@ mappedTypeDef *allocMappedType(argDef *type)
 
     mtd = sipMalloc(sizeof (mappedTypeDef));
 
+    mtd->mtflags = 0;
     mtd->type = *type;
     mtd->type.argflags = 0;
     mtd->type.nrderefs = 0;
@@ -3618,6 +3627,20 @@ static void templateType(argDef *ad, classTmplDef *tcd, templateDef *td, classDe
     int a;
     char *name;
 
+    /* Descend into any sub-templates. */
+    if (ad->atype == template_type)
+    {
+        templateDef *new_td = sipMalloc(sizeof (templateDef));
+
+        /* Make a deep copy of the template definition. */
+        *new_td = *ad->u.td;
+        ad->u.td = new_td;
+
+        templateSignature(&ad->u.td->types, FALSE, tcd, td, ncd);
+
+        return;
+    }
+
     /* Ignore if it isn't an unscoped name. */
     if (ad->atype != defined_type || ad->u.snd->next != NULL)
         return;
@@ -3936,41 +3959,42 @@ static void newTypedef(sipSpec *pt,moduleDef *mod,char *name,argDef *type)
  * used for mapped type templates where we want to recurse into any nested
  * templates.
  */
-int sameTemplateSignature(signatureDef *sd1, signatureDef *sd2, int deep)
+int sameTemplateSignature(signatureDef *tmpl_sd, signatureDef *args_sd,
+        int deep)
 {
     int a;
 
-    if (sd1->nrArgs != sd2->nrArgs)
+    if (tmpl_sd->nrArgs != args_sd->nrArgs)
         return FALSE;
 
-    for (a = 0; a < sd1->nrArgs; ++a)
+    for (a = 0; a < tmpl_sd->nrArgs; ++a)
     {
-        argDef *ad1 = &sd1->args[a];
-        argDef *ad2 = &sd2->args[a];
+        argDef *tmpl_ad = &tmpl_sd->args[a];
+        argDef *args_ad = &args_sd->args[a];
 
         /*
-         * If we are doing a shallow comparision (ie. for class
-         * templates) then a type name on the left hand side matches
-         * anything on the right hand side.
+         * If we are doing a shallow comparision (ie. for class templates) then
+         * a type name in the template signature matches anything in the
+         * argument signature.
          */
-        if (ad1->atype == defined_type && !deep)
+        if (tmpl_ad->atype == defined_type && !deep)
             continue;
 
         /*
-         * For type names only compare the references and pointers, and
-         * do the same for any nested templates.
+         * For type names only compare the references and pointers, and do the
+         * same for any nested templates.
          */
-        if (ad1->atype == defined_type && ad2->atype == defined_type)
+        if (tmpl_ad->atype == defined_type && args_ad->atype == defined_type)
         {
-            if (isReference(ad1) != isReference(ad2) || ad1->nrderefs != ad2->nrderefs)
+            if (isReference(tmpl_ad) != isReference(args_ad) || tmpl_ad->nrderefs != args_ad->nrderefs)
                 return FALSE;
         }
-        else if (ad1->atype == template_type && ad2->atype == template_type)
+        else if (tmpl_ad->atype == template_type && args_ad->atype == template_type)
         {
-            if (!sameTemplateSignature(&ad1->u.td->types, &ad2->u.td->types, deep))
+            if (!sameTemplateSignature(&tmpl_ad->u.td->types, &args_ad->u.td->types, deep))
                 return FALSE;
         }
-        else if (!sameBaseType(ad1, ad2))
+        else if (!sameBaseType(tmpl_ad, args_ad))
             return FALSE;
     }
 
@@ -4005,8 +4029,8 @@ static void newVar(sipSpec *pt,moduleDef *mod,char *name,int isstatic,
     var -> accessfunc = acode;
     var -> getcode = gcode;
     var -> setcode = scode;
-	var -> getter = NULL;
-	var -> setter = NULL;
+    var -> getter = NULL;
+    var -> setter = NULL;
     var -> next = pt -> vars;
 
     if (isstatic || (escope != NULL && escope->iff->type == namespace_iface))
@@ -4097,7 +4121,7 @@ static void newFunction(sipSpec *pt,moduleDef *mod,int sflags,int isstatic,
 {
     classDef *cd = currentScope();
     nameDef *pname;
-    int factory, xferback;
+    int factory, xferback, no_arg_parser;
     overDef *od, **odp, **headp;
     optFlag *of;
     virtHandlerDef *vhd;
@@ -4257,8 +4281,19 @@ static void newFunction(sipSpec *pt,moduleDef *mod,int sflags,int isstatic,
     od->methodcode = methodcode;
     od->virthandler = vhd;
 
+    no_arg_parser = (findOptFlag(optflgs, "NoArgParser", bool_flag) != NULL);
+
+    if (no_arg_parser)
+    {
+        if (cd != NULL)
+            yyerror("/NoArgParser/ may only be specified for global functions");
+
+        if (methodcode == NULL)
+            yyerror("%MethodCode must be supplied if /NoArgParser/ is specified");
+    }
+
     od->common = findFunction(pt, mod, cd, getPythonName(optflgs, name),
-            (methodcode != NULL), sig->nrArgs);
+            (methodcode != NULL), sig->nrArgs, no_arg_parser);
 
     if (findOptFlag(optflgs,"Numeric",bool_flag) != NULL)
         setIsNumeric(od -> common);
@@ -4352,7 +4387,7 @@ nameDef *cacheName(sipSpec *pt, const char *name)
  * Find (or create) an overloaded function name.
  */
 static memberDef *findFunction(sipSpec *pt, moduleDef *mod, classDef *cd,
-        const char *pname, int hwcode, int nrargs)
+        const char *pname, int hwcode, int nrargs, int no_arg_parser)
 {
     static struct slot_map {
         char *name;         /* The slot name. */
@@ -4483,7 +4518,12 @@ static memberDef *findFunction(sipSpec *pt, moduleDef *mod, classDef *cd,
 
         if (inMainModule())
             setIsUsedName(md->pyname);
+
+        if (no_arg_parser)
+            setNoArgParser(md);
     }
+    else if (noArgParser(md))
+        yyerror("Another overload has already been defined that is annotated as /NoArgParser/");
 
     /* Global operators are a subset. */
     if (cd == NULL && st != no_slot && st != neg_slot && st != pos_slot && !isNumberSlot(md) && !isRichCompareSlot(md))

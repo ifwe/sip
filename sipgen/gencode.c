@@ -1,8 +1,7 @@
 /*
  * The code generator module for SIP.
  *
- * Copyright (c) 2008
- * 	Phil Thompson <phil@river-bank.demon.co.uk>
+ * Copyright (c) 2008 Riverbank Computing Limited <info@riverbankcomputing.com>
  * 
  * This file is part of SIP.
  * 
@@ -32,9 +31,8 @@
 #define TYPE_FLAGS_MASK         0x0f00
 
 
-/* Control what generateSingleArg() actually generates. */
+/* Control what generateCalledArgs() actually generates. */
 typedef enum {
-    Call,
     Declaration,
     Definition
 } funcArgType;
@@ -106,10 +104,11 @@ static void generateShadowClassDeclaration(sipSpec *, classDef *, FILE *);
 static int hasConvertToCode(argDef *ad);
 static void deleteTemps(signatureDef *sd, FILE *fp);
 static void gc_ellipsis(signatureDef *sd, FILE *fp);
-static void generateArgs(classDef *, signatureDef *, funcArgType, FILE *);
+static void generateCallArgs(classDef *, signatureDef *, signatureDef *,
+        FILE *);
+static void generateCalledArgs(classDef *, signatureDef *, funcArgType, FILE *);
 static void generateVariable(classDef *, argDef *, int, FILE *);
 static void generateNamedValueType(classDef *, argDef *, char *, FILE *);
-static void generateSingleArg(classDef *, argDef *, int, funcArgType, FILE *);
 static void generateBaseType(classDef *, argDef *, FILE *);
 static void generateNamedBaseType(classDef *, argDef *, char *, FILE *);
 static void generateTupleBuilder(signatureDef *, FILE *);
@@ -125,7 +124,7 @@ static void generateProtectedDeclarations(classDef *, FILE *);
 static void generateProtectedDefinitions(classDef *, FILE *);
 static void generateProtectedCallArgs(overDef *od, FILE *fp);
 static void generateConstructorCall(classDef *, ctorDef *, int, FILE *);
-static void generateHandleResult(overDef *, int, char *, FILE *);
+static void generateHandleResult(overDef *, int, int, char *, FILE *);
 static void generateOrdinaryFunction(moduleDef *mod, classDef *cd,
         memberDef *md, FILE *fp);
 static void generateSimpleFunctionCall(fcallDef *, FILE *);
@@ -603,6 +602,16 @@ static void generateInternalAPIHeader(sipSpec *pt, moduleDef *mod,
 "#define sipString_AsChar            sipAPI_%s->api_string_as_char\n"
 "#define sipUnicode_AsWChar          sipAPI_%s->api_unicode_as_wchar\n"
 "#define sipUnicode_AsWString        sipAPI_%s->api_unicode_as_wstring\n"
+"#define sipConvertFromConstVoidPtr  sipAPI_%s->api_convert_from_const_void_ptr\n"
+"#define sipConvertFromVoidPtrAndSize    sipAPI_%s->api_convert_from_void_ptr_and_size\n"
+"#define sipConvertFromConstVoidPtrAndSize   sipAPI_%s->api_convert_from_const_void_ptr_and_size\n"
+"#define sipInvokeSlot               sipAPI_%s->api_invoke_slot\n"
+"#define sipParseType                sipAPI_%s->api_parse_type\n"
+        ,mname
+        ,mname
+        ,mname
+        ,mname
+        ,mname
         ,mname
         ,mname
         ,mname
@@ -1820,9 +1829,14 @@ static void generateCpp(sipSpec *pt, moduleDef *mod, const char *codeDir,
 
     for (md = mod->othfuncs; md != NULL; md = md->next)
         if (md->slot == no_slot)
-            prcode(fp,
+            if (noArgParser(md))
+                prcode(fp,
+"        {%N, (PyCFunction)func_%s, METH_KEYWORDS, NULL},\n"
+                    , md->pyname, md->pyname->text);
+            else
+                prcode(fp,
 "        {%N, func_%s, METH_VARARGS, NULL},\n"
-                , md->pyname, md->pyname->text);
+                    , md->pyname, md->pyname->text);
 
     prcode(fp,
 "        {0, 0, 0, 0}\n"
@@ -2138,12 +2152,13 @@ static void generateEncodedClass(moduleDef *mod, classDef *cd, int last,
 
 
 /*
- * Generate an ordinary function (ie. not a class method).
+ * Generate an ordinary function.
  */
 static void generateOrdinaryFunction(moduleDef *mod, classDef *cd,
         memberDef *md, FILE *fp)
 {
     overDef *od;
+    int need_intro;
 
     prcode(fp,
 "\n"
@@ -2165,39 +2180,73 @@ static void generateOrdinaryFunction(moduleDef *mod, classDef *cd,
     }
     else
     {
-        if (!generating_c)
-            prcode(fp,
-"extern \"C\" {static PyObject *func_%s(PyObject *,PyObject *);}\n"
-                , md->pyname->text);
+        const char *self = (generating_c ? "sipSelf" : "");
 
-        prcode(fp,
+        if (!generating_c)
+            if (noArgParser(md))
+                prcode(fp,
+"extern \"C\" {static PyObject *func_%s(PyObject *,PyObject *,PyObject *);}\n"
+                    , md->pyname->text);
+            else
+                prcode(fp,
+"extern \"C\" {static PyObject *func_%s(PyObject *,PyObject *);}\n"
+                    , md->pyname->text);
+
+        if (noArgParser(md))
+            prcode(fp,
+"static PyObject *func_%s(PyObject *%s,PyObject *sipArgs,PyObject *sipKwds)\n"
+                , md->pyname->text, self);
+        else
+            prcode(fp,
 "static PyObject *func_%s(PyObject *%s,PyObject *sipArgs)\n"
-            ,md->pyname->text,(generating_c ? "sipSelf" : ""));
+                , md->pyname->text, self);
 
         od = mod->overs;
     }
 
     prcode(fp,
 "{\n"
-"    int sipArgsParsed = 0;\n"
         );
+
+    need_intro = TRUE;
 
     while (od != NULL)
     {
         if (od->common == md)
+        {
+            if (noArgParser(md))
+            {
+                generateCppCodeBlock(od->methodcode, fp);
+                break;
+            }
+
+            if (need_intro)
+            {
+                prcode(fp,
+"    int sipArgsParsed = 0;\n"
+                    );
+
+                need_intro = FALSE;
+            }
+
             generateFunctionBody(od, cd, cd, TRUE, fp);
+        }
 
         od = od->next;
     }
 
-    prcode(fp,
+    if (!need_intro)
+        prcode(fp,
 "\n"
 "    /* Raise an exception if the arguments couldn't be parsed. */\n"
 "    sipNoFunction(sipArgsParsed,%N);\n"
 "\n"
 "    return NULL;\n"
+            ,md->pyname);
+
+    prcode(fp,
 "}\n"
-        ,md->pyname);
+        );
 }
 
 
@@ -3156,49 +3205,52 @@ static char *createIfaceFileName(const char *codeDir, ifaceFileDef *iff,
 /*
  * Generate the C++ code for a mapped type version.
  */
-static void generateMappedTypeCpp(mappedTypeDef *mtd,FILE *fp)
+static void generateMappedTypeCpp(mappedTypeDef *mtd, FILE *fp)
 {
     int need_xfer;
 
-    prcode(fp,
+    if (!noRelease(mtd))
+    {
+        prcode(fp,
 "\n"
 "\n"
 "/* Call the mapped type's destructor. */\n"
-        );
+            );
 
-    if (!generating_c)
-        prcode(fp,
+        if (!generating_c)
+            prcode(fp,
 "extern \"C\" {static void release_%T(void *, int);}\n"
-            , &mtd->type);
+                , &mtd->type);
 
-    prcode(fp,
+        prcode(fp,
 "static void release_%T(void *ptr, int%s)\n"
 "{\n"
-        , &mtd->type, (generating_c ? " status" : ""));
+            , &mtd->type, (generating_c ? " status" : ""));
 
-    if (release_gil)
-        prcode(fp,
+        if (release_gil)
+            prcode(fp,
 "    Py_BEGIN_ALLOW_THREADS\n"
-            );
+                );
 
-    if (generating_c)
-        prcode(fp,
+        if (generating_c)
+            prcode(fp,
 "    sipFree(ptr);\n"
-            );
-    else
-        prcode(fp,
+                );
+        else
+            prcode(fp,
 "    delete reinterpret_cast<%b *>(ptr);\n"
-            , &mtd->type);
+                , &mtd->type);
 
-    if (release_gil)
-        prcode(fp,
+        if (release_gil)
+            prcode(fp,
 "    Py_END_ALLOW_THREADS\n"
-            );
+                );
 
-    prcode(fp,
+        prcode(fp,
 "}\n"
 "\n"
-        );
+            );
+    }
 
     generateConvertToDefinitions(mtd,NULL,fp);
 
@@ -3235,15 +3287,23 @@ static void generateMappedTypeCpp(mappedTypeDef *mtd,FILE *fp)
 "\n"
 "sipMappedType sipMappedTypeDef_%T = {\n"
 "    \"%B\",\n"
+        , &mtd->type
+        , &mtd->type);
+
+    if (noRelease(mtd))
+        prcode(fp,
+"    0,\n"
+            );
+    else
+        prcode(fp,
 "    release_%T,\n"
+            , &mtd->type);
+
+    prcode(fp,
 "    forceConvertTo_%T,\n"
 "    convertTo_%T,\n"
 "    convertFrom_%T\n"
 "};\n"
-        , &mtd->type
-        , &mtd->type
-        , &mtd->type
-        , &mtd->type
         , &mtd->type
         , &mtd->type
         , &mtd->type);
@@ -3904,31 +3964,10 @@ static void generateVariableHandler(classDef *context, varDef *vd, FILE *fp)
             break;
 
         case struct_type:
-            prcode(fp,
-"        sipPy = sipConvertFromVoidPtr(");
-
-            if (isConstArg(&vd->type))
-                prcode(fp, "const_cast<%b *>(sipVal)", &vd->type);
-            else
-                prcode(fp, "sipVal");
-
-            prcode(fp, ");\n"
-                );
-
-            break;
-
         case void_type:
             prcode(fp,
-"        sipPy = sipConvertFromVoidPtr(");
-
-            if (isConstArg(&vd->type))
-                prcode(fp, "const_cast<void *>(sipVal)");
-            else
-                prcode(fp, "sipVal");
-
-            prcode(fp, ");\n"
-                );
-
+"        sipPy = sipConvertFrom%sVoidPtr(sipVal);\n"
+                , (isConstArg(&vd->type) ? "Const" : ""));
             break;
 
         case pyobject_type:
@@ -4051,7 +4090,7 @@ static void generateVariableHandler(classDef *context, varDef *vd, FILE *fp)
 "\n"
 "    sipReleaseInstance(sipVal,sipClass_%C,sipValState);\n"
                 , classFQCName(vd->type.u.cd));
-        else if (vd->type.atype == mapped_type && vd->type.nrderefs == 0)
+        else if (vd->type.atype == mapped_type && vd->type.nrderefs == 0 && !noRelease(vd->type.u.mtd))
             prcode(fp,
 "\n"
 "    sipReleaseMappedType(sipVal,sipMappedType_%T,sipValState);\n"
@@ -5142,7 +5181,7 @@ static void generateShadowCode(sipSpec *pt, moduleDef *mod, classDef *cd,
 "\n"
 "sip%C::sip%C(",classFQCName(cd),classFQCName(cd));
 
-        generateArgs(cd, ct->cppsig, Definition, fp);
+        generateCalledArgs(cd, ct->cppsig, Definition, fp);
 
         prcode(fp,")%X: %S(",ct->exceptions,classFQCName(cd));
 
@@ -5162,7 +5201,7 @@ static void generateShadowCode(sipSpec *pt, moduleDef *mod, classDef *cd,
         {
             prcode(fp,
 "    sipTrace(SIP_TRACE_CTORS,\"sip%C::sip%C(",classFQCName(cd),classFQCName(cd));
-            generateArgs(cd, ct->cppsig, Declaration, fp);
+            generateCalledArgs(cd, ct->cppsig, Declaration, fp);
             prcode(fp,")%X (this=0x%%08x)\\n\",this);\n"
 "\n"
                 ,ct->exceptions);
@@ -5403,7 +5442,7 @@ static void generateVirtualCatcher(moduleDef *mod, classDef *cd, int virtNr,
     generateBaseType(cd, &od->cppsig->result, fp);
 
     prcode(fp," sip%C::%O(",classFQCName(cd),od);
-    generateArgs(cd, od->cppsig, Definition, fp);
+    generateCalledArgs(cd, od->cppsig, Definition, fp);
     prcode(fp,")%s%X\n"
 "{\n"
         ,(isConst(od) ? " const" : ""),od->exceptions);
@@ -5415,7 +5454,7 @@ static void generateVirtualCatcher(moduleDef *mod, classDef *cd, int virtNr,
 
         generateBaseType(cd, &od->cppsig->result, fp);
         prcode(fp," sip%C::%O(",classFQCName(cd),od);
-        generateArgs(cd, od->cppsig, Declaration, fp);
+        generateCalledArgs(cd, od->cppsig, Declaration, fp);
         prcode(fp,")%s%X (this=0x%%08x)\\n\",this);\n"
 "\n"
             ,(isConst(od) ? " const" : ""),od->exceptions);
@@ -5448,7 +5487,7 @@ static void generateVirtualCatcher(moduleDef *mod, classDef *cd, int virtNr,
     if (vhd->cppsig->nrArgs > 0)
     {
         prcode(fp,",");
-        generateArgs(cd, vhd->cppsig, Declaration, fp);
+        generateCalledArgs(cd, vhd->cppsig, Declaration, fp);
     }
 
     prcode(fp,");\n"
@@ -5810,7 +5849,7 @@ static void generateEmitter(classDef *cd, visibleList *vl, FILE *fp)
 "            emit %s("
             ,od->cppname);
 
-        generateArgs(cd, od->cppsig, Call, fp);
+        generateCallArgs(cd, od->cppsig, &od->pysig, fp);
 
         prcode(fp,");\n"
             );
@@ -5911,7 +5950,7 @@ static void generateProtectedDeclarations(classDef *cd,FILE *fp)
             else
                 prcode(fp, " sipProtect_%s(", od->cppname);
 
-            generateArgs(cd, od->cppsig, Declaration, fp);
+            generateCalledArgs(cd, od->cppsig, Declaration, fp);
             prcode(fp,")%s;\n"
                 ,(isConst(od) ? " const" : ""));
         }
@@ -5958,7 +5997,7 @@ static void generateProtectedDefinitions(classDef *cd,FILE *fp)
             else
                 prcode(fp, " sip%C::sipProtect_%s(", classFQCName(cd), mname);
 
-            generateArgs(cd, od->cppsig, Definition, fp);
+            generateCalledArgs(cd, od->cppsig, Definition, fp);
             prcode(fp,")%s\n"
 "{\n"
                 ,(isConst(od) ? " const" : ""));
@@ -6094,7 +6133,7 @@ static void generateVirtualHandler(virtHandlerDef *vhd, FILE *fp)
     {
         prcode(fp,",");
 
-        generateArgs(NULL, vhd->cppsig, Definition, fp);
+        generateCalledArgs(NULL, vhd->cppsig, Definition, fp);
     }
 
     *vhd->cppsig = saved;
@@ -6542,7 +6581,7 @@ static void generateTupleBuilder(signatureDef *sd,FILE *fp)
             if (ad->nrderefs == 0 || (ad->nrderefs == 1 && isOutArg(ad)))
                 fmt = "c";
             else if (isArray(ad))
-                fmt = "a";
+                fmt = "g";
             else
                 fmt = "s";
 
@@ -6552,7 +6591,7 @@ static void generateTupleBuilder(signatureDef *sd,FILE *fp)
             if (ad->nrderefs == 0 || (ad->nrderefs == 1 && isOutArg(ad)))
                 fmt = "w";
             else if (isArray(ad))
-                fmt = "A";
+                fmt = "G";
             else
                 fmt = "x";
 
@@ -6763,11 +6802,7 @@ static void generateTupleBuilder(signatureDef *sd,FILE *fp)
             }
 
             if (isArray(ad))
-            {
-                argType astype = sd->args[arraylenarg].atype;
-
-                prcode(fp,",%sa%d",(astype == int_type ? "" : "(int)"),arraylenarg);
-            }
+                prcode(fp, ",(SIP_SSIZE_T)a%d", arraylenarg);
             else if (ad->atype == enum_type && ad->u.ed->fqcname != NULL)
                 prcode(fp,",sipEnum_%C",ad->u.ed->fqcname);
         }
@@ -7065,7 +7100,7 @@ static void generateShadowClassDeclaration(sipSpec *pt,classDef *cd,FILE *fp)
         prcode(fp,
 "    sip%C(",classFQCName(cd));
 
-        generateArgs(cd, ct->cppsig, Declaration, fp);
+        generateCalledArgs(cd, ct->cppsig, Declaration, fp);
 
         prcode(fp,")%X;\n"
             ,ct->exceptions);
@@ -7241,19 +7276,110 @@ void prOverloadDecl(FILE *fp, classDef *context, overDef *od, int defval)
 
 
 /*
- * Generate typed arguments.
+ * Generate typed arguments for a declaration or a definition.
  */
-static void generateArgs(classDef *context, signatureDef *sd,
+static void generateCalledArgs(classDef *context, signatureDef *sd,
         funcArgType ftype, FILE *fp)
+{
+    char name[50];
+    int a;
+
+    for (a = 0; a < sd->nrArgs; ++a)
+    {
+        argDef *ad = &sd->args[a];
+
+        if (a > 0)
+            prcode(fp,",");
+
+        if (ftype == Definition)
+            sprintf(name, "a%d", a);
+        else
+            name[0] = '\0';
+
+        generateNamedBaseType(context, ad, name, fp);
+    }
+}
+
+
+/*
+ * Generate typed arguments for a call.
+ */
+static void generateCallArgs(classDef *context, signatureDef *sd,
+        signatureDef *py_sd, FILE *fp)
 {
     int a;
 
     for (a = 0; a < sd->nrArgs; ++a)
     {
+        char *ind = NULL;
+        argDef *ad, *py_ad;
+
         if (a > 0)
             prcode(fp,",");
 
-        generateSingleArg(context, &sd->args[a], a, ftype, fp);
+        ad = &sd->args[a];
+
+        /* See if the argument needs dereferencing or it's address taking. */
+        switch (ad->atype)
+        {
+        case sstring_type:
+        case ustring_type:
+        case string_type:
+        case wstring_type:
+            if (ad->nrderefs > (isOutArg(ad) ? 0 : 1))
+                ind = "&";
+
+            break;
+
+        case mapped_type:
+        case class_type:
+            if (ad->nrderefs == 2)
+                ind = "&";
+            else if (ad->nrderefs == 0)
+                ind = "*";
+
+            break;
+
+        case struct_type:
+        case void_type:
+            if (ad->nrderefs == 2)
+                ind = "&";
+
+            break;
+
+        default:
+            if (ad->nrderefs == 1)
+                ind = "&";
+        }
+
+        if (ind != NULL)
+            prcode(fp, ind);
+
+        /*
+         * See if we need to cast a Python void * to the correct C/C++ pointer
+         * type.
+         */
+        if (py_sd != sd)
+        {
+            py_ad = &py_sd->args[a];
+
+            if (py_ad->atype != void_type || ad->atype == void_type || py_ad->nrderefs != ad->nrderefs)
+                py_ad = NULL;
+        }
+        else
+            py_ad = NULL;
+
+        if (py_ad == NULL)
+        {
+            if (isArraySize(ad))
+                prcode(fp, "(%b)", ad);
+
+            prcode(fp, "a%d", a);
+        }
+        else if (generating_c)
+            prcode(fp, "(%b *)a%d", ad, a);
+        else
+            prcode(fp, "reinterpret_cast<%b *>(a%d)", ad, a);
     }
 }
 
@@ -7277,87 +7403,6 @@ static void generateNamedValueType(classDef *context, argDef *ad, char *name,
 
     resetIsReference(&mod);
     generateNamedBaseType(context, &mod, name, fp);
-}
-
-
-/*
- * Generate a single argument.
- */
-static void generateSingleArg(classDef *context, argDef *ad, int argnr,
-        funcArgType ftype, FILE *fp)
-{
-    char name[50];
-    int genType, genName, derefPtr;
-
-    /* Break the type down to individual modifications. */
-
-    genType = FALSE;
-    genName = FALSE;
-    derefPtr = FALSE;
-
-    switch (ftype)
-    {
-    case Call:
-        genName = TRUE;
-        derefPtr = TRUE;
-        break;
-
-    case Declaration:
-        genType = TRUE;
-        break;
-
-    case Definition:
-        genType = TRUE;
-        genName = TRUE;
-        break;
-    }
-
-    if (genName)
-    {
-        char *ind = "";
-
-        if (derefPtr)
-            switch (ad->atype)
-            {
-            case sstring_type:
-            case ustring_type:
-            case string_type:
-            case wstring_type:
-                if (ad->nrderefs > (isOutArg(ad) ? 0 : 1))
-                    ind = "&";
-
-                break;
-
-            case mapped_type:
-            case class_type:
-                if (ad->nrderefs == 2)
-                    ind = "&";
-                else if (ad->nrderefs == 0)
-                    ind = "*";
-
-                break;
-
-            case struct_type:
-            case void_type:
-                if (ad->nrderefs == 2)
-                    ind = "&";
-
-                break;
-
-            default:
-                if (ad->nrderefs == 1)
-                    ind = "&";
-            }
-
-        sprintf(name,"%sa%d",ind,argnr);
-    }
-    else
-        name[0] = '\0';
-
-    if (genType)
-        generateNamedBaseType(context, ad, name, fp);
-    else if (genName)
-        prcode(fp,name);
 }
 
 
@@ -7395,7 +7440,7 @@ static void generateNamedBaseType(classDef *context, argDef *ad, char *name,
             prcode(fp,"*");
 
         prcode(fp,"%s)(",name);
-        generateArgs(context, sig, Declaration, fp);
+        generateCalledArgs(context, sig, Declaration, fp);
         prcode(fp,")");
 
         return;
@@ -7446,6 +7491,10 @@ static void generateNamedBaseType(classDef *context, argDef *ad, char *name,
     case int_type:
     case cint_type:
         prcode(fp,"int");
+        break;
+
+    case ssize_type:
+        prcode(fp, "SIP_SSIZE_T");
         break;
 
     case ulong_type:
@@ -7631,9 +7680,9 @@ static void generateVariable(classDef *context, argDef *ad, int argnr,
         ad->nrderefs = 0;
     }
 
-    /* Array sizes are always integers. */
+    /* Array sizes are always SIP_SSIZE_T. */
     if (isArraySize(ad))
-        ad->atype = int_type;
+        ad->atype = ssize_type;
 
     resetIsReference(ad);
 
@@ -7671,9 +7720,11 @@ static void generateVariable(classDef *context, argDef *ad, int argnr,
             break;
 
         case mapped_type:
-            prcode(fp,
+            if (!noRelease(ad->u.mtd))
+                prcode(fp,
 "        int a%dState = 0;\n"
-                ,argnr);
+                    ,argnr);
+
             break;
 
         case anyslot_type:
@@ -8106,8 +8157,17 @@ static void generateTypeDefinition(sipSpec *pt, classDef *cd, FILE *fp)
 
     if (cd->picklecode != NULL)
         prcode(fp,
-"    pickle_%C\n"
+"    pickle_%C,\n"
             , classFQCName(cd));
+    else
+        prcode(fp,
+"    0,\n"
+            );
+
+    if (isQObjectSubClass(cd) && !noQMetaObject(cd) && optQ_OBJECT4(pt))
+        prcode(fp,
+"    &%U::staticMetaObject\n"
+            , cd);
     else
         prcode(fp,
 "    0\n"
@@ -8657,7 +8717,7 @@ static void generateConstructorCall(classDef *cd,ctorDef *ct,int error_flag,
             ct->pysig.args[0].u.cd = ocd;
         }
         else
-            generateArgs(cd, ct->cppsig, Call, fp);
+            generateCallArgs(cd, ct->cppsig, &ct->pysig, fp);
 
         prcode(fp,");\n"
             );
@@ -8911,7 +8971,8 @@ static void generateFunctionBody(overDef *od, classDef *cd, classDef *ocd,
 /*
  * Generate the code to handle the result of a call to a member function.
  */
-static void generateHandleResult(overDef *od,int isNew,char *prefix,FILE *fp)
+static void generateHandleResult(overDef *od, int isNew, int result_size,
+        char *prefix, FILE *fp)
 {
     char *vname, vnamebuf[50];
     int a, nrvals, only, has_owner;
@@ -9249,31 +9310,25 @@ static void generateHandleResult(overDef *od,int isNew,char *prefix,FILE *fp)
         break;
 
     case void_type:
-        prcode(fp,
-"            %s sipConvertFromVoidPtr(", prefix);
+        {
+            const char *cnst = (isConstArg(ad) ? "Const" : "");
 
-        if (isConstArg(ad))
-            prcode(fp, "const_cast<void *>(%s)", vname);
-        else
-            prcode(fp, "%s", vname);
-
-        prcode(fp, ");\n"
-            );
+            if (result_size < 0)
+                prcode(fp,
+"            %s sipConvertFrom%sVoidPtr(%s);\n"
+                    , prefix, cnst, vname);
+            else
+                prcode(fp,
+"            %s sipConvertFrom%sVoidPtrAndSize(%s,a%d);\n"
+                    , prefix, cnst, vname, result_size);
+        }
 
         break;
 
     case struct_type:
         prcode(fp,
-"            %s sipConvertFromVoidPtr(",prefix);
-
-        if (isConstArg(ad))
-            prcode(fp,"const_cast<%b *>(%s)",ad,vname);
-        else
-            prcode(fp,"%s",vname);
-
-        prcode(fp,");\n"
-            );
-
+"            %s sipConvertFrom%sVoidPtr(%s);\n"
+            , prefix, (isConstArg(ad) ? "Const" : ""), vname);
         break;
 
     case float_type:
@@ -9413,7 +9468,8 @@ static char getBuildResultFormat(argDef *ad)
 static void generateFunctionCall(classDef *cd,classDef *ocd,overDef *od,
                  int deref, FILE *fp)
 {
-    int needsNew, error_flag = FALSE, newline, is_result, a, deltemps;
+    int needsNew, error_flag = FALSE, newline, is_result, result_size, a,
+            deltemps;
     argDef *res = &od->pysig.result, orig_res;
 
     prcode(fp,
@@ -9480,11 +9536,15 @@ static void generateFunctionCall(classDef *cd,classDef *ocd,overDef *od,
         newline = TRUE;
     }
 
+    result_size = -1;
     deltemps = TRUE;
 
     for (a = 0; a < od->pysig.nrArgs; ++a)
     {
         argDef *ad = &od->pysig.args[a];
+
+        if (isResultSize(ad))
+            result_size = a;
 
         /*
          * If we have an In,Out argument that has conversion code then we delay
@@ -9630,7 +9690,7 @@ static void generateFunctionCall(classDef *cd,classDef *ocd,overDef *od,
 
         case call_slot:
             prcode(fp, "(*sipCpp)(");
-            generateArgs(cd, od->cppsig, Call, fp);
+            generateCallArgs(cd, od->cppsig, &od->pysig, fp);
             prcode(fp,")");
             break;
 
@@ -9826,7 +9886,7 @@ static void generateFunctionCall(classDef *cd,classDef *ocd,overDef *od,
 
     gc_ellipsis(&od->pysig, fp);
 
-    if (deltemps)
+    if (deltemps && !isZeroArgSlot(od->common))
         deleteTemps(&od->pysig, fp);
 
     prcode(fp,
@@ -9863,7 +9923,8 @@ static void generateFunctionCall(classDef *cd,classDef *ocd,overDef *od,
             );
     else
     {
-        generateHandleResult(od,needsNew,(deltemps ? "return" : "sipResult ="),fp);
+        generateHandleResult(od, needsNew, result_size,
+                (deltemps ? "return" : "sipResult ="), fp);
 
         /* Delete the temporaries now if we haven't already done so. */
         if (!deltemps)
@@ -9889,15 +9950,15 @@ static void generateFunctionCall(classDef *cd,classDef *ocd,overDef *od,
 /*
  * Generate a call to a C++ function.
  */
-static void generateCppFunctionCall(classDef *cd,classDef *ocd,overDef *od,
-                    FILE *fp)
+static void generateCppFunctionCall(classDef *cd, classDef *ocd, overDef *od,
+        FILE *fp)
 {
     char *mname = od->cppname;
     int parens = 1;
 
     /*
      * If the function is protected then call the public wrapper.  If it is
-     * virtual then call explicit scoped function if "self" was passed as
+     * virtual then call the explicit scoped function if "self" was passed as
      * the first argument.
      */
 
@@ -9927,14 +9988,14 @@ static void generateCppFunctionCall(classDef *cd,classDef *ocd,overDef *od,
     else if (!isAbstract(od) && (isVirtual(od) || isVirtualReimp(od)))
     {
         prcode(fp, "(sipSelfWasArg ? sipCpp->%U::%s(", ocd, mname);
-        generateArgs(cd, od->cppsig, Call, fp);
+        generateCallArgs(cd, od->cppsig, &od->pysig, fp);
         prcode(fp, ") : sipCpp->%s(", mname);
         ++parens;
     }
     else
         prcode(fp, "sipCpp->%s(", mname);
 
-    generateArgs(cd, od->cppsig, Call, fp);
+    generateCallArgs(cd, od->cppsig, &od->pysig, fp);
 
     while (parens--)
         prcode(fp, ")");
@@ -9972,9 +10033,9 @@ static void generateComparisonSlotCall(classDef *cd, overDef *od,
         prcode(fp, "sipCpp%s%S::operator%s(", (deref ? "->" : "."),
                 classFQCName(cd), op);
     else if (deref)
-        prcode(fp, "::operator%s((*sipCpp), ", op);
+        prcode(fp, "operator%s((*sipCpp), ", op);
     else
-        prcode(fp, "::operator%s(sipCpp, ", op);
+        prcode(fp, "operator%s(sipCpp, ", op);
 
     generateSlotArg(&od->pysig, 0, fp);
     prcode(fp, ")");
@@ -10010,7 +10071,7 @@ static void generateNumberSlotCall(overDef *od, char *op, FILE *fp)
 static int generateArgParser(signatureDef *sd, classDef *cd, ctorDef *ct,
         overDef *od, int secCall, FILE *fp)
 {
-    int a, isQtSlot, optargs, arraylenarg, sigarg, handle_self;
+    int a, isQtSlot, optargs, arraylenarg, sigarg, handle_self, single_arg;
     int slotconarg, slotdisarg, need_owner;
 
     /* If the class is just a namespace, then ignore it. */
@@ -10089,14 +10150,25 @@ static int generateArgParser(signatureDef *sd, classDef *cd, ctorDef *ct,
 
     /* Generate the call to the parser function. */
     if (od != NULL && isNumberSlot(od->common))
+    {
+        single_arg = FALSE;
+
         prcode(fp,
 "        if (sipParsePair(%ssipArgsParsed,sipArg0,sipArg1,\"", (ct != NULL ? "" : "&"));
+    }
     else
+    {
+        single_arg = (od != NULL && od->common->slot != no_slot && !isMultiArgSlot(od->common));
+
         prcode(fp,
-"        if (sipParseArgs(%ssipArgsParsed,sipArg%s,\"", (ct != NULL ? "" : "&"), (od == NULL || od->common->slot == no_slot || isMultiArgSlot(od->common)) ? "s" : "");
+"        if (sipParseArgs(%ssipArgsParsed,sipArg%s,\"", (ct != NULL ? "" : "&"), (single_arg ? "" : "s"));
+    }
 
     /* Generate the format string. */
     optargs = FALSE;
+
+    if (single_arg)
+        prcode(fp, "1");
 
     if (handle_self)
         prcode(fp,"%c",(isProtected(od) ? 'p' : 'B'));
@@ -10125,7 +10197,7 @@ static int generateArgParser(signatureDef *sd, classDef *cd, ctorDef *ct,
             if (ad->nrderefs == 0 || (isOutArg(ad) && ad->nrderefs == 1))
                 fmt = "c";
             else if (isArray(ad))
-                fmt = "a";
+                fmt = "k";
             else
                 fmt = "s";
 
@@ -10135,7 +10207,7 @@ static int generateArgParser(signatureDef *sd, classDef *cd, ctorDef *ct,
             if (ad->nrderefs == 0 || (isOutArg(ad) && ad->nrderefs == 1))
                 fmt = "w";
             else if (isArray(ad))
-                fmt = "A";
+                fmt = "K";
             else
                 fmt = "x";
 
@@ -10306,7 +10378,11 @@ static int generateArgParser(signatureDef *sd, classDef *cd, ctorDef *ct,
         switch (ad->atype)
         {
         case mapped_type:
-            prcode(fp,",sipMappedType_%T,&a%d,&a%dState",ad,a,a);
+            if (noRelease(ad->u.mtd))
+                prcode(fp, ",sipMappedType_%T,&a%d,NULL", ad, a);
+            else
+                prcode(fp, ",sipMappedType_%T,&a%d,&a%dState", ad, a, a);
+
             break;
 
         case class_type:
@@ -10330,7 +10406,7 @@ static int generateArgParser(signatureDef *sd, classDef *cd, ctorDef *ct,
                 {
                     prcode(fp,",\"(");
 
-                    generateArgs(cd, sd->args[slotconarg].u.sa, Declaration, fp);
+                    generateCalledArgs(cd, sd->args[slotconarg].u.sa, Declaration, fp);
 
                     prcode(fp,")\"");
                 }
@@ -10344,7 +10420,7 @@ static int generateArgParser(signatureDef *sd, classDef *cd, ctorDef *ct,
             {
                 prcode(fp,",\"(");
 
-                generateArgs(cd, sd->args[slotdisarg].u.sa, Declaration, fp);
+                generateCalledArgs(cd, sd->args[slotdisarg].u.sa, Declaration, fp);
 
                 prcode(fp,")\",&a%d,&a%d",a,slotdisarg);
 
@@ -10516,7 +10592,12 @@ static void deleteTemps(signatureDef *sd, FILE *fp)
             const char *fstr, *sstr;
 
             if (ad->atype == mapped_type)
+            {
+                if (noRelease(ad->u.mtd))
+                    continue;
+
                 fstr = sstr = "MappedType";
+            }
             else
             {
                 fstr = "Instance";
@@ -10790,7 +10871,7 @@ void prcode(FILE *fp, const char *fmt, ...)
                     resetIsReference(ad);
                     ad->nrderefs = 0;
 
-                    generateBaseType(NULL, ad,fp);
+                    generateBaseType(NULL, ad, fp);
 
                     *ad = orig;
 
