@@ -75,8 +75,10 @@ static void sip_api_transfer_back(PyObject *self);
 static void sip_api_transfer_to(PyObject *self, PyObject *owner);
 static int sip_api_export_module(sipExportedModuleDef *client,
         unsigned api_major, unsigned api_minor, PyObject *mod_dict);
+#ifdef SIP_QT
 static void *sip_api_convert_rx(sipWrapper *txSelf, const char *sigargs,
         PyObject *rxObj, const char *slot, const char **memberp);
+#endif
 static int sip_api_parse_args(int *argsParsedp, PyObject *sipArgs,
         const char *fmt, ...);
 static int sip_api_parse_pair(int *argsParsedp, PyObject *sipArg0,
@@ -145,7 +147,9 @@ static const sipAPIDef sip_api = {
     sip_api_build_result,
     sip_api_call_method,
     sip_api_class_name,
+#ifdef SIP_QT
     sip_api_connect_rx,
+#endif
     sip_api_convert_from_sequence_index,
     sip_api_can_convert_to_instance,
     sip_api_can_convert_to_mapped_type,
@@ -161,10 +165,14 @@ static const sipAPIDef sip_api = {
     sip_api_convert_to_cpp,
     sip_api_get_state,
     sip_api_find_mapped_type,
+#ifdef SIP_QT
     sip_api_disconnect_rx,
     sip_api_emit_signal,
+#endif
     sip_api_free,
+#ifdef SIP_QT
     sip_api_get_sender,
+#endif
     sip_api_get_wrapper,
     sip_api_malloc,
     sip_api_map_int_to_class,
@@ -178,6 +186,7 @@ static const sipAPIDef sip_api = {
     sip_api_long_as_unsigned_long,
     sip_api_convert_from_named_enum,
     sip_api_convert_from_void_ptr,
+#ifdef SIP_QT
     /*
      * The following may be used by Qt support code but by no other handwritten
      * code.
@@ -186,6 +195,7 @@ static const sipAPIDef sip_api = {
     sip_api_emit_to_slot,
     sip_api_same_connection,
     sip_api_convert_rx,
+#endif
     /*
      * The following are not part of the public API.
      */
@@ -225,12 +235,14 @@ static const sipAPIDef sip_api = {
      */
     sip_api_export_symbol,
     sip_api_import_symbol,
+#ifdef SIP_QT
     /*
      * The following may be used by Qt support code but by no other handwritten
      * code.
      */
     sip_api_register_int_types,
     sip_api_parse_signature,
+#endif
     /*
      * The following are part of the public API.
      */
@@ -249,12 +261,14 @@ static const sipAPIDef sip_api = {
     sip_api_convert_from_const_void_ptr,
     sip_api_convert_from_void_ptr_and_size,
     sip_api_convert_from_const_void_ptr_and_size,
+#ifdef SIP_QT
     /*
      * The following may be used by Qt support code but by no other handwritten
      * code.
      */
     sip_api_invoke_slot,
     sip_api_parse_type,
+#endif
 };
 
 
@@ -318,8 +332,12 @@ static sipWrapperType sipWrapper_Type;
 static PyTypeObject sipVoidPtr_Type;
 
 PyInterpreterState *sipInterpreter = NULL;
+
+#ifdef SIP_QT
 sipQtAPI *sipQtSupport = NULL;
 sipWrapperType *sipQObjectClass;
+#endif
+
 sipPyObject *sipRegisteredIntTypes = NULL;
 sipSymbol *sipSymbolList = NULL;
 
@@ -433,22 +451,26 @@ static void addToParent(sipWrapper *self, sipWrapper *owner);
 static void removeFromParent(sipWrapper *self);
 static sipWrapperType *findClass(sipExportedModuleDef *emd, const char *name,
         size_t len);
+#ifdef SIP_QT
 static int findClassArg(sipExportedModuleDef *emd, const char *name,
         size_t len, sipSigArg *at, int indir);
 static int findMtypeArg(sipMappedType **mttab, const char *name, size_t len,
         sipSigArg *at, int indir);
-static PyTypeObject *findEnumTypeByName(sipExportedModuleDef *emd,
-        const char *name, size_t len);
 static int findEnumArg(sipExportedModuleDef *emd, const char *name, size_t len,
         sipSigArg *at, int indir);
+#endif
+static PyTypeObject *findEnumTypeByName(sipExportedModuleDef *emd,
+        const char *name, size_t len);
 static int sameScopedName(const char *pyname, const char *name, size_t len);
 static int nameEq(const char *with, const char *name, size_t len);
 static int isExactWrappedType(sipWrapperType *wt);
 static void release(void *addr, sipTypeDef *td, int state);
 static void callPyDtor(sipWrapper *self);
+#ifdef SIP_QT
 static int qt_and_sip_api_3_4(void);
 static int visitSlot(sipSlot *slot, visitproc visit, void *arg);
 static void clearAnySlotReference(sipSlot *slot);
+#endif
 static int parseCharArray(PyObject *obj, const char **ap, SIP_SSIZE_T *aszp);
 static int parseChar(PyObject *obj, char *ap);
 static int parseCharString(PyObject *obj, const char **ap);
@@ -556,7 +578,9 @@ PyMODINIT_FUNC initsip(void)
         /* Initialise the object map. */
         sipOMInit(&cppPyMap);
 
+#ifdef SIP_QT
         sipQtSupport = NULL;
+#endif
 
         /*
          * Get the current interpreter.  This will be shared between all
@@ -927,12 +951,14 @@ static int sip_api_export_module(sipExportedModuleDef *client,
         }
 
         /* Only one module can claim to wrap QObject. */
+#ifdef SIP_QT
         if (em->em_qt_api != NULL && client->em_qt_api != NULL)
         {
             PyErr_Format(PyExc_RuntimeError, "the %s and %s modules both wrap the QObject class", client->em_name, em->em_name);
 
             return -1;
         }
+#endif
     }
 
     /* Import any required modules. */
@@ -1012,12 +1038,14 @@ static int sip_api_export_module(sipExportedModuleDef *client,
                 return -1;
         }
 
+#ifdef SIP_QT
     /* Set any Qt support API. */
     if (client->em_qt_api != NULL)
     {
         sipQtSupport = client->em_qt_api;
         sipQObjectClass = *sipQtSupport->qt_qobject;
     }
+#endif
 
     /* Append any initialiser extenders to the relevant classes. */
     if ((ie = client->em_initextend) != NULL)
@@ -2742,6 +2770,7 @@ static int parsePass1(sipWrapper **selfp, int *selfargp, int *argsParsedp,
                 break;
             }
 
+#ifdef SIP_QT
         case 'R':
             {
                 /* Sub-class of QObject. */
@@ -2753,6 +2782,7 @@ static int parsePass1(sipWrapper **selfp, int *selfargp, int *argsParsedp,
 
                 break;
             }
+#endif
 
         case 'F':
             {
@@ -2778,6 +2808,7 @@ static int parsePass1(sipWrapper **selfp, int *selfargp, int *argsParsedp,
                 break;
             }
 
+#ifdef SIP_QT
         case 'q':
             {
                 /* Qt receiver to connect. */
@@ -2834,6 +2865,7 @@ static int parsePass1(sipWrapper **selfp, int *selfargp, int *argsParsedp,
 
                 break;
             }
+#endif
 
         case 'a':
             {
@@ -3314,6 +3346,7 @@ static int parsePass2(sipWrapper *self, int selfarg, int nrargs,
          */
         switch (ch)
         {
+#ifdef SIP_QT
         case 'q':
             {
                 /* Qt receiver to connect. */
@@ -3379,6 +3412,7 @@ static int parsePass2(sipWrapper *self, int selfarg, int nrargs,
                 *rx = sipGetRx(self,sig,arg,NULL,slot);
                 break;
             }
+#endif
 
         case 'J':
             {
@@ -7164,7 +7198,9 @@ static int sipWrapper_traverse(sipWrapper *self, visitproc visit, void *arg)
     void *ptr;
     sipTypeDef *td;
     sipWrapper *w;
+#ifdef SIP_QT
     sipPySig *ps;
+#endif
 
     /* Call the nearest handwritten traverse code in the class hierachy. */
     if ((ptr = getPtrTypeDef(self, &td)) != NULL)
@@ -7186,6 +7222,7 @@ static int sipWrapper_traverse(sipWrapper *self, visitproc visit, void *arg)
                 return vret;
     }
 
+#ifdef SIP_QT
     if (qt_and_sip_api_3_4() && sipIsPyOwned(self))
     {
         void *tx = sipGetAddress(self);
@@ -7214,6 +7251,7 @@ static int sipWrapper_traverse(sipWrapper *self, visitproc visit, void *arg)
             if ((vret = visitSlot(&psrx->rx, visit, arg)) != 0)
                 return vret;
     }
+#endif
 
     if (self->user != NULL)
         if ((vret = visit(self->user, arg)) != 0)
@@ -7249,7 +7287,9 @@ static int sipWrapper_clear(sipWrapper *self)
     void *ptr;
     sipTypeDef *td;
     PyObject *tmp;
+#ifdef SIP_QT
     sipPySig *ps;
+#endif
 
     /* Call the nearest handwritten clear code in the class hierachy. */
     if ((ptr = getPtrTypeDef(self, &td)) != NULL)
@@ -7270,6 +7310,7 @@ static int sipWrapper_clear(sipWrapper *self)
             vret = ctd->td_clear(ptr);
     }
 
+#ifdef SIP_QT
     /* Remove any slots connected via a proxy. */
     if (qt_and_sip_api_3_4() && sipIsPyOwned(self) && sipPossibleProxy(self))
     {
@@ -7298,6 +7339,7 @@ static int sipWrapper_clear(sipWrapper *self)
         for (psrx = ps->rxlist; psrx != NULL; psrx = psrx->next)
             clearAnySlotReference(&psrx->rx);
     }
+#endif
 
     /* Remove any user object. */
     tmp = self->user;
@@ -7430,6 +7472,7 @@ static void sipWrapper_dealloc(sipWrapper *self)
      */
     sipWrapper_clear(self);
 
+#ifdef SIP_QT
     while (self->pySigList != NULL)
     {
         sipPySig *ps;
@@ -7448,6 +7491,7 @@ static void sipWrapper_dealloc(sipWrapper *self)
         sip_api_free(ps->name);
         sip_api_free(ps);
     }
+#endif
 
     /* Call the standard super-type dealloc. */
     PyBaseObject_Type.tp_dealloc((PyObject *)self);
@@ -8112,6 +8156,7 @@ static sipWrapperType *findClass(sipExportedModuleDef *emd, const char *name,
 }
 
 
+#ifdef SIP_QT
 /*
  * Search for a named class and return TRUE and the necessary information to
  * create an instance of it if it was found.
@@ -8163,6 +8208,7 @@ static int findMtypeArg(sipMappedType **mttab, const char *name, size_t len,
 
     return FALSE;
 }
+#endif
 
 
 /*
@@ -8192,6 +8238,7 @@ static PyTypeObject *findEnumTypeByName(sipExportedModuleDef *emd,
 }
 
 
+#ifdef SIP_QT
 /*
  * Search for a named enum and return TRUE and the necessary information to
  * create an instance of it if it was found.
@@ -8314,6 +8361,7 @@ void sipFindSigArgType(const char *name, size_t len, sipSigArg *at, int indir)
         }
     }
 }
+#endif // SIP_QT
 
 
 /*
@@ -8441,7 +8489,7 @@ static void *sip_api_import_symbol(const char *name)
     return NULL;
 }
 
-
+#ifdef SIP_QT
 /*
  * Returns TRUE if the Qt support is present and conforms to the v3.4 or later
  * of the SIP API.
@@ -8450,7 +8498,6 @@ static int qt_and_sip_api_3_4(void)
 {
     return (sipQtSupport != NULL && sipQObjectClass->type->td_module->em_api_minor >= 4);
 }
-
 
 /*
  * Visit a slot connected to an object for the cyclic garbage collector.
@@ -8484,7 +8531,7 @@ static void clearAnySlotReference(sipSlot *slot)
         Py_DECREF(xref);
     }
 }
-
+#endif
 
 /*
  * Convert a Python object to a character.

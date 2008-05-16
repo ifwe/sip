@@ -290,8 +290,10 @@ static int apiArgument(argDef *ad, int out, int need_comma, int sec, FILE *fp)
     if (isArraySize(ad))
         return need_comma;
 
+#ifdef SIP_QT
     if (sec && (ad->atype == slotcon_type || ad->atype == slotdis_type))
         return need_comma;
+#endif
 
     if ((tname = pyType(ad, sec, &tscope)) == NULL)
         return need_comma;
@@ -582,6 +584,7 @@ static void xmlFunction(classDef *scope, memberDef *md, overDef *oloads,
         if (isPrivate(od))
             continue;
 
+#ifdef SIP_QT
         if (isSignal(od))
         {
             xmlIndent(indent, fp);
@@ -593,6 +596,7 @@ static void xmlFunction(classDef *scope, memberDef *md, overDef *oloads,
 
             continue;
         }
+#endif
 
         xtnds = NULL;
         isstat = (scope == NULL || scope->iff->type == namespace_iface || isStatic(od));
@@ -628,12 +632,14 @@ static int xmlOverload(classDef *scope, memberDef *md, overDef *od,
     if (stat)
         fprintf(fp, " static=\"1\"");
 
+#ifdef SIP_QT
     if (isSlot(od))
     {
         fprintf(fp, " slot=\"");
         xmlCppSignature(fp, od);
         fprintf(fp, "\"");
     }
+#endif
 
     if (xtnds != NULL)
     {
@@ -716,8 +722,10 @@ static void xmlArgument(argDef *ad, const char *dir, int res_xfer, int sec,
     if (isArraySize(ad))
         return;
 
+#ifdef SIP_QT
     if (sec && (ad->atype == slotcon_type || ad->atype == slotdis_type))
         return;
+#endif
 
     xmlIndent(indent, fp);
     fprintf(fp, "<Argument");
@@ -782,6 +790,7 @@ static void xmlType(argDef *ad, int sec, FILE *fp)
         type_type = "class";
         break;
 
+#ifdef SIP_QT
     case slotcon_type:
     case slotdis_type:
         {
@@ -801,6 +810,7 @@ static void xmlType(argDef *ad, int sec, FILE *fp)
         }
 
         break;
+#endif
 
     case mapped_type:
         prcode(fp, "%M%B%M", &ad->u.mtd->type);
@@ -887,6 +897,7 @@ static const char *pyType(argDef *ad, int sec, classDef **scope)
             type_name = "int";
         break;
 
+#ifdef SIP_QT
     case signal_type:
         type_name = "SIGNAL()";
         break;
@@ -907,6 +918,7 @@ static const char *pyType(argDef *ad, int sec, classDef **scope)
     case qobject_type:
         type_name = "QObject";
         break;
+#endif
 
     case ustring_type:
     case string_type:

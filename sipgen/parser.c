@@ -874,13 +874,13 @@ static const yytype_uint16 yyrline[] =
     1887,  1888,  1889,  1890,  1891,  1892,  1893,  1894,  1895,  1896,
     1897,  1898,  1899,  1900,  1901,  1902,  1905,  1908,  1913,  1916,
     1924,  1927,  1933,  1937,  1949,  1953,  1959,  1963,  1967,  1973,
-    1976,  1981,  1984,  1989,  2037,  2042,  2048,  2075,  2084,  2093,
-    2102,  2113,  2121,  2136,  2151,  2157,  2163,  2163,  2164,  2167,
-    2168,  2171,  2171,  2172,  2175,  2208,  2214,  2222,  2282,  2285,
-    2293,  2296,  2301,  2305,  2315,  2328,  2331,  2334,  2337,  2340,
-    2343,  2346,  2349,  2352,  2355,  2358,  2361,  2364,  2367,  2370,
-    2373,  2376,  2379,  2382,  2385,  2388,  2391,  2394,  2397,  2400,
-    2405,  2411,  2427,  2430,  2438,  2444,  2451
+    1976,  1981,  1984,  1989,  2037,  2042,  2048,  2075,  2086,  2097,
+    2108,  2121,  2131,  2148,  2165,  2173,  2179,  2179,  2180,  2183,
+    2184,  2187,  2187,  2188,  2191,  2224,  2230,  2238,  2298,  2301,
+    2309,  2312,  2317,  2321,  2331,  2344,  2347,  2350,  2353,  2356,
+    2359,  2362,  2365,  2368,  2371,  2374,  2377,  2380,  2383,  2386,
+    2389,  2392,  2395,  2398,  2401,  2404,  2407,  2410,  2413,  2416,
+    2421,  2427,  2443,  2446,  2454,  2460,  2467
 };
 #endif
 
@@ -4605,6 +4605,7 @@ yyreduce:
   case 287:
 #line 2075 "parser.y"
     {
+#ifdef SIP_QT
             (yyval.memArg).atype = signal_type;
             (yyval.memArg).argflags = ARG_IS_CONST;
             (yyval.memArg).nrderefs = 0;
@@ -4612,12 +4613,14 @@ yyreduce:
             (yyval.memArg).defval = (yyvsp[(4) - (4)].valp);
 
             currentSpec -> sigslots = TRUE;
+#endif
         }
     break;
 
   case 288:
-#line 2084 "parser.y"
+#line 2086 "parser.y"
     {
+#ifdef SIP_QT
             (yyval.memArg).atype = slot_type;
             (yyval.memArg).argflags = ARG_IS_CONST;
             (yyval.memArg).nrderefs = 0;
@@ -4625,12 +4628,14 @@ yyreduce:
             (yyval.memArg).defval = (yyvsp[(4) - (4)].valp);
 
             currentSpec -> sigslots = TRUE;
+#endif
         }
     break;
 
   case 289:
-#line 2093 "parser.y"
+#line 2097 "parser.y"
     {
+#ifdef SIP_QT
             (yyval.memArg).atype = anyslot_type;
             (yyval.memArg).argflags = ARG_IS_CONST;
             (yyval.memArg).nrderefs = 0;
@@ -4638,12 +4643,14 @@ yyreduce:
             (yyval.memArg).defval = (yyvsp[(4) - (4)].valp);
 
             currentSpec -> sigslots = TRUE;
+#endif
         }
     break;
 
   case 290:
-#line 2102 "parser.y"
+#line 2108 "parser.y"
     {
+#ifdef SIP_QT
             (yyval.memArg).atype = rxcon_type;
             (yyval.memArg).argflags = 0;
             (yyval.memArg).nrderefs = 0;
@@ -4653,24 +4660,28 @@ yyreduce:
                 (yyval.memArg).argflags |= ARG_SINGLE_SHOT;
 
             currentSpec -> sigslots = TRUE;
+#endif
         }
     break;
 
   case 291:
-#line 2113 "parser.y"
+#line 2121 "parser.y"
     {
+#ifdef SIP_QT
             (yyval.memArg).atype = rxdis_type;
             (yyval.memArg).argflags = 0;
             (yyval.memArg).nrderefs = 0;
             (yyval.memArg).name = (yyvsp[(2) - (3)].text);
 
             currentSpec -> sigslots = TRUE;
+#endif
         }
     break;
 
   case 292:
-#line 2121 "parser.y"
+#line 2131 "parser.y"
     {
+#ifdef SIP_QT
             (yyval.memArg).atype = slotcon_type;
             (yyval.memArg).argflags = ARG_IS_CONST;
             (yyval.memArg).nrderefs = 0;
@@ -4684,12 +4695,14 @@ yyreduce:
             *(yyval.memArg).u.sa = (yyvsp[(3) - (6)].signature);
 
             currentSpec -> sigslots = TRUE;
+#endif
         }
     break;
 
   case 293:
-#line 2136 "parser.y"
+#line 2148 "parser.y"
     {
+#ifdef SIP_QT
             (yyval.memArg).atype = slotdis_type;
             (yyval.memArg).argflags = ARG_IS_CONST;
             (yyval.memArg).nrderefs = 0;
@@ -4703,21 +4716,24 @@ yyreduce:
             *(yyval.memArg).u.sa = (yyvsp[(3) - (6)].signature);
 
             currentSpec -> sigslots = TRUE;
+#endif
         }
     break;
 
   case 294:
-#line 2151 "parser.y"
+#line 2165 "parser.y"
     {
+#ifdef SIP_QT
             (yyval.memArg).atype = qobject_type;
             (yyval.memArg).argflags = 0;
             (yyval.memArg).nrderefs = 0;
             (yyval.memArg).name = (yyvsp[(2) - (3)].text);
+#endif
         }
     break;
 
   case 295:
-#line 2157 "parser.y"
+#line 2173 "parser.y"
     {
             (yyval.memArg) = (yyvsp[(1) - (2)].memArg);
             (yyval.memArg).defval = (yyvsp[(2) - (2)].valp);
@@ -4725,17 +4741,17 @@ yyreduce:
     break;
 
   case 296:
-#line 2163 "parser.y"
+#line 2179 "parser.y"
     {currentIsStatic = TRUE;}
     break;
 
   case 301:
-#line 2171 "parser.y"
+#line 2187 "parser.y"
     {currentOverIsVirt = TRUE;}
     break;
 
   case 304:
-#line 2175 "parser.y"
+#line 2191 "parser.y"
     {
             if (notSkipping())
             {
@@ -4770,7 +4786,7 @@ yyreduce:
     break;
 
   case 305:
-#line 2208 "parser.y"
+#line 2224 "parser.y"
     {
             (yyval.memArg) = (yyvsp[(2) - (4)].memArg);
             (yyval.memArg).nrderefs = (yyvsp[(3) - (4)].number);
@@ -4780,7 +4796,7 @@ yyreduce:
     break;
 
   case 306:
-#line 2214 "parser.y"
+#line 2230 "parser.y"
     {
             (yyval.memArg) = (yyvsp[(1) - (3)].memArg);
             (yyval.memArg).nrderefs = (yyvsp[(2) - (3)].number);
@@ -4790,7 +4806,7 @@ yyreduce:
     break;
 
   case 307:
-#line 2222 "parser.y"
+#line 2238 "parser.y"
     {
             (yyval.memArg) = (yyvsp[(1) - (3)].memArg);
             (yyval.memArg).name = (yyvsp[(2) - (3)].text);
@@ -4852,14 +4868,14 @@ yyreduce:
     break;
 
   case 308:
-#line 2282 "parser.y"
+#line 2298 "parser.y"
     {
             (yyval.number) = 0;
         }
     break;
 
   case 309:
-#line 2285 "parser.y"
+#line 2301 "parser.y"
     {
             if (currentSpec -> genc)
                 yyerror("References not allowed in a C module");
@@ -4869,21 +4885,21 @@ yyreduce:
     break;
 
   case 310:
-#line 2293 "parser.y"
+#line 2309 "parser.y"
     {
             (yyval.number) = 0;
         }
     break;
 
   case 311:
-#line 2296 "parser.y"
+#line 2312 "parser.y"
     {
             (yyval.number) = (yyvsp[(1) - (2)].number) + 1;
         }
     break;
 
   case 312:
-#line 2301 "parser.y"
+#line 2317 "parser.y"
     {
             (yyval.memArg).atype = defined_type;
             (yyval.memArg).u.snd = (yyvsp[(1) - (1)].scpvalp);
@@ -4891,7 +4907,7 @@ yyreduce:
     break;
 
   case 313:
-#line 2305 "parser.y"
+#line 2321 "parser.y"
     {
             templateDef *td;
 
@@ -4905,7 +4921,7 @@ yyreduce:
     break;
 
   case 314:
-#line 2315 "parser.y"
+#line 2331 "parser.y"
     {
             /* In a C module all structures must be defined. */
             if (currentSpec -> genc)
@@ -4922,182 +4938,182 @@ yyreduce:
     break;
 
   case 315:
-#line 2328 "parser.y"
+#line 2344 "parser.y"
     {
             (yyval.memArg).atype = ushort_type;
         }
     break;
 
   case 316:
-#line 2331 "parser.y"
+#line 2347 "parser.y"
     {
             (yyval.memArg).atype = short_type;
         }
     break;
 
   case 317:
-#line 2334 "parser.y"
+#line 2350 "parser.y"
     {
             (yyval.memArg).atype = uint_type;
         }
     break;
 
   case 318:
-#line 2337 "parser.y"
+#line 2353 "parser.y"
     {
             (yyval.memArg).atype = uint_type;
         }
     break;
 
   case 319:
-#line 2340 "parser.y"
+#line 2356 "parser.y"
     {
             (yyval.memArg).atype = int_type;
         }
     break;
 
   case 320:
-#line 2343 "parser.y"
+#line 2359 "parser.y"
     {
             (yyval.memArg).atype = long_type;
         }
     break;
 
   case 321:
-#line 2346 "parser.y"
+#line 2362 "parser.y"
     {
             (yyval.memArg).atype = ulong_type;
         }
     break;
 
   case 322:
-#line 2349 "parser.y"
+#line 2365 "parser.y"
     {
             (yyval.memArg).atype = longlong_type;
         }
     break;
 
   case 323:
-#line 2352 "parser.y"
+#line 2368 "parser.y"
     {
             (yyval.memArg).atype = ulonglong_type;
         }
     break;
 
   case 324:
-#line 2355 "parser.y"
+#line 2371 "parser.y"
     {
             (yyval.memArg).atype = float_type;
         }
     break;
 
   case 325:
-#line 2358 "parser.y"
+#line 2374 "parser.y"
     {
             (yyval.memArg).atype = double_type;
         }
     break;
 
   case 326:
-#line 2361 "parser.y"
+#line 2377 "parser.y"
     {
             (yyval.memArg).atype = bool_type;
         }
     break;
 
   case 327:
-#line 2364 "parser.y"
+#line 2380 "parser.y"
     {
             (yyval.memArg).atype = sstring_type;
         }
     break;
 
   case 328:
-#line 2367 "parser.y"
+#line 2383 "parser.y"
     {
             (yyval.memArg).atype = ustring_type;
         }
     break;
 
   case 329:
-#line 2370 "parser.y"
+#line 2386 "parser.y"
     {
             (yyval.memArg).atype = string_type;
         }
     break;
 
   case 330:
-#line 2373 "parser.y"
+#line 2389 "parser.y"
     {
             (yyval.memArg).atype = wstring_type;
         }
     break;
 
   case 331:
-#line 2376 "parser.y"
+#line 2392 "parser.y"
     {
             (yyval.memArg).atype = void_type;
         }
     break;
 
   case 332:
-#line 2379 "parser.y"
+#line 2395 "parser.y"
     {
             (yyval.memArg).atype = pyobject_type;
         }
     break;
 
   case 333:
-#line 2382 "parser.y"
+#line 2398 "parser.y"
     {
             (yyval.memArg).atype = pytuple_type;
         }
     break;
 
   case 334:
-#line 2385 "parser.y"
+#line 2401 "parser.y"
     {
             (yyval.memArg).atype = pylist_type;
         }
     break;
 
   case 335:
-#line 2388 "parser.y"
+#line 2404 "parser.y"
     {
             (yyval.memArg).atype = pydict_type;
         }
     break;
 
   case 336:
-#line 2391 "parser.y"
+#line 2407 "parser.y"
     {
             (yyval.memArg).atype = pycallable_type;
         }
     break;
 
   case 337:
-#line 2394 "parser.y"
+#line 2410 "parser.y"
     {
             (yyval.memArg).atype = pyslice_type;
         }
     break;
 
   case 338:
-#line 2397 "parser.y"
+#line 2413 "parser.y"
     {
             (yyval.memArg).atype = pytype_type;
         }
     break;
 
   case 339:
-#line 2400 "parser.y"
+#line 2416 "parser.y"
     {
             (yyval.memArg).atype = ellipsis_type;
         }
     break;
 
   case 340:
-#line 2405 "parser.y"
+#line 2421 "parser.y"
     {
             /* The single or first type. */
 
@@ -5107,7 +5123,7 @@ yyreduce:
     break;
 
   case 341:
-#line 2411 "parser.y"
+#line 2427 "parser.y"
     {
             /* Check there is nothing after an ellipsis. */
             if ((yyvsp[(1) - (3)].signature).args[(yyvsp[(1) - (3)].signature).nrArgs - 1].atype == ellipsis_type)
@@ -5125,14 +5141,14 @@ yyreduce:
     break;
 
   case 342:
-#line 2427 "parser.y"
+#line 2443 "parser.y"
     {
             (yyval.throwlist) = NULL;
         }
     break;
 
   case 343:
-#line 2430 "parser.y"
+#line 2446 "parser.y"
     {
             if (currentSpec->genc)
                 yyerror("Exceptions not allowed in a C module");
@@ -5142,7 +5158,7 @@ yyreduce:
     break;
 
   case 344:
-#line 2438 "parser.y"
+#line 2454 "parser.y"
     {
             /* Empty list so use a blank. */
 
@@ -5152,7 +5168,7 @@ yyreduce:
     break;
 
   case 345:
-#line 2444 "parser.y"
+#line 2460 "parser.y"
     {
             /* The only or first exception. */
 
@@ -5163,7 +5179,7 @@ yyreduce:
     break;
 
   case 346:
-#line 2451 "parser.y"
+#line 2467 "parser.y"
     {
             /* Check that it wasn't ...(,arg...). */
 
@@ -5182,7 +5198,7 @@ yyreduce:
 
 
 /* Line 1267 of yacc.c.  */
-#line 5186 "y.tab.c"
+#line 5202 "y.tab.c"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);
@@ -5396,7 +5412,7 @@ yyreturn:
 }
 
 
-#line 2467 "parser.y"
+#line 2483 "parser.y"
 
 
 
@@ -5423,7 +5439,9 @@ void parse(sipSpec *spec, FILE *fp, char *filename, stringList *tsl,
     spec -> typedefs = NULL;
     spec -> exphdrcode = NULL;
     spec -> docs = NULL;
+#ifdef SIP_QT
     spec -> sigslots = FALSE;
+#endif
     spec -> genc = -1;
     spec -> options = NULL;
 
@@ -5936,8 +5954,10 @@ static void finishClass(sipSpec *pt, moduleDef *mod, classDef *cd, optFlags *of)
     if ((flg = findOptFlag(of, "TypeFlags", integer_flag)) != NULL)
         cd->userflags = flg->fvalue.ival;
 
+#ifdef SIP_QT
     if (findOptFlag(of, "NoQMetaObject", bool_flag) != NULL)
         setNoQMetaObject(cd);
+#endif
 
     if (isOpaque(cd))
     {
@@ -7119,6 +7139,7 @@ static void newFunction(sipSpec *pt,moduleDef *mod,int sflags,int isstatic,
     if (isProtected(od))
         setHasShadow(cd);
 
+#ifdef SIP_QT
     if ((isSlot(od) || isSignal(od)) && !isPrivate(od))
     {
         if (isSignal(od))
@@ -7129,14 +7150,17 @@ static void newFunction(sipSpec *pt,moduleDef *mod,int sflags,int isstatic,
 
     if (isSignal(od) && (methodcode != NULL || vcode != NULL))
         yyerror("Cannot provide code for signals");
+#endif
 
     if (isstatic)
     {
+#ifdef SIP_QT
         if (isSignal(od))
             yyerror("Static functions cannot be signals");
 
         if (isvirt)
             yyerror("Static functions cannot be virtual");
+#endif
 
         setIsStatic(od);
     }
@@ -7170,8 +7194,10 @@ static void newFunction(sipSpec *pt,moduleDef *mod,int sflags,int isstatic,
 
     if (isvirt)
     {
+#ifdef SIP_QT
         if (isSignal(od) && !optNoEmitters(pt))
             yyerror("Virtual signals aren't supported");
+#endif
 
         setIsVirtual(od);
         setHasShadow(cd);

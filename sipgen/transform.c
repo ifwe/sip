@@ -107,6 +107,7 @@ void transform(sipSpec *pt)
     rev = NULL;
     cd = pt -> classes;
 
+#ifdef SIP_QT
     while (cd != NULL)
     {
         classDef *next = cd -> next;
@@ -123,6 +124,7 @@ void transform(sipSpec *pt)
 
         cd = next;
     }
+#endif
 
     pt -> classes = rev;
 
@@ -283,11 +285,13 @@ void transform(sipSpec *pt)
             cd->classnr = cd->real->classnr;
     }
 
+#ifdef SIP_QT
     /* Mark classes that should be registered as Qt meta types. */
     if (optRegisterTypes(pt))
         for (cd = pt->classes; cd != NULL; cd = cd->next)
             if (generatingCodeForModule(pt, cd->iff->module))
                 registerMetaType(cd);
+#endif
                 
     /* Autogenerate properties */
     if (optAutoProperties(pt))
@@ -401,6 +405,7 @@ static void addComplementarySlot(sipSpec *pt, classDef *cd, memberDef *md,
 }
 
 
+#ifdef SIP_QT
 /*
  * See if a class needs to be registered as a Qt meta type.
  */
@@ -457,6 +462,7 @@ static void registerMetaType(classDef *cd)
         addToUsedList(&cd->iff->module->used, cd->iff);
     }
 }
+#endif
 
 
 /*
@@ -1066,12 +1072,14 @@ static void setHierarchy(sipSpec *pt,classDef *base,classDef *cd,
             {
                 appendToMRO(cd -> mro,&tailp,mro -> cd);
 
+#ifdef SIP_QT
                 /*
                  * If the super-class is a QObject sub-class then this one is
                  * as well.
                  */
                 if (isQObjectSubClass(mro->cd))
                     setIsQObjectSubClass(cd);
+#endif
 
                 /*
                  * If the super-class has a shadow then this one should have
@@ -1423,7 +1431,11 @@ static void getVisibleMembers(sipSpec *pt, classDef *cd)
                         if (!generatingCodeForModule(pt, cd->iff->module))
                             continue;
 
-                        if (isProtected(od) || (isSignal(od) && !optNoEmitters(pt)))
+                        if (isProtected(od)
+#ifdef SIP_QT
+                            || (isSignal(od) && !optNoEmitters(pt))
+#endif
+                            )
                             setIsUsedName(md->pyname);
                     }
             }
@@ -1646,7 +1658,13 @@ static void resolveFuncTypes(sipSpec *pt, moduleDef *mod, classDef *scope, overD
     }
  
     /* Handle the Python signature. */
-    resolvePySigTypes(pt, mod, scope, od, &od->pysig,isSignal(od));
+    resolvePySigTypes(pt, mod, scope, od, &od->pysig, 
+#ifdef SIP_QT
+    isSignal(od)
+#else
+    0
+#endif
+    );
 
     /* These slots must return int. */
     res = &od -> pysig.result;
@@ -3042,9 +3060,11 @@ static void assignClassNrs(sipSpec *pt, moduleDef *mod, nodeDef *nd)
     {
         cd->classnr = mod->nrclasses++;
 
+#ifdef SIP_QT
         /* If we find a class called QObject, assume it's Qt. */
         if (strcmp(classBaseName(cd), "QObject") == 0)
             mod->qobjclass = cd->classnr;
+#endif
     }
 
     /* Assign all it's children. */

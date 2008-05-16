@@ -70,7 +70,9 @@
 
 /* Handle class flags.  These are combined with the section flags. */
 
+#ifdef SIP_QT
 #define CLASS_HAS_SIGSLOTS  0x00000200  /* It has signals or slots. */
+#endif
 #define CLASS_IS_ABSTRACT   0x00000400  /* It is an abstract class. */
 #define CLASS_HAS_SHADOW    0x00000800  /* It is has a shadow class. */
 #define CLASS_IS_OPAQUE     0x00001000  /* It is opaque. */
@@ -84,13 +86,17 @@
 #define CLASS_IS_EXTERNAL   0x00100000  /* It is external. */
 #define CLASS_IS_DELAYED_DTOR   0x00200000  /* The dtor is delayed. */
 #define CLASS_NO_DEFAULT_CTORS  0x00400000  /* Don't create default ctors. */
+#ifdef SIP_QT
 #define CLASS_QOBJECT_SUB   0x00800000  /* It is derived from QObject. */
+#endif
 #define CLASS_DTOR_HOLD_GIL 0x01000000  /* The dtor holds the GIL. */
+#ifdef SIP_QT
 #define CLASS_QT_META_TYPE  0x02000000  /* Register as a Qt meta type. */
 #define CLASS_NO_QMETAOBJECT    0x04000000  /* It has no QMetaObject. */
 
 #define hasSigSlots(cd)     ((cd)->classflags & CLASS_HAS_SIGSLOTS)
 #define setHasSigSlots(cd)  ((cd)->classflags |= CLASS_HAS_SIGSLOTS)
+#endif
 #define isAbstractClass(cd) ((cd)->classflags & CLASS_IS_ABSTRACT)
 #define setIsAbstractClass(cd)  ((cd)->classflags |= CLASS_IS_ABSTRACT)
 #define hasShadow(cd)       ((cd)->classflags & CLASS_HAS_SHADOW)
@@ -125,10 +131,12 @@
 #define setIsQObjectSubClass(cd)    ((cd)->classflags |= CLASS_QOBJECT_SUB)
 #define isHoldGILDtor(c)    ((cd)->classflags & CLASS_DTOR_HOLD_GIL)
 #define setIsHoldGILDtor(c) ((cd)->classflags |= CLASS_DTOR_HOLD_GIL)
+#ifdef SIP_QT
 #define registerQtMetaType(c)   ((cd)->classflags & CLASS_QT_META_TYPE)
 #define setRegisterQtMetaType(c)    ((cd)->classflags |= CLASS_QT_META_TYPE)
 #define noQMetaObject(c)    ((cd)->classflags & CLASS_NO_QMETAOBJECT)
 #define setNoQMetaObject(c) ((cd)->classflags |= CLASS_NO_QMETAOBJECT)
+#endif
 
 #define isPublicDtor(cd)    ((cd)->classflags & SECT_IS_PUBLIC)
 #define setIsPublicDtor(cd) ((cd)->classflags |= SECT_IS_PUBLIC)
@@ -227,10 +235,12 @@
 #define setIsProtected(o)   ((o)->overflags |= SECT_IS_PROT)
 #define isPrivate(o)        ((o)->overflags & SECT_IS_PRIVATE)
 #define setIsPrivate(o)     ((o)->overflags |= SECT_IS_PRIVATE)
+#ifdef SIP_QT
 #define isSlot(o)           ((o)->overflags & SECT_IS_SLOT)
 #define setIsSlot(o)        ((o)->overflags |= SECT_IS_SLOT)
 #define isSignal(o)         ((o)->overflags & SECT_IS_SIGNAL)
 #define setIsSignal(o)      ((o)->overflags |= SECT_IS_SIGNAL)
+#endif
 
 #define isVirtual(o)        ((o)->overflags & OVER_IS_VIRTUAL)
 #define setIsVirtual(o)     ((o)->overflags |= OVER_IS_VIRTUAL)
@@ -296,7 +306,10 @@
 #define ARG_IN              0x0200  /* It passes an argument. */
 #define ARG_OUT             0x0400  /* It returns a result. */
 #define ARG_CONSTRAINED     0x0800  /* Suppress type conversion. */
+#ifdef SIP_QT
 #define ARG_SINGLE_SHOT     0x1000  /* The slot is only ever fired once. */
+#endif
+
 #define ARG_RESULT_SIZE     0x2000  /* It defines the result size. */
 
 #define isReference(a)      ((a)->argflags & ARG_IS_REF)
@@ -971,7 +984,9 @@ typedef struct {
     typedefDef *typedefs;               /* List of typedefs. */
     codeBlock *exphdrcode;              /* Exported header code. */
     codeBlock *docs;                    /* Documentation. */
+#ifdef SIP_QT
     int sigslots;                       /* Set if signals or slots are used. */
+#endif
     int genc;                           /* Set if we are generating C code. */
     struct _stringList *options;        /* The list of options. */
 } sipSpec;

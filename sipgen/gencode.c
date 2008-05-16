@@ -112,8 +112,10 @@ static void generateNamedValueType(classDef *, argDef *, char *, FILE *);
 static void generateBaseType(classDef *, argDef *, FILE *);
 static void generateNamedBaseType(classDef *, argDef *, char *, FILE *);
 static void generateTupleBuilder(signatureDef *, FILE *);
+#ifdef SIP_QT
 static void generateEmitters(classDef *cd, FILE *fp);
 static void generateEmitter(classDef *, visibleList *, FILE *);
+#endif
 static void generateVirtualHandler(virtHandlerDef *vhd, FILE *fp);
 static void generateVirtHandlerErrorReturn(argDef *res, FILE *fp);
 static void generateVirtualCatcher(moduleDef *mod, classDef *cd, int virtNr,
@@ -1916,6 +1918,7 @@ static void generateCpp(sipSpec *pt, moduleDef *mod, const char *codeDir,
             , xd->pyname, xd->exceptionnr);
     }
 
+#ifdef SIP_QT
     /* Generate any Qt meta type registration calls. */
     if (optRegisterTypes(pt))
         for (cd = pt->classes; cd != NULL; cd = cd->next)
@@ -1924,6 +1927,7 @@ static void generateCpp(sipSpec *pt, moduleDef *mod, const char *codeDir,
                     prcode(fp,
 "    qRegisterMetaType<%S>(\"%S\");\n"
                         , classFQCName(cd), classFQCName(cd));
+#endif
 
     /* Generate any post-initialisation code. */
     generateCppCodeBlock(mod->postinitcode, fp);
@@ -5240,6 +5244,7 @@ static void generateShadowCode(sipSpec *pt, moduleDef *mod, classDef *cd,
             );
     }
 
+#ifdef SIP_QT
     /* The meta methods if required. */
     if (isQObjectSubClass(cd) && optQ_OBJECT4(pt))
     {
@@ -5275,6 +5280,7 @@ static void generateShadowCode(sipSpec *pt, moduleDef *mod, classDef *cd,
             , classFQCName(cd)
             , mod->name, mod->name, classFQCName(cd), classFQCName(cd));
     }
+#endif
 
     /* Generate the virtual catchers. */
  
@@ -5303,12 +5309,15 @@ static void generateShadowCode(sipSpec *pt, moduleDef *mod, classDef *cd,
 
     generateProtectedDefinitions(cd,fp);
 
+#ifdef SIP_QT
     /* Generate the emitters if needed. */
     if (!optNoEmitters(pt))
         generateEmitters(cd, fp);
+#endif
 }
 
 
+#ifdef SIP_QT
 /*
  * Generate the emitter functions.
  */
@@ -5366,6 +5375,7 @@ static void generateEmitters(classDef *cd, FILE *fp)
 "};\n"
             );
 }
+#endif
 
 
 /*
@@ -5805,6 +5815,7 @@ static void generateCallDefaultCtor(ctorDef *ct, FILE *fp)
 }
 
 
+#ifdef SIP_QT
 /*
  * Generate the emitter function for a signal.
  */
@@ -5896,6 +5907,7 @@ static void generateEmitter(classDef *cd, visibleList *vl, FILE *fp)
         ,classFQCName(cd),classFQCName(cd)
         ,pname);
 }
+#endif
 
 
 /*
@@ -7115,6 +7127,7 @@ static void generateShadowClassDeclaration(sipSpec *pt,classDef *cd,FILE *fp)
 "    %s~sip%C()%X;\n"
             ,(cd->vmembers != NULL ? "virtual " : ""),classFQCName(cd),cd->dtorexceptions);
 
+#ifdef SIP_QT
     /* The metacall methods if required. */
     if (isQObjectSubClass(cd) && optQ_OBJECT4(pt))
         prcode(fp,
@@ -7123,6 +7136,7 @@ static void generateShadowClassDeclaration(sipSpec *pt,classDef *cd,FILE *fp)
 "    int qt_metacall(QMetaObject::Call,int,void **);\n"
 "    void *qt_metacast(const char *);\n"
             );
+#endif
 
     /* The exposure of protected enums. */
 
@@ -7146,6 +7160,7 @@ static void generateShadowClassDeclaration(sipSpec *pt,classDef *cd,FILE *fp)
             if (vl->m->slot != no_slot)
                 continue;
 
+#ifdef SIP_QT
             for (od = vl->cd->overs; od != NULL; od = od->next)
             {
                 if (od->common != vl->m || !isSignal(od))
@@ -7171,6 +7186,7 @@ static void generateShadowClassDeclaration(sipSpec *pt,classDef *cd,FILE *fp)
 
                 break;
             }
+#endif // SIP_QT
         }
     }
 
@@ -8086,6 +8102,7 @@ static void generateTypeDefinition(sipSpec *pt, classDef *cd, FILE *fp)
                 );
     }
 
+#ifdef SIP_QT
     if (!optNoEmitters(pt) && hasSigSlots(cd))
         prcode(fp,
 "    signals_%C,\n"
@@ -8094,6 +8111,7 @@ static void generateTypeDefinition(sipSpec *pt, classDef *cd, FILE *fp)
         prcode(fp,
 "    0,\n"
             );
+#endif
 
     prcode(fp,
 "    {");
@@ -8166,6 +8184,7 @@ static void generateTypeDefinition(sipSpec *pt, classDef *cd, FILE *fp)
 "    0,\n"
             );
 
+#ifdef SIP_QT
     if (isQObjectSubClass(cd) && !noQMetaObject(cd) && optQ_OBJECT4(pt))
         prcode(fp,
 "    &%U::staticMetaObject\n"
@@ -8174,6 +8193,7 @@ static void generateTypeDefinition(sipSpec *pt, classDef *cd, FILE *fp)
         prcode(fp,
 "    0\n"
             );
+#endif
 
     prcode(fp,
 "};\n"
@@ -8777,9 +8797,11 @@ static int skipOverload(overDef *od,memberDef *md,classDef *cd,classDef *ccd,
     if (od->common != md)
         return TRUE;
 
+#ifdef SIP_QT
     /* Skip if it's a signal. */
     if (isSignal(od))
         return TRUE;
+#endif
 
     /* Skip if it's a private abstract. */
     if (isAbstract(od) && isPrivate(od))
@@ -10317,6 +10339,7 @@ static int generateArgParser(signatureDef *sd, classDef *cd, ctorDef *ct,
             fmt = (secCall ? "" : "S");
             break;
 
+#ifdef SIP_QT
         case rxcon_type:
             fmt = (secCall ? (isSingleShot(ad) ? "g" : "y") : "q");
             break;
@@ -10324,6 +10347,7 @@ static int generateArgParser(signatureDef *sd, classDef *cd, ctorDef *ct,
         case rxdis_type:
             fmt = (secCall ? "Y" : "Q");
             break;
+#endif
 
         case mapped_type:
             fmt = getSubFormatChar('M',ad);

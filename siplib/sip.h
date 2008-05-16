@@ -184,8 +184,10 @@ typedef struct _sipWrapperType {
     /* The list of init extenders. */
     struct _sipInitExtenderDef *iextend;
 
+#ifdef SIP_QT
     /* The optional PyQt defined Q_OBJECT information. */
     void *qt_qobject;
+#endif
 } sipWrapperType;
 
 
@@ -581,8 +583,10 @@ typedef struct _sipTypeDef {
     /* The convert to function. */
     sipConvertToFunc td_cto;
 
+#ifdef SIP_QT
     /* Emit table for Qt signals. */
     struct _sipQtSignal *td_emit;
+#endif
 
     /* The static instances. */
     sipInstancesDef td_instances;
@@ -593,8 +597,10 @@ typedef struct _sipTypeDef {
     /* The pickle function. */
     sipPickleFunc td_pickle;
 
+#ifdef SIP_QT
     /* The optional PyQt defined information. */
     const void *td_qt;
+#endif
 } sipTypeDef;
 
 
@@ -686,8 +692,10 @@ typedef struct _sipExportedModuleDef {
     /* The imported modules. */
     sipImportedModuleDef *em_imports;
 
+#ifdef SIP_QT
     /* The optional Qt support API. */
     struct _sipQtAPI *em_qt_api;
+#endif
 
     /* The number of types. */
     int em_nrtypes;
@@ -972,6 +980,7 @@ typedef struct _sipMethodCache {
 } sipMethodCache;
 
 
+#ifdef SIP_QT
 /*
  * A slot (in the Qt, rather than Python, sense).
  */
@@ -988,7 +997,6 @@ typedef struct _sipSlot {
     /* A weak reference to the slot, Py_True if pyobj has an extra reference. */
     PyObject *weakSlot;
 } sipSlot;
-
 
 /*
  * An entry in a linked list of slots.
@@ -1081,6 +1089,7 @@ typedef struct _sipQtSignal {
     sipEmitFunc st_emitfunc;
 } sipQtSignal;
 
+#endif /* SIP_QT */
 
 /*
  * The API exported by the SIP module, ie. pointers to all the data and
@@ -1157,6 +1166,7 @@ typedef struct _sipAPIDef {
     PyObject *(*api_convert_from_named_enum)(int eval, PyTypeObject *et);
     PyObject *(*api_convert_from_void_ptr)(void *val);
 
+#ifdef SIP_QT
     /*
      * The following may be used by Qt support code but no other handwritten
      * code.
@@ -1167,6 +1177,7 @@ typedef struct _sipAPIDef {
             const char *sig, PyObject *rxObj, const char *slot);
     void *(*api_convert_rx)(sipWrapper *txSelf, const char *sigargs,
             PyObject *rxObj, const char *slot, const char **memberp);
+#endif
 
     /*
      * The following are not part of the public API.
@@ -1220,12 +1231,14 @@ typedef struct _sipAPIDef {
     int (*api_export_symbol)(const char *name, void *sym);
     void *(*api_import_symbol)(const char *name);
 
+#ifdef SIP_QT
     /*
      * The following may be used by Qt support code but no other handwritten
      * code.
      */
     int (*api_register_int_types)(PyObject *args);
     sipSignature *(*api_parse_signature)(const char *sig);
+#endif
 
     /*
      * The following are part of the public API.
@@ -1255,15 +1268,17 @@ typedef struct _sipAPIDef {
     PyObject *(*api_convert_from_const_void_ptr_and_size)(const void *val,
             SIP_SSIZE_T size);
 
+#ifdef SIP_QT
     /*
      * The following may be used by Qt support code but no other handwritten
      * code.
      */
     PyObject *(*api_invoke_slot)(const sipSlot *slot, PyObject *sigargs);
     void (*api_parse_type)(const char *type, sipSigArg *arg);
+#endif
 } sipAPIDef;
 
-
+#ifdef SIP_QT
 /*
  * The API implementing the optional Qt support.
  */
@@ -1293,7 +1308,7 @@ typedef struct _sipQtAPI {
     void *(*qt_create_universal_slot_ex)(struct _sipWrapper *,
             struct _sipSlotConnection *, const char **, int);
 } sipQtAPI;
-
+#endif
 
 /*
  * These are flags that can be passed to sipCanConvertToInstance(),

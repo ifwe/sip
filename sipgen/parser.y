@@ -2073,6 +2073,7 @@ rawarglist: {
     ;
 
 argvalue:   TK_SIPSIGNAL optname optflags optassign {
+#ifdef SIP_QT
             $$.atype = signal_type;
             $$.argflags = ARG_IS_CONST;
             $$.nrderefs = 0;
@@ -2080,8 +2081,10 @@ argvalue:   TK_SIPSIGNAL optname optflags optassign {
             $$.defval = $4;
 
             currentSpec -> sigslots = TRUE;
+#endif
         }
     |   TK_SIPSLOT optname optflags optassign {
+#ifdef SIP_QT
             $$.atype = slot_type;
             $$.argflags = ARG_IS_CONST;
             $$.nrderefs = 0;
@@ -2089,8 +2092,10 @@ argvalue:   TK_SIPSIGNAL optname optflags optassign {
             $$.defval = $4;
 
             currentSpec -> sigslots = TRUE;
+#endif
         }
     |   TK_SIPANYSLOT optname optflags optassign {
+#ifdef SIP_QT
             $$.atype = anyslot_type;
             $$.argflags = ARG_IS_CONST;
             $$.nrderefs = 0;
@@ -2098,8 +2103,10 @@ argvalue:   TK_SIPSIGNAL optname optflags optassign {
             $$.defval = $4;
 
             currentSpec -> sigslots = TRUE;
+#endif
         }
     |   TK_SIPRXCON optname optflags {
+#ifdef SIP_QT
             $$.atype = rxcon_type;
             $$.argflags = 0;
             $$.nrderefs = 0;
@@ -2109,16 +2116,20 @@ argvalue:   TK_SIPSIGNAL optname optflags optassign {
                 $$.argflags |= ARG_SINGLE_SHOT;
 
             currentSpec -> sigslots = TRUE;
+#endif
         }
     |   TK_SIPRXDIS optname optflags {
+#ifdef SIP_QT
             $$.atype = rxdis_type;
             $$.argflags = 0;
             $$.nrderefs = 0;
             $$.name = $2;
 
             currentSpec -> sigslots = TRUE;
+#endif
         }
     |   TK_SIPSLOTCON '(' arglist ')' optname optflags {
+#ifdef SIP_QT
             $$.atype = slotcon_type;
             $$.argflags = ARG_IS_CONST;
             $$.nrderefs = 0;
@@ -2132,8 +2143,10 @@ argvalue:   TK_SIPSIGNAL optname optflags optassign {
             *$$.u.sa = $3;
 
             currentSpec -> sigslots = TRUE;
+#endif
         }
     |   TK_SIPSLOTDIS '(' arglist ')' optname optflags {
+#ifdef SIP_QT
             $$.atype = slotdis_type;
             $$.argflags = ARG_IS_CONST;
             $$.nrderefs = 0;
@@ -2147,12 +2160,15 @@ argvalue:   TK_SIPSIGNAL optname optflags optassign {
             *$$.u.sa = $3;
 
             currentSpec -> sigslots = TRUE;
+#endif
         }
     |   TK_QOBJECT optname optflags {
+#ifdef SIP_QT
             $$.atype = qobject_type;
             $$.argflags = 0;
             $$.nrderefs = 0;
             $$.name = $2;
+#endif
         }
     |   argtype optassign {
             $$ = $1;
@@ -2490,7 +2506,9 @@ void parse(sipSpec *spec, FILE *fp, char *filename, stringList *tsl,
     spec -> typedefs = NULL;
     spec -> exphdrcode = NULL;
     spec -> docs = NULL;
+#ifdef SIP_QT
     spec -> sigslots = FALSE;
+#endif
     spec -> genc = -1;
     spec -> options = NULL;
 
@@ -3003,8 +3021,10 @@ static void finishClass(sipSpec *pt, moduleDef *mod, classDef *cd, optFlags *of)
     if ((flg = findOptFlag(of, "TypeFlags", integer_flag)) != NULL)
         cd->userflags = flg->fvalue.ival;
 
+#ifdef SIP_QT
     if (findOptFlag(of, "NoQMetaObject", bool_flag) != NULL)
         setNoQMetaObject(cd);
+#endif
 
     if (isOpaque(cd))
     {
@@ -4186,6 +4206,7 @@ static void newFunction(sipSpec *pt,moduleDef *mod,int sflags,int isstatic,
     if (isProtected(od))
         setHasShadow(cd);
 
+#ifdef SIP_QT
     if ((isSlot(od) || isSignal(od)) && !isPrivate(od))
     {
         if (isSignal(od))
@@ -4196,14 +4217,17 @@ static void newFunction(sipSpec *pt,moduleDef *mod,int sflags,int isstatic,
 
     if (isSignal(od) && (methodcode != NULL || vcode != NULL))
         yyerror("Cannot provide code for signals");
+#endif
 
     if (isstatic)
     {
+#ifdef SIP_QT
         if (isSignal(od))
             yyerror("Static functions cannot be signals");
 
         if (isvirt)
             yyerror("Static functions cannot be virtual");
+#endif
 
         setIsStatic(od);
     }
@@ -4237,8 +4261,10 @@ static void newFunction(sipSpec *pt,moduleDef *mod,int sflags,int isstatic,
 
     if (isvirt)
     {
+#ifdef SIP_QT
         if (isSignal(od) && !optNoEmitters(pt))
             yyerror("Virtual signals aren't supported");
+#endif
 
         setIsVirtual(od);
         setHasShadow(cd);
