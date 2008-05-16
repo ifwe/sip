@@ -6,3 +6,4 @@ sip
 sip.so
 
 .DS_Store
+sipconfig.py
