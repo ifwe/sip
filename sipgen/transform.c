@@ -3144,7 +3144,7 @@ static varDef* addOrFindProperty(sipSpec* pt, moduleDef* module, classDef* cd, o
     propertyName = cacheName(pt, over->cppname + 3);
         
     /* Find the property if it already exists. */
-    findProperty(pt, module, cd, over, propertyName);
+    var = findProperty(pt, module, cd, over, propertyName);
     if (var != NULL)
         return var;
     
