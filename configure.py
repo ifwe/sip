@@ -216,7 +216,10 @@ def set_platform_directories():
     plat_py_conf_inc_dir = os.path.dirname(sysconfig.get_config_h_filename())
 
     if sys.platform == "win32":
-        plat_py_lib_dir = sys.prefix + "\\libs"
+        if sysconfig.python_build:
+            plat_py_lib_dir = sysconfig.project_base
+        else:
+            plat_py_lib_dir = sys.prefix + "\\libs"
         plat_bin_dir = sys.exec_prefix
         plat_sip_dir = sys.prefix + "\\sip"
     else:
