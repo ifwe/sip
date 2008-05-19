@@ -139,6 +139,7 @@ static void generateBinarySlotCall(classDef *cd, overDef *od, const char *op,
         int deref, FILE *fp);
 static void generateNumberSlotCall(overDef *od, char *op, FILE *fp);
 static void generateVariableHandler(classDef *, varDef *, FILE *);
+static void generatePropertyHandler(classDef* context, varDef *, FILE *);
 static int generateObjToCppConversion(argDef *, FILE *);
 static void generateVarClassConversion(varDef *, FILE *);
 static void generateVarMember(varDef *vd, FILE *fp);
@@ -3379,12 +3380,15 @@ static void generateClassCpp(classDef *cd, sipSpec *pt, FILE *fp)
 
     generateAccessFunctions(pt, mod, cd, fp);
 
-    /* Generate the variable handlers. */
+    /* Generate the variable and property handlers. */
     if (hasVarHandlers(cd))
     {
         for (vd = pt->vars; vd != NULL; vd = vd->next)
             if (vd->ecd == cd && needsHandler(vd))
-                generateVariableHandler(cd, vd, fp);
+                if (isProperty(vd))
+                    generatePropertyHandler(cd, vd, fp);
+                else
+                    generateVariableHandler(cd, vd, fp);
 
         /* Generate the variable table. */
         prcode(fp,
@@ -3817,15 +3821,7 @@ static void generatePropertyHandler(classDef* context, varDef *vd, FILE *fp)
  */
 static void generateVariableHandler(classDef *context, varDef *vd, FILE *fp)
 {
-    argType atype;
-
-    if (isProperty(vd))
-    {
-        generatePropertyHandler(context, vd, fp);
-        return;
-    }
-
-    atype = vd->type.atype;
+    argType atype = vd->type.atype;
     const char *first_arg;
     int no_setter;
 

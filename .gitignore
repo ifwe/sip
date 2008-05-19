@@ -5,5 +5,15 @@ Makefile
 sip
 sip.so
 
+# windows binary files
+*.pdb
+*.obj
+*.exe.manifest
+*.exe
+*.lib
+*.pyd
+*.pyd.manifest
+*.exp
+
 .DS_Store
 sipconfig.py
