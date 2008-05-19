@@ -2,8 +2,7 @@
 # extension modules created with SIP.  It provides information about file
 # locations, version numbers etc., and provides some classes and functions.
 #
-# Copyright (c) 2008
-# 	Phil Thompson <phil@river-bank.demon.co.uk>
+# Copyright (c) 2008 Riverbank Computing Limited <info@riverbankcomputing.com>
 # 
 # This file is part of SIP.
 # 
@@ -176,6 +175,17 @@ class _Macro:
         """
         for el in value:
             self.append(el)
+
+    def remove(self, value): 
+        """Remove a value from the macro.  It doesn't matter if the value 
+        wasn't present. 
+ 
+        value is the value to remove. 
+        """ 
+        try: 
+            self._macro.remove(value) 
+        except: 
+            pass 
 
     def as_list(self):
         """Return the macro as a list.
@@ -501,6 +511,7 @@ class Makefile:
 
             if self.config.qt_version >= 0x040000:
                 for mod in self._qt:
+                    # Note that qmake doesn't define anything for QtHelp.
                     if mod == "QtCore":
                         defines.append("QT_CORE_LIB")
                     elif mod == "QtGui":
@@ -515,8 +526,14 @@ class Makefile:
                         defines.append("QT_SQL_LIB")
                     elif mod == "QtTest":
                         defines.append("QT_TEST_LIB")
+                    elif mod == "QtWebKit":
+                        defines.append("QT_WEBKIT_LIB")
                     elif mod == "QtXml":
                         defines.append("QT_XML_LIB")
+                    elif mod == "QtXmlPatterns":
+                        defines.append("QT_XMLPATTERNS_LIB")
+                    elif mod == "phonon":
+                        defines.append("QT_PHONON_LIB")
             elif self._threaded:
                 defines.append("QT_THREAD_SUPPORT")
 
@@ -537,17 +554,21 @@ class Makefile:
 
                 # For Windows: the dependencies between Qt libraries.
                 qdepmap = {
-                    "QtAssistant":  ("QtCore", "QtGui", "QtNetwork"),
-                    "QtGui":        ("QtCore", ),
-                    "QtNetwork":    ("QtCore", ),
-                    "QtOpenGL":     ("QtCore", "QtGui"),
-                    "QtScript":     ("QtCore", ),
-                    "QtSql":        ("QtCore", ),
-                    "QtSvg":        ("QtCore", "QtGui", "QtXml"),
-                    "QtTest":       ("QtCore", "QtGui"),
-                    "QtXml":        ("QtCore", ),
-                    "QtDesigner":   ("QtCore", "QtGui"),
-                    "QAxContainer": ("QtCore", "QtGui")
+                    "QtAssistant":      ("QtCore", "QtGui", "QtNetwork"),
+                    "QtGui":            ("QtCore", ),
+                    "QtHelp":           ("QtCore", "QtGui", "QtSql"),
+                    "QtNetwork":        ("QtCore", ),
+                    "QtOpenGL":         ("QtCore", "QtGui"),
+                    "QtScript":         ("QtCore", ),
+                    "QtSql":            ("QtCore", ),
+                    "QtSvg":            ("QtCore", "QtGui", "QtXml"),
+                    "QtTest":           ("QtCore", "QtGui"),
+                    "QtWebKit":         ("QtCore", "QtGui", "QtNetwork"),
+                    "QtXml":            ("QtCore", ),
+                    "QtXmlPatterns":    ("QtCore", ),
+                    "phonon":           ("QtCore", "QtGui"),
+                    "QtDesigner":       ("QtCore", "QtGui"),
+                    "QAxContainer":     ("QtCore", "QtGui")
                 }
 
                 # The QtSql .prl file doesn't include QtGui as a dependency (at
@@ -700,9 +721,10 @@ class Makefile:
                 lib = lib + "_debug"
 
         if sys.platform == "win32" and "shared" in string.split(self.config.qt_winconfig):
-            if (mname in ("QtCore", "QtGui", "QtNetwork", "QtOpenGL",
-                          "QtScript", "QtSql", "QtSvg", "QtTest", "QtXml",
-                          "QtDesigner") or
+            if (mname in ("QtCore", "QtDesigner", "QtGui", "QtHelp",
+                          "QtNetwork", "QtOpenGL", "QtScript", "QtSql",
+                          "QtSvg", "QtTest", "QtWebKit", "QtXml",
+                          "QtXmlPatterns", "phonon") or
                 (self.config.qt_version >= 0x040200 and mname == "QtAssistant")):
                 lib = lib + "4"
 
@@ -1399,6 +1421,11 @@ class ModuleMakefile(Makefile):
                 if link_shlib:
                     self.LINK.set(link_shlib)
 
+        # This made an appearence in Qt v4.4rc1 and breaks extension modules so
+        # remove it.  It was removed at my request but some stupid distros may
+        # have kept it.
+        self.LFLAGS.remove('-Wl,--no-undefined') 
+
     def module_as_lib(self, mname):
         """Return the name of a SIP v3.x module when it is used as a library.
         This will raise an exception when used with SIP v4.x modules.
@@ -1715,7 +1742,7 @@ class ProgramMakefile(Makefile):
             mfile.write("\t  $(OFILES) $(LIBS)\n")
             mfile.write("<<\n")
 
-            if "embed_manifest_dll" in self.optional_list("CONFIG"):
+            if "embed_manifest_exe" in self.optional_list("CONFIG"):
                 mfile.write("\tmt -nologo -manifest $(TARGET).manifest -outputresource:$(TARGET);1\n")
         elif self.generator == "BMAKE":
             mfile.write("\t$(LINK) @&&|\n")
@@ -1851,13 +1878,13 @@ def create_content(dict, macros=None):
     for k in keys:
         val = dict[k]
         vtype = type(val)
+        delim = None
 
         if val is None:
             val = "None"
         elif vtype == types.ListType:
-            val = "'" + string.join(val) + "'"
-        elif vtype == types.StringType:
-            val = "'" + val + "'"
+            val = string.join(val)
+            delim = "'"
         elif vtype == types.IntType:
             if string.find(k, "version") >= 0:
                 # Assume it's a hexadecimal version number.  It doesn't matter
@@ -1866,7 +1893,14 @@ def create_content(dict, macros=None):
             else:
                 val = str(val)
         else:
-            val = "'" + str(val) + "'"
+            val = str(val)
+            delim = "'"
+
+        if delim:
+            if "'" in val:
+                delim = "'''"
+
+            val = delim + val + delim
 
         content = content + "    '" + k + "':" + (" " * (width - len(k) + 2)) + string.replace(val, "\\", "\\\\")
 
@@ -1898,8 +1932,14 @@ def create_content(dict, macros=None):
             else:
                 sep = ","
 
+            val = macros[c]
+            if "'" in val:
+                delim = "'''"
+            else:
+                delim = "'"
+
             k = "'" + c + "':"
-            content = content + "    %-*s  '%s'%s\n" % (1 + width + 2, k, string.replace(macros[c], "\\", "\\\\"), sep)
+            content = content + "    %-*s  %s%s%s%s\n" % (1 + width + 2, k, delim, string.replace(val, "\\", "\\\\"), delim, sep)
 
         content = content + "}\n"
     else:
@@ -2174,6 +2214,9 @@ def parse_build_macros(filename, names, overrides=None, properties=None):
             if assstart > 0:
                 lhs = string.strip(line[:assstart])
                 rhs = string.strip(line[assend + 1:])
+
+                # Remove the escapes for any quotes.
+                rhs = rhs.replace(r'\"', '"').replace(r"\'", "'")
 
                 raw[lhs] = rhs
 

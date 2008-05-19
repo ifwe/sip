@@ -1,7 +1,6 @@
 # This script handles the SIP configuration and generates the Makefiles.
 #
-# Copyright (c) 2008
-# 	Phil Thompson <phil@river-bank.demon.co.uk>
+# Copyright (c) 2008 Riverbank Computing Limited <info@riverbankcomputing.com>
 # 
 # This file is part of SIP.
 # 
@@ -23,8 +22,8 @@ import siputils
 
 
 # Initialise the globals.
-sip_version = 0x040704
-sip_version_str = "4.7.4"
+sip_version = 0x040706
+sip_version_str = "4.7.6-snapshot-20080518"
 py_version = sys.hexversion >> 8
 plat_py_site_dir = None
 plat_py_inc_dir = None
@@ -35,6 +34,9 @@ plat_bin_dir = None
 platform_specs = []
 default_platform = None
 
+# Constants.
+DEFAULT_MACOSX_SDK = 'MacOSX10.5.sdk'
+
 # Command line options.
 opt_platform = None
 opt_sipbindir = None
@@ -44,7 +46,7 @@ opt_sipsipdir = None
 opt_static = 0
 opt_debug = 0
 opt_export_all = 0
-opt_universal = ''
+opt_universal = None
 
 # The names of build macros extracted from the platform specific configuration
 # files.
@@ -94,7 +96,7 @@ def usage(rcode = 2):
     rcode is the return code passed back to the calling process.
     """
     print "Usage:"
-    print "  python configure.py [-h] [-b dir] [-d dir] [-e dir] [-k] [-n] [-p plat] [-u] [-v dir] option=value option+=value ..."
+    print "  python configure.py [-h] [-b dir] [-d dir] [-e dir] [-k] [-n] [-p plat] [-s sdk] [-u] [-v dir] option=value option+=value ..."
     print "where:"
     print "  -h       display this help message"
     print "  -b dir   where the SIP code generator will be installed [default %s]" % opt_sipbindir
@@ -103,6 +105,7 @@ def usage(rcode = 2):
     print "  -k       build the SIP module as a static library"
     print "  -n       build the SIP code generator and module as universal binaries on MacOS/X"
     print "  -p plat  the platform/compiler configuration [default %s]" % default_platform
+    print "  -s sdk   the name of the MacOS/X SDK used when building universal binaries [default %s]" % DEFAULT_MACOSX_SDK
     print "  -u       build with debugging symbols"
     print "  -v dir   where .sip files are normally installed [default %s]" % opt_sipsipdir
 
@@ -175,7 +178,9 @@ def set_defaults():
     default_platform = "none"
 
     if sys.platform == "win32":
-        if py_version >= 0x020400:
+        if py_version >= 0x020600:
+            default_platform = "win32-msvc2008"
+        elif py_version >= 0x020400:
             default_platform = "win32-msvc.net"
         else:
             default_platform = "win32-msvc"
@@ -201,7 +206,7 @@ def inform_user():
     siputils.inform("The platform/compiler configuration is %s." % opt_platform)
 
     if opt_universal:
-        siputils.inform("MacOS/X universal binaries will be created.")
+        siputils.inform("MacOS/X universal binaries will be created using %s." % opt_universal)
 
 
 def set_platform_directories():
@@ -212,7 +217,7 @@ def set_platform_directories():
     global plat_bin_dir, plat_py_lib_dir, plat_sip_dir
 
     # We trust distutils for some stuff.
-    plat_py_site_dir = sysconfig.get_python_lib()
+    plat_py_site_dir = sysconfig.get_python_lib(plat_specific=1)
     plat_py_inc_dir = sysconfig.get_python_inc()
     plat_py_conf_inc_dir = os.path.dirname(sysconfig.get_config_h_filename())
 
@@ -221,17 +226,7 @@ def set_platform_directories():
         plat_bin_dir = sys.exec_prefix
         plat_sip_dir = sys.prefix + "\\sip"
     else:
-        vers = "%d.%d" % ((py_version >> 16) & 0xff, (py_version >> 8) & 0xff)
-
-        # Some 64 bit Linux distros (Mandriva, SuSE) seem to add sys.lib as a
-        # non-standard extension presumably to allow 32 and 64 bit versions to
-        # be installed side by side.  Use it if it seems to be available.
-        try:
-            lib_dir = sys.lib
-        except AttributeError:
-            lib_dir = "lib"
-
-        lib_dir = sys.prefix + "/" + lib_dir + "/python" + vers
+        lib_dir = sysconfig.get_python_lib(plat_specific=1, standard_lib=1)
 
         plat_py_lib_dir = lib_dir + "/config"
         plat_bin_dir = sys.exec_prefix + "/bin"
@@ -341,12 +336,14 @@ def main(argv):
     set_defaults()
 
     try:
-        optlist, args = getopt.getopt(argv[1:], "hab:d:e:knp:uv:")
+        optlist, args = getopt.getopt(argv[1:], "hab:d:e:knp:s:uv:")
     except getopt.GetoptError:
         usage()
 
     global opt_sipbindir, opt_sipmoddir, opt_sipincdir, opt_sipsipdir
     global opt_platform, opt_static, opt_debug, opt_export_all, opt_universal
+
+    sdk = DEFAULT_MACOSX_SDK
 
     for opt, arg in optlist:
         if opt == "-h":
@@ -362,14 +359,14 @@ def main(argv):
         elif opt == "-k":
             opt_static = 1
         elif opt == "-n":
-            # This should probably be determined dynamically or passed as an
-            # argument.
-            opt_universal = '/Developer/SDKs/MacOSX10.4u.sdk'
+            opt_universal = ''
         elif opt == "-p":
             if arg not in platform_specs:
                 usage()
             
             opt_platform = arg
+        elif opt == "-s":
+            sdk = arg
         elif opt == "-u":
             opt_debug = 1
         elif opt == "-v":
@@ -377,6 +374,15 @@ def main(argv):
 
     if opt_platform is None:
         opt_platform = default_platform
+
+    if opt_universal is not None:
+        if '/' in sdk:
+            opt_universal = os.path.abspath(sdk)
+        else:
+            opt_universal = '/Developer/SDKs/' + sdk
+
+        if not os.path.isdir(opt_universal):
+            siputils.error("Unable to find the SDK directory %s. Use the -s flag to specify the name of the SDK (e.g. %s) or its full path." % (opt_universal, DEFAULT_MACOSX_SDK))
 
     # Get the platform specific macros for building.
     macros = siputils.parse_build_macros(os.path.join("specs", opt_platform), build_macro_names, args)
@@ -406,6 +412,6 @@ if __name__ == "__main__":
     except:
         print \
 """An internal error occured.  Please report all the output from the program,
-including the following traceback, to support@riverbankcomputing.co.uk.
+including the following traceback, to support@riverbankcomputing.com.
 """
         raise

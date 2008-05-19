@@ -1,8 +1,7 @@
 /*
  * The SIP module interface.
  *
- * Copyright (c) 2008
- * 	Phil Thompson <phil@river-bank.demon.co.uk>
+ * Copyright (c) 2008 Riverbank Computing Limited <info@riverbankcomputing.com>
  * 
  * This file is part of SIP.
  * 
@@ -51,8 +50,8 @@ extern "C" {
 /*
  * Define the SIP version number.
  */
-#define SIP_VERSION         0x040704
-#define SIP_VERSION_STR     "4.7.4"
+#define SIP_VERSION         0x040706
+#define SIP_VERSION_STR     "4.7.6-snapshot-20080518"
 
 
 /*
@@ -64,6 +63,22 @@ extern "C" {
  * to 0.
  *
  * History:
+ *
+ * 3.7  Added sip_api_convert_from_const_void_ptr(),
+ *      sip_api_convert_from_void_ptr_and_size() and
+ *      sip_api_convert_from_const_void_ptr_and_size().
+ *      Added the 'g' and 'G' format characters (to replace the now deprecated
+ *      'a' and 'A' format characters) to sip_api_build_result(),
+ *      sip_api_call_method() and sip_api_parse_result().
+ *      Added the 'k' and 'K' format characters (to replace the now deprecated
+ *      'a' and 'A' format characters) to sip_api_parse_args().
+ *      Added sip_api_invoke_slot().
+ *      Added sip_api_parse_type().
+ *      Added sip_api_is_exact_wrapped_type().
+ *      Added sip_api_assign_instance().
+ *      Added sip_api_assign_mapped_type().
+ *      Added the td_assign and td_qt fields to the sipTypeDef structure.
+ *      Added the mt_assign field to the sipMappedType structure.
  *
  * 3.6  Added the 'g' format character to sip_api_parse_args().
  *
@@ -114,7 +129,7 @@ extern "C" {
  * 0.0  Original version.
  */
 #define SIP_API_MAJOR_NR    3
-#define SIP_API_MINOR_NR    6
+#define SIP_API_MINOR_NR    7
 
 
 /* Some compatibility stuff to help with handwritten code for SIP v3. */
@@ -240,6 +255,7 @@ typedef int (*sipVirtHandlerFunc)(void *, PyObject *, ...);
 typedef int (*sipEmitFunc)(sipWrapper *, PyObject *);
 typedef void (*sipReleaseFunc)(void *, int);
 typedef PyObject *(*sipPickleFunc)(void *);
+typedef void (*sipAssignFunc)(void *, const void *);
 
 
 /*
@@ -582,6 +598,12 @@ typedef struct _sipTypeDef {
 
     /* The pickle function. */
     sipPickleFunc td_pickle;
+
+    /* The assignment function. */
+    sipAssignFunc td_assign;
+
+    /* The optional PyQt defined information. */
+    const void *td_qt;
 } sipTypeDef;
 
 
@@ -615,6 +637,9 @@ typedef struct _sipMappedType {
 
     /* The convert from function. */
     sipConvertFromFunc mt_cfrom;
+
+    /* The assignment function. */
+    sipAssignFunc mt_assign;
 } sipMappedType;
 
 
@@ -1142,14 +1167,14 @@ typedef struct _sipAPIDef {
     int (*api_wrapper_check)(PyObject *o);
     unsigned long (*api_long_as_unsigned_long)(PyObject *o);
     PyObject *(*api_convert_from_named_enum)(int eval, PyTypeObject *et);
+    PyObject *(*api_convert_from_void_ptr)(void *val);
 
     /*
      * The following may be used by Qt support code but no other handwritten
      * code.
      */
-    PyObject *(*api_convert_from_void_ptr)(void *val);
     void (*api_free_connection)(sipSlotConnection *conn);
-    int (*api_emit_to_slot)(sipSlot *slot, PyObject *sigargs);
+    int (*api_emit_to_slot)(const sipSlot *slot, PyObject *sigargs);
     int (*api_same_connection)(sipSlotConnection *conn, void *tx,
             const char *sig, PyObject *rxObj, const char *slot);
     void *(*api_convert_rx)(sipWrapper *txSelf, const char *sigargs,
@@ -1164,7 +1189,15 @@ typedef struct _sipAPIDef {
             const char *fmt, ...);
     void (*api_common_ctor)(sipMethodCache *cache, int nrmeths);
     void (*api_common_dtor)(sipWrapper *sipSelf);
+
+    /*
+     * The following are part of the public API.
+     */
     void *(*api_convert_to_void_ptr)(PyObject *obj);
+
+    /*
+     * The following are not part of the public API.
+     */
     void (*api_no_function)(int argsParsed, const char *func);
     void (*api_no_method)(int argsParsed, const char *classname,
             const char *method);
@@ -1228,6 +1261,22 @@ typedef struct _sipAPIDef {
      * The following are part of the public API.
      */
     void (*api_transfer_break)(PyObject *self);
+    PyObject *(*api_convert_from_const_void_ptr)(const void *val);
+    PyObject *(*api_convert_from_void_ptr_and_size)(void *val,
+            SIP_SSIZE_T size);
+    PyObject *(*api_convert_from_const_void_ptr_and_size)(const void *val,
+            SIP_SSIZE_T size);
+
+    /*
+     * The following may be used by Qt support code but no other handwritten
+     * code.
+     */
+    PyObject *(*api_invoke_slot)(const sipSlot *slot, PyObject *sigargs);
+    void (*api_parse_type)(const char *type, sipSigArg *arg);
+    int (*api_is_exact_wrapped_type)(sipWrapperType *wt);
+    int (*api_assign_instance)(void *dst, const void *src, sipWrapperType *wt);
+    int (*api_assign_mapped_type)(void *dst, const void *src,
+            sipMappedType *mt);
 } sipAPIDef;
 
 

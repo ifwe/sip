@@ -1,8 +1,7 @@
 /*
  * SIP library code.
  *
- * Copyright (c) 2008
- * 	Phil Thompson <phil@river-bank.demon.co.uk>
+ * Copyright (c) 2008 Riverbank Computing Limited <info@riverbankcomputing.com>
  * 
  * This file is part of SIP.
  * 
@@ -124,6 +123,17 @@ static int sip_api_unicode_as_wchar(PyObject *obj);
 static int *sip_api_unicode_as_wstring(PyObject *obj);
 #endif
 static void sip_api_transfer_break(PyObject *self);
+static PyObject *sip_api_convert_from_void_ptr(void *val);
+static PyObject *sip_api_convert_from_const_void_ptr(const void *val);
+static PyObject *sip_api_convert_from_void_ptr_and_size(void *val,
+        SIP_SSIZE_T size);
+static PyObject *sip_api_convert_from_const_void_ptr_and_size(const void *val,
+        SIP_SSIZE_T size);
+static int sip_api_is_exact_wrapped_type(sipWrapperType *wt);
+static int sip_api_assign_instance(void *dst, const void *src,
+        sipWrapperType *wt);
+static int sip_api_assign_mapped_type(void *dst, const void *src,
+        sipMappedType *mt);
 
 
 /*
@@ -171,12 +181,12 @@ static const sipAPIDef sip_api = {
     sip_api_transfer_to,
     sip_api_wrapper_check,
     sip_api_long_as_unsigned_long,
+    sip_api_convert_from_named_enum,
+    sip_api_convert_from_void_ptr,
     /*
      * The following may be used by Qt support code but by no other handwritten
      * code.
      */
-    sip_api_convert_from_named_enum,
-    sip_api_convert_from_void_ptr,
     sip_api_free_connection,
     sip_api_emit_to_slot,
     sip_api_same_connection,
@@ -188,7 +198,13 @@ static const sipAPIDef sip_api = {
     sip_api_parse_pair,
     sip_api_common_ctor,
     sip_api_common_dtor,
+    /*
+     * The following are part of the public API.
+     */
     sip_api_convert_to_void_ptr,
+    /*
+     * The following are not part of the public API.
+     */
     sip_api_no_function,
     sip_api_no_method,
     sip_api_abstract_method,
@@ -235,6 +251,18 @@ static const sipAPIDef sip_api = {
      * The following are part of the public API.
      */
     sip_api_transfer_break,
+    sip_api_convert_from_const_void_ptr,
+    sip_api_convert_from_void_ptr_and_size,
+    sip_api_convert_from_const_void_ptr_and_size,
+    /*
+     * The following may be used by Qt support code but by no other handwritten
+     * code.
+     */
+    sip_api_invoke_slot,
+    sip_api_parse_type,
+    sip_api_is_exact_wrapped_type,
+    sip_api_assign_instance,
+    sip_api_assign_mapped_type,
 };
 
 
@@ -261,13 +289,17 @@ static const sipAPIDef sip_api = {
 #define FORMAT_NO_CONVERTORS    0x10    /* Suppress any convertors. */
 #define FORMAT_TRANSFER_THIS    0x20    /* Support for /TransferThis/. */
 
-#define SIP_MC_FOUND            0x01    /* If we have looked for the method. */
-#define SIP_MC_ISMETH           0x02    /* If we looked and there was one. */
+#define SIP_MC_CHECKED          0x01    /* If we have looked for the reimp. */
+#define SIP_MC_METHOD           0x02    /* The reimp is a method. */
+#define SIP_MC_CALLABLE         0x04    /* The reimp is another callable. */
 
-#define sipFoundMethod(m)       ((m)->mcflags & SIP_MC_FOUND)
-#define sipSetFoundMethod(m)    ((m)->mcflags |= SIP_MC_FOUND)
-#define sipIsMethod(m)          ((m)->mcflags & SIP_MC_ISMETH)
-#define sipSetIsMethod(m)       ((m)->mcflags |= SIP_MC_ISMETH)
+#define sipNoReimp(m)           ((m)->mcflags == SIP_MC_CHECKED)
+#define sipCheckedReimp(m)      ((m)->mcflags & SIP_MC_CHECKED)
+#define sipSetCheckedReimp(m)   ((m)->mcflags |= SIP_MC_CHECKED)
+#define sipMethodReimp(m)       ((m)->mcflags & SIP_MC_METHOD)
+#define sipSetMethodReimp(m)    ((m)->mcflags |= SIP_MC_METHOD)
+#define sipCallableReimp(m)     ((m)->mcflags & SIP_MC_CALLABLE)
+#define sipSetCallableReimp(m)  ((m)->mcflags |= SIP_MC_CALLABLE)
 
 
 /*
@@ -417,17 +449,16 @@ static int findEnumArg(sipExportedModuleDef *emd, const char *name, size_t len,
         sipSigArg *at, int indir);
 static int sameScopedName(const char *pyname, const char *name, size_t len);
 static int nameEq(const char *with, const char *name, size_t len);
-static int isExactWrappedType(sipWrapperType *wt);
 static void release(void *addr, sipTypeDef *td, int state);
 static void callPyDtor(sipWrapper *self);
 static int qt_and_sip_api_3_4(void);
 static int visitSlot(sipSlot *slot, visitproc visit, void *arg);
 static void clearAnySlotReference(sipSlot *slot);
-static int parseCharArray(PyObject *obj, char **ap, int *aszp);
+static int parseCharArray(PyObject *obj, const char **ap, SIP_SSIZE_T *aszp);
 static int parseChar(PyObject *obj, char *ap);
-static int parseCharString(PyObject *obj, char **ap);
+static int parseCharString(PyObject *obj, const char **ap);
 #if defined(HAVE_WCHAR_H)
-static int parseWCharArray(PyObject *obj, wchar_t **ap, int *aszp);
+static int parseWCharArray(PyObject *obj, wchar_t **ap, SIP_SSIZE_T *aszp);
 static int parseWChar(PyObject *obj, wchar_t *ap);
 static int parseWCharString(PyObject *obj, wchar_t **ap);
 #else
@@ -435,6 +466,7 @@ static void raiseNoWChar();
 #endif
 static int importComponents(void);
 static void *getComplexCppPtr(sipWrapper *w, sipWrapperType *type);
+static PyObject *make_voidptr(void *voidptr, SIP_SSIZE_T size, int rw);
 
 
 /*
@@ -1215,6 +1247,40 @@ void sip_api_free(void *mem)
 
 
 /*
+ * Assign a C/C++ instance if it is supported by the type.
+ */
+static int sip_api_assign_instance(void *dst, const void *src,
+        sipWrapperType *wt)
+{
+    sipAssignFunc assign = wt->type->td_assign;
+
+    if (assign == NULL)
+        return FALSE;
+
+    assign(dst, src);
+
+    return TRUE;
+}
+
+
+/*
+ * Assign a C/C++ mapped type if it is supported by the type.
+ */
+static int sip_api_assign_mapped_type(void *dst, const void *src,
+        sipMappedType *mt)
+{
+    sipAssignFunc assign = mt->mt_assign;
+
+    if (assign == NULL)
+        return FALSE;
+
+    assign(dst, src);
+
+    return TRUE;
+}
+
+
+/*
  * Extend a Python slot by looking in other modules to see if there is an
  * extender function that can handle the arguments.
  */
@@ -1372,11 +1438,32 @@ static PyObject *buildObject(PyObject *obj, const char *fmt, va_list va)
                 char *s;
                 int l;
 
+                /* Note that this is deprecated in favor of 'g'. */
+
                 s = va_arg(va, char *);
                 l = va_arg(va, int);
 
                 if (s != NULL)
                     el = PyString_FromStringAndSize(s, (SIP_SSIZE_T)l);
+                else
+                {
+                    Py_INCREF(Py_None);
+                    el = Py_None;
+                }
+            }
+
+            break;
+
+        case 'g':
+            {
+                char *s;
+                SIP_SSIZE_T l;
+
+                s = va_arg(va, char *);
+                l = va_arg(va, SIP_SSIZE_T);
+
+                if (s != NULL)
+                    el = PyString_FromStringAndSize(s, l);
                 else
                 {
                     Py_INCREF(Py_None);
@@ -1392,11 +1479,37 @@ static PyObject *buildObject(PyObject *obj, const char *fmt, va_list va)
                 wchar_t *s;
                 int l;
 
+                /* Note that this is deprecated in favor of 'G'. */
+
                 s = va_arg(va, wchar_t *);
                 l = va_arg(va, int);
 
                 if (s != NULL)
                     el = PyUnicode_FromWideChar(s, (SIP_SSIZE_T)l);
+                else
+                {
+                    Py_INCREF(Py_None);
+                    el = Py_None;
+                }
+            }
+#else
+            raiseNoWChar();
+            el = NULL;
+#endif
+
+            break;
+
+        case 'G':
+#if defined(HAVE_WCHAR_H)
+            {
+                wchar_t *s;
+                SIP_SSIZE_T l;
+
+                s = va_arg(va, wchar_t *);
+                l = va_arg(va, SIP_SSIZE_T);
+
+                if (s != NULL)
+                    el = PyUnicode_FromWideChar(s, l);
                 else
                 {
                     Py_INCREF(Py_None);
@@ -1600,7 +1713,7 @@ static PyObject *buildObject(PyObject *obj, const char *fmt, va_list va)
             break;
 
         case 'V':
-            el = sip_api_convert_from_void_ptr(va_arg(va,void *));
+            el = sip_api_convert_from_void_ptr(va_arg(va, void *));
             break;
 
         default:
@@ -1694,8 +1807,24 @@ static int sip_api_parse_result(int *isErr, PyObject *method, PyObject *res,
             {
             case 'a':
                 {
-                    char **p = va_arg(va, char **);
+                    const char **p = va_arg(va, const char **);
                     int *szp = va_arg(va, int *);
+                    SIP_SSIZE_T sz;
+
+                    /* Note that this is deprecated in favor of 'g'. */
+
+                    if (parseCharArray(arg, p, &sz) < 0)
+                        invalid = TRUE;
+
+                    *szp = (int)sz;
+                }
+
+                break;
+
+            case 'g':
+                {
+                    const char **p = va_arg(va, const char **);
+                    SIP_SSIZE_T *szp = va_arg(va, SIP_SSIZE_T *);
 
                     if (parseCharArray(arg, p, szp) < 0)
                         invalid = TRUE;
@@ -1708,6 +1837,27 @@ static int sip_api_parse_result(int *isErr, PyObject *method, PyObject *res,
                 {
                     wchar_t **p = va_arg(va, wchar_t **);
                     int *szp = va_arg(va, int *);
+                    SIP_SSIZE_T sz;
+
+                    /* Note that this is deprecated in favor of 'G'. */
+
+                    if (parseWCharArray(arg, p, &sz) < 0)
+                        invalid = TRUE;
+
+                    *szp = (int)sz;
+                }
+#else
+                raiseNoWChar();
+                invalid = TRUE;
+#endif
+
+                break;
+
+            case 'G':
+#if defined(HAVE_WCHAR_H)
+                {
+                    wchar_t **p = va_arg(va, wchar_t **);
+                    SIP_SSIZE_T *szp = va_arg(va, SIP_SSIZE_T *);
 
                     if (parseWCharArray(arg, p, szp) < 0)
                         invalid = TRUE;
@@ -1919,7 +2069,7 @@ static int sip_api_parse_result(int *isErr, PyObject *method, PyObject *res,
 
             case 's':
                 {
-                    char **p = va_arg(va, char **);
+                    const char **p = va_arg(va, const char **);
 
                     if (parseCharString(arg, p) < 0)
                         invalid = TRUE;
@@ -2142,7 +2292,7 @@ static unsigned long sip_api_long_as_unsigned_long(PyObject *o)
 static int sip_api_parse_args(int *argsParsedp, PyObject *sipArgs,
         const char *fmt, ...)
 {
-    int valid, nrargs, selfarg;
+    int no_tmp_tuple, valid, nrargs, selfarg;
     sipWrapper *self;
     PyObject *single_arg;
     va_list va;
@@ -2151,8 +2301,20 @@ static int sip_api_parse_args(int *argsParsedp, PyObject *sipArgs,
     if (*argsParsedp & PARSE_STICKY)
         return 0;
 
-    /* See if we are parsing a tuple or a single argument. */
-    if (PyTuple_Check(sipArgs))
+    /*
+     * See if we are parsing a single argument.  In current versions we are
+     * told explicitly by the first character of the format string.  In earlier
+     * versions we guessed (sometimes wrongly).
+     */
+    if (*fmt == '1')
+    {
+        ++fmt;
+        no_tmp_tuple = FALSE;
+    }
+    else
+        no_tmp_tuple = PyTuple_Check(sipArgs);
+
+    if (no_tmp_tuple)
     {
         Py_INCREF(sipArgs);
         nrargs = PyTuple_GET_SIZE(sipArgs);
@@ -2413,7 +2575,7 @@ static int parsePass1(sipWrapper **selfp, int *selfargp, int *argsParsedp,
             {
                 /* String or None. */
 
-                char **p = va_arg(va, char **);
+                const char **p = va_arg(va, const char **);
 
                 if (parseCharString(arg, p) < 0)
                     valid = PARSE_TYPE;
@@ -2702,10 +2864,29 @@ static int parsePass1(sipWrapper **selfp, int *selfargp, int *argsParsedp,
 
         case 'a':
             {
+                /*
+                 * Char array or None.  Note that this is deprecated in favor
+                 * of 'k'.
+                 */
+
+                const char **p = va_arg(va, const char **);
+                int *szp = va_arg(va, int *);
+                SIP_SSIZE_T sz;
+
+                if (parseCharArray(arg, p, &sz) < 0)
+                    valid = PARSE_TYPE;
+
+                *szp = (int)sz;
+
+                break;
+            }
+
+        case 'k':
+            {
                 /* Char array or None. */
 
-                char **p = va_arg(va, char **);
-                int *szp = va_arg(va, int *);
+                const char **p = va_arg(va, const char **);
+                SIP_SSIZE_T *szp = va_arg(va, SIP_SSIZE_T *);
 
                 if (parseCharArray(arg, p, szp) < 0)
                     valid = PARSE_TYPE;
@@ -2716,10 +2897,35 @@ static int parsePass1(sipWrapper **selfp, int *selfargp, int *argsParsedp,
         case 'A':
 #if defined(HAVE_WCHAR_H)
             {
-                /* Wide char array or None. */
+                /*
+                 * Wide char array or None.  Note that this is deprecated in
+                 * favor of 'K'.
+                 */
 
                 wchar_t **p = va_arg(va, wchar_t **);
                 int *szp = va_arg(va, int *);
+                SIP_SSIZE_T sz;
+
+                if (parseWCharArray(arg, p, &sz) < 0)
+                    valid = PARSE_TYPE;
+
+                *szp = (int)sz;
+
+                break;
+            }
+#else
+            raiseNoWChar();
+            valid = PARSE_RAISED;
+            break
+#endif
+
+        case 'K':
+#if defined(HAVE_WCHAR_H)
+            {
+                /* Wide char array or None. */
+
+                wchar_t **p = va_arg(va, wchar_t **);
+                SIP_SSIZE_T *szp = va_arg(va, SIP_SSIZE_T *);
 
                 if (parseWCharArray(arg, p, szp) < 0)
                     valid = PARSE_TYPE;
@@ -3335,7 +3541,9 @@ static int parsePass2(sipWrapper *self, int selfarg, int nrargs,
         case 'N':
         case 'T':
         case 'a':
+        case 'k':
         case 'A':
+        case 'K':
             va_arg(va,void *);
 
             /* Drop through. */
@@ -4072,10 +4280,12 @@ static int handleSetLazyAttr(PyObject *nameobj,PyObject *valobj,
     enm = NULL;
     vmd = NULL;
 
-    findLazyAttr(wt,name,&pmd,&enm,&vmd,NULL);
+    findLazyAttr(wt, name, &pmd, &enm, &vmd, NULL);
 
     if (vmd != NULL)
     {
+        PyObject *res;
+
         if (valobj == NULL)
         {
             PyErr_Format(PyExc_ValueError,"%s.%s cannot be deleted",wt->type->td_name,name);
@@ -4083,22 +4293,18 @@ static int handleSetLazyAttr(PyObject *nameobj,PyObject *valobj,
             return -1;
         }
 
-        if ((vmd->ml_flags & METH_STATIC) != 0 || w != NULL)
-        {
-            PyObject *res;
+        if ((vmd->ml_flags & METH_STATIC) != 0)
+            res = (*vmd->ml_meth)((PyObject *)wt, valobj);
+        else
+            res = (*vmd->ml_meth)((PyObject *)w, valobj);
 
-            if ((res = (*vmd->ml_meth)((PyObject *)w,valobj)) == NULL)
-                return -1;
+        if (res == NULL)
+            return -1;
 
-            /* Ignore the result (which should be Py_None). */
-            Py_DECREF(res);
+        /* Ignore the result (which should be Py_None). */
+        Py_DECREF(res);
 
-            return 0;
-        }
-
-        PyErr_SetObject(PyExc_AttributeError,nameobj);
-
-        return -1;
+        return 0;
     }
 
     /* It isn't a variable. */
@@ -4131,7 +4337,7 @@ static PyObject *handleGetLazyAttr(PyObject *nameobj,sipWrapperType *wt,
     enm = NULL;
     vmd = NULL;
 
-    findLazyAttr(wt,name,&pmd,&enm,&vmd,&in);
+    findLazyAttr(wt, name, &pmd, &enm, &vmd, &in);
 
     if (pmd != NULL)
         return PyCFunction_New(pmd,(PyObject *)w);
@@ -4158,8 +4364,16 @@ static PyObject *handleGetLazyAttr(PyObject *nameobj,sipWrapperType *wt,
     }
 
     if (vmd != NULL)
-        if ((vmd->ml_flags & METH_STATIC) != 0 || w != NULL)
-            return (*vmd->ml_meth)((PyObject *)w,NULL);
+    {
+        PyObject *res;
+
+        if ((vmd->ml_flags & METH_STATIC) != 0)
+            res = (*vmd->ml_meth)((PyObject *)wt, NULL);
+        else
+            res = (*vmd->ml_meth)((PyObject *)w, NULL);
+
+        return res;
+    }
 
     PyErr_SetObject(PyExc_AttributeError,nameobj);
 
@@ -4191,9 +4405,8 @@ PyObject *sip_api_convert_from_named_enum(int eval, PyTypeObject *et)
 /*
  * Find definition for a lazy class attribute.
  */
-static void findLazyAttr(sipWrapperType *wt,char *name,PyMethodDef **pmdp,
-             sipEnumMemberDef **enmp,PyMethodDef **vmdp,
-             sipTypeDef **in)
+static void findLazyAttr(sipWrapperType *wt, char *name, PyMethodDef **pmdp,
+        sipEnumMemberDef **enmp, PyMethodDef **vmdp, sipTypeDef **in)
 {
     sipTypeDef *td, *nsx;
     sipEncodedClassDef *sup;
@@ -5031,22 +5244,29 @@ static int sip_api_add_mapped_type_instance(PyObject *dict, const char *name,
 
 
 /*
- * Return the Python member function corresponding to a C/C++ virtual function,
+ * Return a Python reimplementation corresponding to a C/C++ virtual function,
  * if any.  If one was found then the Python lock is acquired.
  */
-static PyObject *sip_api_is_py_method(sip_gilstate_t *gil,sipMethodCache *pymc,
-                      sipWrapper *sipSelf,char *cname,
-                      char *mname)
+static PyObject *sip_api_is_py_method(sip_gilstate_t *gil,
+        sipMethodCache *pymc, sipWrapper *sipSelf, char *cname, char *mname)
 {
+    /*
+     * This is the most common case (where there is no Python reimplementation)
+     * so we take a fast shortcut without acquiring the GIL.
+     */
+    if (sipNoReimp(pymc))
+        return NULL;
+
     /* We might still have C++ going after the interpreter has gone. */
     if (sipInterpreter == NULL)
         return NULL;
 
     /*
      * It's possible that the Python object has been deleted but the underlying
-     * (complex) C/C++ instance is still working and trying to handle virtual
-     * functions.  Or an instance has started handling virtual functions before
-     * its ctor has returned.  In either case say there is no Python method.
+     * C++ instance is still working and trying to handle virtual functions.
+     * Alternatively, an instance has started handling virtual functions before
+     * its ctor has returned.  In either case say there is no Python
+     * reimplementation.
      */
     if (sipSelf == NULL)
         return NULL;
@@ -5055,41 +5275,81 @@ static PyObject *sip_api_is_py_method(sip_gilstate_t *gil,sipMethodCache *pymc,
     *gil = PyGILState_Ensure();
 #endif
 
-    /* See if we have already looked for the Python method. */
-    if (!sipFoundMethod(pymc))
+    /* See if we have already looked for a Python reimplementation. */
+    if (!sipCheckedReimp(pymc))
     {
-        PyObject *methobj;
+        PyObject *reimp = PyObject_GetAttrString((PyObject *)sipSelf, mname);
 
         /*
-         * Using PyMethod_Check() rather than PyCallable_Check() has the added
-         * benefits of ensuring the (common) case of there being no Python
-         * method is handled as a direct call to C/C++ (rather than converted
-         * to Python and then back to C/C++) and makes sure that abstract
-         * virtuals are trapped.
+         * This should always succeed unless there are bugs in the code
+         * generation.
          */
-        if ((methobj = PyObject_GetAttrString((PyObject *)sipSelf,mname)) != NULL)
+        if (reimp != NULL)
         {
-            if (PyMethod_Check(methobj))
+            /*
+             * Ignore if it's not a callable or if it is a builtin function or
+             * method.  The latter is the most common case as it represents the
+             * wrapper around the generated C++ implementation.  We don't want
+             * to use it because we'd rather handle it faster as a direct call.
+             */
+            if (PyCFunction_Check(reimp) || !PyCallable_Check(reimp))
+                Py_DECREF(reimp);
+            else if (PyMethod_Check(reimp))
             {
-                sipSetIsMethod(pymc);
-                sipSaveMethod(&pymc->pyMethod,methobj);
+                sipSaveMethod(&pymc->pyMethod, reimp);
+                sipSetMethodReimp(pymc);
             }
+            else
+            {
+                /*
+                 * Note that the callable is never garbage collected.  The main
+                 * reason for this is that it's not possible to get hold of the
+                 * method cache without make incompatible changes to the SIP
+                 * API, particularly to support the cyclic garbage collector.
+                 * It would be a lot easier if the cache was held in the
+                 * Python object rather than the derived C++ class (and this
+                 * function would be passed a cache index instead of a pointer
+                 * to the cache entry).  Dropping the cache completely should
+                 * also be considered which would have the advantage of making
+                 * monkey patching predictable.  With cyclic garbage collector
+                 * support we could also just save a reference to a
+                 * reimplementation that was a method rather than save the
+                 * separate components, which would also allow a borrowed
+                 * reference to the reimplementation to be returned so that the
+                 * virtual handler wouldn't need to decrement its reference
+                 * count.
+                 */
 
-            Py_DECREF(methobj);
+                pymc->pyMethod.mfunc = reimp;
+                sipSetCallableReimp(pymc);
+            }
         }
+        else
+            PyErr_Clear();
 
-        PyErr_Clear();
-
-        sipSetFoundMethod(pymc);
+        /* Don't check again. */
+        sipSetCheckedReimp(pymc);
     }
-    else if (sipIsMethod(pymc))
-        PyErr_Clear();
 
-    if (sipIsMethod(pymc))
-        return PyMethod_New(pymc->pyMethod.mfunc,pymc->pyMethod.mself,pymc->pyMethod.mclass);
+    if (sipMethodReimp(pymc))
+        return PyMethod_New(pymc->pyMethod.mfunc, pymc->pyMethod.mself,
+                pymc->pyMethod.mclass);
+
+    if (sipCallableReimp(pymc))
+    {
+        PyObject *reimp = pymc->pyMethod.mfunc;
+
+        Py_INCREF(reimp);
+        return reimp;
+    }
 
     if (cname != NULL)
-        PyErr_Format(PyExc_NotImplementedError,"%s.%s() is abstract and must be overridden",cname,mname);
+    {
+        /* Note that this will only be raised once per object/method. */
+        PyErr_Format(PyExc_NotImplementedError,
+                "%s.%s() is abstract and must be overridden", cname, mname);
+        PyErr_Print();
+    }
 
 #ifdef WITH_THREAD
     PyGILState_Release(*gil);
@@ -5604,7 +5864,7 @@ static PyTypeObject *sip_api_find_named_enum(const char *type)
 /*
  * Save the components of a Python method.
  */
-void sipSaveMethod(sipPyMethod *pm,PyObject *meth)
+void sipSaveMethod(sipPyMethod *pm, PyObject *meth)
 {
     pm->mfunc = PyMethod_GET_FUNCTION(meth);
     pm->mself = PyMethod_GET_SELF(meth);
@@ -6010,77 +6270,155 @@ static int ssizeobjargprocSlot(PyObject *self, SIP_SSIZE_T arg1,
 
 /*****************************************************************************
  * The functions, data types and structures to support a Python type to hold a
- * void * that can be converted to an integer.
+ * void *.
  *****************************************************************************/
 
 /* The object data structure. */
 typedef struct {
     PyObject_HEAD
     void *voidptr;
+    SIP_SSIZE_T size;
+    int rw;
 } sipVoidPtr;
+
+
+/* The structure used to hold the results of a voidptr conversion. */
+struct vp_values {
+    void *voidptr;
+    SIP_SSIZE_T size;
+    int rw;
+};
+
+
+/*
+ * Convert a Python object to the values needed to create a voidptr.
+ */
+static int vp_convertor(PyObject *arg, struct vp_values *vp)
+{
+    void *ptr;
+    SIP_SSIZE_T size = -1;
+    int rw = TRUE;
+
+    if (arg == Py_None)
+        ptr = NULL;
+    else if (PyCObject_Check(arg))
+        ptr = PyCObject_AsVoidPtr(arg);
+    else if (PyObject_TypeCheck(arg, &sipVoidPtr_Type))
+    {
+        ptr = ((sipVoidPtr *)arg)->voidptr;
+        size = ((sipVoidPtr *)arg)->size;
+        rw = ((sipVoidPtr *)arg)->rw;
+    }
+    else
+    {
+        ptr = (void *)PyInt_AsLong(arg);
+
+        if (PyErr_Occurred())
+        {
+            PyErr_SetString(PyExc_TypeError, "a single integer, CObject, None or another voidptr is required");
+            return 0;
+        }
+    }
+
+    vp->voidptr = ptr;
+    vp->size = size;
+    vp->rw = rw;
+
+    return 1;
+}
 
 
 /*
  * Implement __new__ for the type.
  */
-static PyObject *sipVoidPtr_new(PyTypeObject *subtype, PyObject *args, PyObject *kwds)
+static PyObject *sipVoidPtr_new(PyTypeObject *subtype, PyObject *args,
+        PyObject *kw)
 {
+    static char *kwlist[] = {"address", "size", "writeable", NULL};
+
+    struct vp_values vp_conversion;
+    SIP_SSIZE_T size = -1;
+    int rw = -1;
     PyObject *obj;
-    void *ptr;
-    int nargs, bad;
 
-    /* We don't support keyword arguments. */
-    if (kwds != NULL)
-    {
-        PyErr_SetString(PyExc_TypeError, "keyword arguments are not supported");
-        return NULL;
-    }
-
-    /* Get the single argument. */
-    if ((nargs = PyTuple_Size(args)) < 0)
+    if (!PyArg_ParseTupleAndKeywords(args, kw,
+#if PY_VERSION_HEX >= 0x02050000
+            "O&|ni:voidptr",
+#else
+            "O&|ii:voidptr",
+#endif
+            kwlist, vp_convertor, &vp_conversion, &size, &rw))
         return NULL;
 
-    bad = FALSE;
+    /* Use the explicit size if one was given. */
+    if (size >= 0)
+        vp_conversion.size = size;
 
-    if (nargs == 1)
-    {
-        PyObject *arg = PyTuple_GET_ITEM(args, 0);
-
-        if (arg == Py_None)
-            ptr = NULL;
-        else if (PyCObject_Check(arg))
-            ptr = PyCObject_AsVoidPtr(arg);
-        else if (arg->ob_type == &sipVoidPtr_Type)
-        {
-            /* The type is immutable so just return the argument. */
-            Py_INCREF(arg);
-            return arg;
-        }
-        else
-        {
-            ptr = (void *)PyInt_AsLong(arg);
-
-            if (PyErr_Occurred())
-                bad = TRUE;
-        }
-    }
-    else
-        bad = TRUE;
-
-    if (bad)
-    {
-        PyErr_SetString(PyExc_TypeError, "a single integer, CObject, None or another voidptr is required");
-        return NULL;
-    }
+    /* Use the explicit writeable flag if one was given. */
+    if (rw >= 0)
+        vp_conversion.rw = rw;
 
     /* Create the instance. */
     if ((obj = subtype->tp_alloc(subtype, 0)) == NULL)
         return NULL;
 
-    /* Save the pointer. */
-    ((sipVoidPtr *)obj)->voidptr = ptr;
+    /* Save the values. */
+    ((sipVoidPtr *)obj)->voidptr = vp_conversion.voidptr;
+    ((sipVoidPtr *)obj)->size = vp_conversion.size;
+    ((sipVoidPtr *)obj)->rw = vp_conversion.rw;
 
     return obj;
+}
+
+
+/*
+ * The read buffer implementation.
+ */
+static SIP_SSIZE_T sipVoidPtr_getbuffer(PyObject *self, SIP_SSIZE_T seg,
+        void **ptr)
+{
+    SIP_SSIZE_T size = ((sipVoidPtr *)self)->size;
+
+    if (size < 0 || seg != 0)
+    {
+        PyErr_SetString(PyExc_SystemError, "invalid buffer segment");
+        return -1;
+    }
+
+    *ptr = ((sipVoidPtr *)self)->voidptr;
+
+    return size;
+}
+
+
+/*
+ * The write buffer implementation.
+ */
+static SIP_SSIZE_T sipVoidPtr_getwritebuffer(PyObject *self, SIP_SSIZE_T seg,
+        void **ptr)
+{
+    if (((sipVoidPtr *)self)->rw)
+        return sipVoidPtr_getbuffer(self, seg, ptr);
+
+    PyErr_SetString(PyExc_TypeError, "the sip.voidptr is not writeable");
+    return -1;
+}
+
+
+/*
+ * The segment count implementation.
+ */
+static SIP_SSIZE_T sipVoidPtr_getsegcount(PyObject *self, SIP_SSIZE_T *lenp)
+{
+    SIP_SSIZE_T segs, len;
+
+    len = ((sipVoidPtr *)self)->size;
+    segs = (len < 0 ? 0 : 1);
+
+    if (lenp != NULL)
+        *lenp = len;
+
+    return segs;
 }
 
 
@@ -6089,7 +6427,7 @@ static PyObject *sipVoidPtr_new(PyTypeObject *subtype, PyObject *args, PyObject 
  */
 static PyObject *sipVoidPtr_int(sipVoidPtr *v)
 {
-    return PyInt_FromLong((long)v->voidptr);
+    return PyLong_FromVoidPtr(v->voidptr);
 }
 
 
@@ -6118,27 +6456,114 @@ static PyObject *sipVoidPtr_ascobject(sipVoidPtr *v, PyObject *arg)
 /*
  * Implement asstring() for the type.
  */
-static PyObject *sipVoidPtr_asstring(sipVoidPtr *v,PyObject *arg)
+static PyObject *sipVoidPtr_asstring(sipVoidPtr *v, PyObject *args,
+        PyObject *kw)
 {
-    long nbytes = PyInt_AsLong(arg);
+    static char *kwlist[] = {"size", NULL};
+
+    SIP_SSIZE_T size = -1;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kw,
+#if PY_VERSION_HEX >= 0x02050000
+            "|n:asstring",
+#else
+            "|i:asstring",
+#endif
+            kwlist, &size))
+        return NULL;
+
+    /* Use the current size if one wasn't explicitly given. */
+    if (size < 0)
+        size = v->size;
+
+    if (size < 0)
+    {
+        PyErr_SetString(PyExc_ValueError, "a size must be given or the sip.voidptr must have a size");
+        return NULL;
+    }
+
+    return PyString_FromStringAndSize(v->voidptr, size);
+}
+
+
+/*
+ * Implement getsize() for the type.
+ */
+static PyObject *sipVoidPtr_getsize(sipVoidPtr *v, PyObject *arg)
+{
+#if PY_VERSION_HEX >= 0x02050000
+    return PyInt_FromSsize_t(v->size);
+#else
+    return PyInt_FromLong(v->size);
+#endif
+}
+
+
+/*
+ * Implement setsize() for the type.
+ */
+static PyObject *sipVoidPtr_setsize(sipVoidPtr *v, PyObject *arg)
+{
+    SIP_SSIZE_T size;
+
+#if PY_VERSION_HEX >= 0x02050000
+    size = PyInt_AsSsize_t(arg);
+#else
+    size = (int)PyInt_AsLong(arg);
+#endif
 
     if (PyErr_Occurred())
         return NULL;
 
-    return PyString_FromStringAndSize(v->voidptr,nbytes);
+    v->size = size;
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+
+/*
+ * Implement getwriteable() for the type.
+ */
+static PyObject *sipVoidPtr_getwriteable(sipVoidPtr *v, PyObject *arg)
+{
+    return PyBool_FromLong(v->rw);
+}
+
+
+/*
+ * Implement setwriteable() for the type.
+ */
+static PyObject *sipVoidPtr_setwriteable(sipVoidPtr *v, PyObject *arg)
+{
+    int rw;
+
+    rw = (int)PyInt_AsLong(arg);
+
+    if (PyErr_Occurred())
+        return NULL;
+
+    v->rw = rw;
+
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 
 
 /* The methods data structure. */
 static PyMethodDef sipVoidPtr_Methods[] = {
     {"ascobject", (PyCFunction)sipVoidPtr_ascobject, METH_NOARGS, NULL},
-    {"asstring", (PyCFunction)sipVoidPtr_asstring, METH_O, NULL},
+    {"asstring", (PyCFunction)sipVoidPtr_asstring, METH_KEYWORDS, NULL},
+    {"getsize", (PyCFunction)sipVoidPtr_getsize, METH_NOARGS, NULL},
+    {"setsize", (PyCFunction)sipVoidPtr_setsize, METH_O, NULL},
+    {"getwriteable", (PyCFunction)sipVoidPtr_getwriteable, METH_NOARGS, NULL},
+    {"setwriteable", (PyCFunction)sipVoidPtr_setwriteable, METH_O, NULL},
     {NULL}
 };
 
 
 /* The number methods data structure. */
-PyNumberMethods sipVoidPtr_NumberMethods = {
+static PyNumberMethods sipVoidPtr_NumberMethods = {
     0,                      /* nb_add */
     0,                      /* nb_subtract */
     0,                      /* nb_multiply */
@@ -6157,11 +6582,24 @@ PyNumberMethods sipVoidPtr_NumberMethods = {
     0,                      /* nb_xor */
     0,                      /* nb_or */
     0,                      /* nb_coerce */
-    (unaryfunc)sipVoidPtr_int,          /* nb_int */
+    (unaryfunc)sipVoidPtr_int,  /* nb_int */
     0,                      /* nb_long */
     0,                      /* nb_float */
     0,                      /* nb_oct */
-    (unaryfunc)sipVoidPtr_hex,          /* nb_hex */
+    (unaryfunc)sipVoidPtr_hex,  /* nb_hex */
+};
+
+
+/* The buffer methods data structure. */
+static PyBufferProcs sipVoidPtr_BufferProcs = {
+    sipVoidPtr_getbuffer,
+    sipVoidPtr_getwritebuffer,
+    sipVoidPtr_getsegcount,
+#if PY_VERSION_HEX >= 0x02050000
+    (charbufferproc)sipVoidPtr_getbuffer
+#else
+    (getcharbufferproc)sipVoidPtr_getbuffer
+#endif
 };
 
 
@@ -6169,8 +6607,8 @@ PyNumberMethods sipVoidPtr_NumberMethods = {
 static PyTypeObject sipVoidPtr_Type = {
     PyObject_HEAD_INIT(NULL)
     0,                      /* ob_size */
-    "sip.voidptr",                  /* tp_name */
-    sizeof (sipVoidPtr),                /* tp_basicsize */
+    "sip.voidptr",          /* tp_name */
+    sizeof (sipVoidPtr),    /* tp_basicsize */
     0,                      /* tp_itemsize */
     0,                      /* tp_dealloc */
     0,                      /* tp_print */
@@ -6178,7 +6616,7 @@ static PyTypeObject sipVoidPtr_Type = {
     0,                      /* tp_setattr */
     0,                      /* tp_compare */
     0,                      /* tp_repr */
-    &sipVoidPtr_NumberMethods,          /* tp_as_number */
+    &sipVoidPtr_NumberMethods,  /* tp_as_number */
     0,                      /* tp_as_sequence */
     0,                      /* tp_as_mapping */
     0,                      /* tp_hash */
@@ -6186,7 +6624,7 @@ static PyTypeObject sipVoidPtr_Type = {
     0,                      /* tp_str */
     0,                      /* tp_getattro */
     0,                      /* tp_setattro */
-    0,                      /* tp_as_buffer */
+    &sipVoidPtr_BufferProcs,    /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,   /* tp_flags */
     0,                      /* tp_doc */
     0,                      /* tp_traverse */
@@ -6195,7 +6633,7 @@ static PyTypeObject sipVoidPtr_Type = {
     0,                      /* tp_weaklistoffset */
     0,                      /* tp_iter */
     0,                      /* tp_iternext */
-    sipVoidPtr_Methods,             /* tp_methods */
+    sipVoidPtr_Methods,     /* tp_methods */
     0,                      /* tp_members */
     0,                      /* tp_getset */
     0,                      /* tp_base */
@@ -6205,7 +6643,7 @@ static PyTypeObject sipVoidPtr_Type = {
     0,                      /* tp_dictoffset */
     0,                      /* tp_init */
     0,                      /* tp_alloc */
-    sipVoidPtr_new,                 /* tp_new */
+    sipVoidPtr_new,         /* tp_new */
 };
 
 
@@ -6216,38 +6654,80 @@ static void *sip_api_convert_to_void_ptr(PyObject *obj)
 {
     if (obj == NULL)
     {
-        PyErr_SetString(PyExc_TypeError,"sip.voidptr is NULL");
+        PyErr_SetString(PyExc_TypeError, "sip.voidptr is NULL");
         return NULL;
     }
 
     if (obj == Py_None)
         return NULL;
 
-    /* Save a conversion if it's not a sub-type. */
-    if (obj->ob_type == &sipVoidPtr_Type)
+    if (PyObject_TypeCheck(obj, &sipVoidPtr_Type))
         return ((sipVoidPtr *)obj)->voidptr;
+
+    if (PyCObject_Check(obj))
+        return PyCObject_AsVoidPtr(obj);
 
     return (void *)PyInt_AsLong(obj);
 }
 
 
 /*
- * A convenience function to convert a C/C++ void pointer to a Python object.
+ * Convert a C/C++ void pointer to a sip.voidptr object.
  */
-PyObject *sip_api_convert_from_void_ptr(void *val)
+static PyObject *sip_api_convert_from_void_ptr(void *val)
+{
+    return make_voidptr(val, -1, TRUE);
+}
+
+
+/*
+ * Convert a C/C++ void pointer to a sip.voidptr object.
+ */
+static PyObject *sip_api_convert_from_const_void_ptr(const void *val)
+{
+    return make_voidptr((void *)val, -1, FALSE);
+}
+
+
+/*
+ * Convert a sized C/C++ void pointer to a sip.voidptr object.
+ */
+static PyObject *sip_api_convert_from_void_ptr_and_size(void *val,
+        SIP_SSIZE_T size)
+{
+    return make_voidptr(val, size, TRUE);
+}
+
+
+/*
+ * Convert a sized C/C++ const void pointer to a sip.voidptr object.
+ */
+static PyObject *sip_api_convert_from_const_void_ptr_and_size(const void *val,
+        SIP_SSIZE_T size)
+{
+    return make_voidptr((void *)val, size, FALSE);
+}
+
+
+/*
+ * Do the work of converting a void pointer.
+ */
+static PyObject *make_voidptr(void *voidptr, SIP_SSIZE_T size, int rw)
 {
     sipVoidPtr *self;
 
-    if (val == NULL)
+    if (voidptr == NULL)
     {
         Py_INCREF(Py_None);
         return Py_None;
     }
 
-    if ((self = PyObject_NEW(sipVoidPtr,&sipVoidPtr_Type)) == NULL)
+    if ((self = PyObject_NEW(sipVoidPtr, &sipVoidPtr_Type)) == NULL)
         return NULL;
 
-    self->voidptr = val;
+    self->voidptr = voidptr;
+    self->size = size;
+    self->rw = rw;
 
     return (PyObject *)self;
 }
@@ -6257,13 +6737,14 @@ PyObject *sip_api_convert_from_void_ptr(void *val)
  * Return TRUE if a type is a wrapped type, rather than a sub-type implemented
  * in Python or the super-type.
  */
-static int isExactWrappedType(sipWrapperType *wt)
+static int sip_api_is_exact_wrapped_type(sipWrapperType *wt)
 {
     char *name;
 
     /*
      * We check by comparing the actual type name with the name used to create
-     * the original wrapped type.
+     * the original wrapped type.  An alternative approach would be to add a
+     * flag to sipWrapperType that was only set by createType().
      */
 #if PY_VERSION_HEX >= 0x02050000
     if ((name = PyString_AsString(wt->super.ht_name)) == NULL)
@@ -6374,7 +6855,7 @@ static PyObject *sipWrapperType_getattro(PyObject *obj,PyObject *name)
         dict = ((PyTypeObject *)wt)->tp_dict;
 
         /* The base type doesn't have any type information. */
-        if ((td = wt->type) == NULL || !isExactWrappedType(wt))
+        if ((td = wt->type) == NULL || !sip_api_is_exact_wrapped_type(wt))
         {
             Py_INCREF(dict);
             return dict;
@@ -6442,7 +6923,10 @@ static PyObject *sipWrapperType_getattro(PyObject *obj,PyObject *name)
                 ++pmd;
             }
 
-            /* Do the static variables. */
+            /*
+             * Do the static variables.  Note that the use of METH_STATIC is
+             * historic - METH_CLASS would be more accurate.
+             */
             if ((pmd = td->td_variables) != NULL)
                 while (pmd->ml_name != NULL)
                 {
@@ -6451,7 +6935,7 @@ static PyObject *sipWrapperType_getattro(PyObject *obj,PyObject *name)
                         int rc;
                         PyObject *val;
 
-                        if ((val = (*pmd->ml_meth)(NULL, NULL)) == NULL)
+                        if ((val = (*pmd->ml_meth)(obj, NULL)) == NULL)
                         {
                             Py_DECREF(dict);
                             return NULL;
@@ -6639,6 +7123,14 @@ static int sipWrapper_init(sipWrapper *self,PyObject *args,PyObject *kwds)
         {
             int pstate = argsparsed & PARSE_MASK;
             sipInitExtenderDef *ie = wt->iextend;
+
+            /*
+             * If the parse was successful but no C/C++ object was created then
+             * we assume that handwritten code decided after the parse that
+             * it didn't want to handle the signature.
+             */
+            if (pstate == PARSE_OK)
+                pstate = PARSE_TYPE;
 
             /*
              * While we just have signature errors, try any initialiser
@@ -7119,7 +7611,7 @@ static PyObject *sipWrapper_getattro(PyObject *obj,PyObject *name)
     {
         PyObject *tmpdict = NULL;
 
-        if (isExactWrappedType(wt) && getNonStaticVariables(wt, w, &tmpdict) < 0)
+        if (sip_api_is_exact_wrapped_type(wt) && getNonStaticVariables(wt, w, &tmpdict) < 0)
         {
             Py_XDECREF(tmpdict);
             return NULL;
@@ -8047,7 +8539,7 @@ static char sip_api_string_as_char(PyObject *obj)
 /*
  * Parse a character array and return it's address and length.
  */
-static int parseCharArray(PyObject *obj, char **ap, int *aszp)
+static int parseCharArray(PyObject *obj, const char **ap, SIP_SSIZE_T *aszp)
 {
     if (obj == Py_None)
     {
@@ -8057,9 +8549,9 @@ static int parseCharArray(PyObject *obj, char **ap, int *aszp)
     else if (PyString_Check(obj))
     {
         *ap = PyString_AS_STRING(obj);
-        *aszp = (int)PyString_GET_SIZE(obj);
+        *aszp = PyString_GET_SIZE(obj);
     }
-    else
+    else if (PyObject_AsCharBuffer(obj, ap, aszp) < 0)
         return -1;
 
     return 0;
@@ -8071,10 +8563,21 @@ static int parseCharArray(PyObject *obj, char **ap, int *aszp)
  */
 static int parseChar(PyObject *obj, char *ap)
 {
-    if (!PyString_Check(obj) || PyString_GET_SIZE(obj) != 1)
+    const char *chp;
+    SIP_SSIZE_T sz;
+
+    if (PyString_Check(obj))
+    {
+        chp = PyString_AS_STRING(obj);
+        sz = PyString_GET_SIZE(obj);
+    }
+    else if (PyObject_AsCharBuffer(obj, &chp, &sz) < 0)
         return -1;
 
-    *ap = *PyString_AS_STRING(obj);
+    if (sz != 1)
+        return -1;
+
+    *ap = *chp;
 
     return 0;
 }
@@ -8083,16 +8586,11 @@ static int parseChar(PyObject *obj, char *ap)
 /*
  * Parse a character string and return it.
  */
-static int parseCharString(PyObject *obj, char **ap)
+static int parseCharString(PyObject *obj, const char **ap)
 {
-    if (obj == Py_None)
-        *ap = NULL;
-    else if (PyString_Check(obj))
-        *ap = PyString_AS_STRING(obj);
-    else
-        return -1;
+    SIP_SSIZE_T sz;
 
-    return 0;
+    return parseCharArray(obj, ap, &sz);
 }
 
 
@@ -8107,7 +8605,6 @@ static wchar_t sip_api_unicode_as_wchar(PyObject *obj)
     if (parseWChar(obj, &ch) < 0)
     {
         PyErr_SetString(PyExc_ValueError, "unicode string of length 1 expected");
-
         return L'\0';
     }
 
@@ -8125,7 +8622,6 @@ static wchar_t *sip_api_unicode_as_wstring(PyObject *obj)
     if (parseWCharString(obj, &p) < 0)
     {
         PyErr_SetString(PyExc_ValueError, "unicode string expected");
-
         return NULL;
     }
 
@@ -8136,7 +8632,7 @@ static wchar_t *sip_api_unicode_as_wstring(PyObject *obj)
 /*
  * Parse a wide character array and return it's address and length.
  */
-static int parseWCharArray(PyObject *obj, wchar_t **ap, int *aszp)
+static int parseWCharArray(PyObject *obj, wchar_t **ap, SIP_SSIZE_T *aszp)
 {
     if (obj == Py_None)
     {
@@ -8162,7 +8658,7 @@ static int parseWCharArray(PyObject *obj, wchar_t **ap, int *aszp)
         }
 
         *ap = wc;
-        *aszp = (int)ulen;
+        *aszp = ulen;
     }
     else
         return -1;
