@@ -5,7 +5,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="Docutils 0.4: http://docutils.sourceforge.net/" />
 <title>SIP - A Tool for Generating Python Bindings for C and C++ Libraries</title>
-<meta name="copyright" content="Copyright (c) 2007 Riverbank Computing Limited" />
+<meta name="copyright" content="Copyright (c) 2008 Riverbank Computing Limited" />
 <style type="text/css">
 
 /*
@@ -299,11 +299,11 @@ ul.auto-toc {
 <col class="docinfo-content" />
 <tbody valign="top">
 <tr><th class="docinfo-name">Contact:</th>
-<td><a class="first last reference" href="mailto:info&#64;riverbankcomputing.co.uk">info&#64;riverbankcomputing.co.uk</a></td></tr>
+<td><a class="first last reference" href="mailto:info&#64;riverbankcomputing.com">info&#64;riverbankcomputing.com</a></td></tr>
 <tr><th class="docinfo-name">Version:</th>
-<td>4.7.4</td></tr>
+<td>4.7.6-snapshot-20080518</td></tr>
 <tr><th class="docinfo-name">Copyright:</th>
-<td>Copyright (c) 2007 Riverbank Computing Limited</td></tr>
+<td>Copyright (c) 2008 Riverbank Computing Limited</td></tr>
 </tbody>
 </table>
 <div class="contents topic">
@@ -336,230 +336,242 @@ ul.auto-toc {
 <li><a class="reference" href="#id7" id="id40" name="id40">4.2&nbsp;&nbsp;&nbsp;A Simple C Example</a></li>
 <li><a class="reference" href="#a-more-complex-c-example" id="id41" name="id41">4.3&nbsp;&nbsp;&nbsp;A More Complex C++ Example</a></li>
 <li><a class="reference" href="#ownership-of-objects" id="id42" name="id42">4.4&nbsp;&nbsp;&nbsp;Ownership of Objects</a></li>
-<li><a class="reference" href="#support-for-wide-characters" id="id43" name="id43">4.5&nbsp;&nbsp;&nbsp;Support for Wide Characters</a></li>
-<li><a class="reference" href="#the-python-global-interpreter-lock" id="id44" name="id44">4.6&nbsp;&nbsp;&nbsp;The Python Global Interpreter Lock</a></li>
+<li><a class="reference" href="#support-for-python-s-buffer-interface" id="id43" name="id43">4.5&nbsp;&nbsp;&nbsp;Support for Python's Buffer Interface</a></li>
+<li><a class="reference" href="#support-for-wide-characters" id="id44" name="id44">4.6&nbsp;&nbsp;&nbsp;Support for Wide Characters</a></li>
+<li><a class="reference" href="#the-python-global-interpreter-lock" id="id45" name="id45">4.7&nbsp;&nbsp;&nbsp;The Python Global Interpreter Lock</a></li>
 </ul>
 </li>
-<li><a class="reference" href="#the-sip-command-line" id="id45" name="id45">5&nbsp;&nbsp;&nbsp;The SIP Command Line</a></li>
-<li><a class="reference" href="#sip-specification-files" id="id46" name="id46">6&nbsp;&nbsp;&nbsp;SIP Specification Files</a><ul class="auto-toc">
-<li><a class="reference" href="#syntax-definition" id="id47" name="id47">6.1&nbsp;&nbsp;&nbsp;Syntax Definition</a></li>
-<li><a class="reference" href="#variable-numbers-of-arguments" id="id48" name="id48">6.2&nbsp;&nbsp;&nbsp;Variable Numbers of Arguments</a></li>
-<li><a class="reference" href="#additional-sip-types" id="id49" name="id49">6.3&nbsp;&nbsp;&nbsp;Additional SIP Types</a><ul class="auto-toc">
-<li><a class="reference" href="#sip-anyslot" id="id50" name="id50">6.3.1&nbsp;&nbsp;&nbsp;SIP_ANYSLOT</a></li>
-<li><a class="reference" href="#sip-pycallable" id="id51" name="id51">6.3.2&nbsp;&nbsp;&nbsp;SIP_PYCALLABLE</a></li>
-<li><a class="reference" href="#sip-pydict" id="id52" name="id52">6.3.3&nbsp;&nbsp;&nbsp;SIP_PYDICT</a></li>
-<li><a class="reference" href="#sip-pylist" id="id53" name="id53">6.3.4&nbsp;&nbsp;&nbsp;SIP_PYLIST</a></li>
-<li><a class="reference" href="#sip-pyobject" id="id54" name="id54">6.3.5&nbsp;&nbsp;&nbsp;SIP_PYOBJECT</a></li>
-<li><a class="reference" href="#sip-pyslice" id="id55" name="id55">6.3.6&nbsp;&nbsp;&nbsp;SIP_PYSLICE</a></li>
-<li><a class="reference" href="#sip-pytuple" id="id56" name="id56">6.3.7&nbsp;&nbsp;&nbsp;SIP_PYTUPLE</a></li>
-<li><a class="reference" href="#sip-pytype" id="id57" name="id57">6.3.8&nbsp;&nbsp;&nbsp;SIP_PYTYPE</a></li>
-<li><a class="reference" href="#sip-qobject" id="id58" name="id58">6.3.9&nbsp;&nbsp;&nbsp;SIP_QOBJECT</a></li>
-<li><a class="reference" href="#sip-rxobj-con" id="id59" name="id59">6.3.10&nbsp;&nbsp;&nbsp;SIP_RXOBJ_CON</a></li>
-<li><a class="reference" href="#sip-rxobj-dis" id="id60" name="id60">6.3.11&nbsp;&nbsp;&nbsp;SIP_RXOBJ_DIS</a></li>
-<li><a class="reference" href="#sip-signal" id="id61" name="id61">6.3.12&nbsp;&nbsp;&nbsp;SIP_SIGNAL</a></li>
-<li><a class="reference" href="#sip-slot" id="id62" name="id62">6.3.13&nbsp;&nbsp;&nbsp;SIP_SLOT</a></li>
-<li><a class="reference" href="#sip-slot-con" id="id63" name="id63">6.3.14&nbsp;&nbsp;&nbsp;SIP_SLOT_CON</a></li>
-<li><a class="reference" href="#sip-slot-dis" id="id64" name="id64">6.3.15&nbsp;&nbsp;&nbsp;SIP_SLOT_DIS</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li><a class="reference" href="#sip-directives" id="id65" name="id65">7&nbsp;&nbsp;&nbsp;SIP Directives</a><ul class="auto-toc">
-<li><a class="reference" href="#accesscode" id="id66" name="id66">7.1&nbsp;&nbsp;&nbsp;%AccessCode</a></li>
-<li><a class="reference" href="#bigetcharbuffercode" id="id67" name="id67">7.2&nbsp;&nbsp;&nbsp;%BIGetCharBufferCode</a></li>
-<li><a class="reference" href="#bigetreadbuffercode" id="id68" name="id68">7.3&nbsp;&nbsp;&nbsp;%BIGetReadBufferCode</a></li>
-<li><a class="reference" href="#bigetsegcountcode" id="id69" name="id69">7.4&nbsp;&nbsp;&nbsp;%BIGetSegCountCode</a></li>
-<li><a class="reference" href="#bigetwritebuffercode" id="id70" name="id70">7.5&nbsp;&nbsp;&nbsp;%BIGetWriteBufferCode</a></li>
-<li><a class="reference" href="#cmodule" id="id71" name="id71">7.6&nbsp;&nbsp;&nbsp;%CModule</a></li>
-<li><a class="reference" href="#compositemodule" id="id72" name="id72">7.7&nbsp;&nbsp;&nbsp;%CompositeModule</a></li>
-<li><a class="reference" href="#consolidatedmodule" id="id73" name="id73">7.8&nbsp;&nbsp;&nbsp;%ConsolidatedModule</a></li>
-<li><a class="reference" href="#convertfromtypecode" id="id74" name="id74">7.9&nbsp;&nbsp;&nbsp;%ConvertFromTypeCode</a></li>
-<li><a class="reference" href="#converttosubclasscode" id="id75" name="id75">7.10&nbsp;&nbsp;&nbsp;%ConvertToSubClassCode</a></li>
-<li><a class="reference" href="#converttotypecode" id="id76" name="id76">7.11&nbsp;&nbsp;&nbsp;%ConvertToTypeCode</a></li>
-<li><a class="reference" href="#copying" id="id77" name="id77">7.12&nbsp;&nbsp;&nbsp;%Copying</a></li>
-<li><a class="reference" href="#doc" id="id78" name="id78">7.13&nbsp;&nbsp;&nbsp;%Doc</a></li>
-<li><a class="reference" href="#end" id="id79" name="id79">7.14&nbsp;&nbsp;&nbsp;%End</a></li>
-<li><a class="reference" href="#exception" id="id80" name="id80">7.15&nbsp;&nbsp;&nbsp;%Exception</a></li>
-<li><a class="reference" href="#exporteddoc" id="id81" name="id81">7.16&nbsp;&nbsp;&nbsp;%ExportedDoc</a></li>
-<li><a class="reference" href="#exportedheadercode" id="id82" name="id82">7.17&nbsp;&nbsp;&nbsp;%ExportedHeaderCode</a></li>
-<li><a class="reference" href="#feature" id="id83" name="id83">7.18&nbsp;&nbsp;&nbsp;%Feature</a></li>
-<li><a class="reference" href="#gcclearcode" id="id84" name="id84">7.19&nbsp;&nbsp;&nbsp;%GCClearCode</a></li>
-<li><a class="reference" href="#gctraversecode" id="id85" name="id85">7.20&nbsp;&nbsp;&nbsp;%GCTraverseCode</a></li>
-<li><a class="reference" href="#getcode" id="id86" name="id86">7.21&nbsp;&nbsp;&nbsp;%GetCode</a></li>
-<li><a class="reference" href="#if" id="id87" name="id87">7.22&nbsp;&nbsp;&nbsp;%If</a></li>
-<li><a class="reference" href="#import" id="id88" name="id88">7.23&nbsp;&nbsp;&nbsp;%Import</a></li>
-<li><a class="reference" href="#include" id="id89" name="id89">7.24&nbsp;&nbsp;&nbsp;%Include</a></li>
-<li><a class="reference" href="#id14" id="id90" name="id90">7.25&nbsp;&nbsp;&nbsp;%License</a></li>
-<li><a class="reference" href="#mappedtype" id="id91" name="id91">7.26&nbsp;&nbsp;&nbsp;%MappedType</a></li>
-<li><a class="reference" href="#methodcode" id="id92" name="id92">7.27&nbsp;&nbsp;&nbsp;%MethodCode</a></li>
-<li><a class="reference" href="#module" id="id93" name="id93">7.28&nbsp;&nbsp;&nbsp;%Module</a></li>
-<li><a class="reference" href="#modulecode" id="id94" name="id94">7.29&nbsp;&nbsp;&nbsp;%ModuleCode</a></li>
-<li><a class="reference" href="#moduleheadercode" id="id95" name="id95">7.30&nbsp;&nbsp;&nbsp;%ModuleHeaderCode</a></li>
-<li><a class="reference" href="#optionalinclude" id="id96" name="id96">7.31&nbsp;&nbsp;&nbsp;%OptionalInclude</a></li>
-<li><a class="reference" href="#picklecode" id="id97" name="id97">7.32&nbsp;&nbsp;&nbsp;%PickleCode</a></li>
-<li><a class="reference" href="#platforms" id="id98" name="id98">7.33&nbsp;&nbsp;&nbsp;%Platforms</a></li>
-<li><a class="reference" href="#postinitialisationcode" id="id99" name="id99">7.34&nbsp;&nbsp;&nbsp;%PostInitialisationCode</a></li>
-<li><a class="reference" href="#preinitialisationcode" id="id100" name="id100">7.35&nbsp;&nbsp;&nbsp;%PreInitialisationCode</a></li>
-<li><a class="reference" href="#raisecode" id="id101" name="id101">7.36&nbsp;&nbsp;&nbsp;%RaiseCode</a></li>
-<li><a class="reference" href="#setcode" id="id102" name="id102">7.37&nbsp;&nbsp;&nbsp;%SetCode</a></li>
-<li><a class="reference" href="#sipoptions" id="id103" name="id103">7.38&nbsp;&nbsp;&nbsp;%SIPOptions</a></li>
-<li><a class="reference" href="#timeline" id="id104" name="id104">7.39&nbsp;&nbsp;&nbsp;%Timeline</a></li>
-<li><a class="reference" href="#typecode" id="id105" name="id105">7.40&nbsp;&nbsp;&nbsp;%TypeCode</a></li>
-<li><a class="reference" href="#typeheadercode" id="id106" name="id106">7.41&nbsp;&nbsp;&nbsp;%TypeHeaderCode</a></li>
-<li><a class="reference" href="#unitcode" id="id107" name="id107">7.42&nbsp;&nbsp;&nbsp;%UnitCode</a></li>
-<li><a class="reference" href="#virtualcatchercode" id="id108" name="id108">7.43&nbsp;&nbsp;&nbsp;%VirtualCatcherCode</a></li>
-</ul>
-</li>
-<li><a class="reference" href="#sip-annotations" id="id109" name="id109">8&nbsp;&nbsp;&nbsp;SIP Annotations</a><ul class="auto-toc">
-<li><a class="reference" href="#argument-annotations" id="id110" name="id110">8.1&nbsp;&nbsp;&nbsp;Argument Annotations</a><ul class="auto-toc">
-<li><a class="reference" href="#allownone" id="id111" name="id111">8.1.1&nbsp;&nbsp;&nbsp;AllowNone</a></li>
-<li><a class="reference" href="#array" id="id112" name="id112">8.1.2&nbsp;&nbsp;&nbsp;Array</a></li>
-<li><a class="reference" href="#arraysize" id="id113" name="id113">8.1.3&nbsp;&nbsp;&nbsp;ArraySize</a></li>
-<li><a class="reference" href="#constrained" id="id114" name="id114">8.1.4&nbsp;&nbsp;&nbsp;Constrained</a></li>
-<li><a class="reference" href="#getwrapper" id="id115" name="id115">8.1.5&nbsp;&nbsp;&nbsp;GetWrapper</a></li>
-<li><a class="reference" href="#in" id="id116" name="id116">8.1.6&nbsp;&nbsp;&nbsp;In</a></li>
-<li><a class="reference" href="#out" id="id117" name="id117">8.1.7&nbsp;&nbsp;&nbsp;Out</a></li>
-<li><a class="reference" href="#singleshot" id="id118" name="id118">8.1.8&nbsp;&nbsp;&nbsp;SingleShot</a></li>
-<li><a class="reference" href="#transfer" id="id119" name="id119">8.1.9&nbsp;&nbsp;&nbsp;Transfer</a></li>
-<li><a class="reference" href="#transferback" id="id120" name="id120">8.1.10&nbsp;&nbsp;&nbsp;TransferBack</a></li>
-<li><a class="reference" href="#transferthis" id="id121" name="id121">8.1.11&nbsp;&nbsp;&nbsp;TransferThis</a></li>
-</ul>
-</li>
-<li><a class="reference" href="#class-annotations" id="id122" name="id122">8.2&nbsp;&nbsp;&nbsp;Class Annotations</a><ul class="auto-toc">
-<li><a class="reference" href="#abstract" id="id123" name="id123">8.2.1&nbsp;&nbsp;&nbsp;Abstract</a></li>
-<li><a class="reference" href="#delaydtor" id="id124" name="id124">8.2.2&nbsp;&nbsp;&nbsp;DelayDtor</a></li>
-<li><a class="reference" href="#external" id="id125" name="id125">8.2.3&nbsp;&nbsp;&nbsp;External</a></li>
-<li><a class="reference" href="#nodefaultctors" id="id126" name="id126">8.2.4&nbsp;&nbsp;&nbsp;NoDefaultCtors</a></li>
-<li><a class="reference" href="#pyname" id="id127" name="id127">8.2.5&nbsp;&nbsp;&nbsp;PyName</a></li>
-</ul>
-</li>
-<li><a class="reference" href="#enum-annotations" id="id128" name="id128">8.3&nbsp;&nbsp;&nbsp;Enum Annotations</a><ul class="auto-toc">
-<li><a class="reference" href="#id17" id="id129" name="id129">8.3.1&nbsp;&nbsp;&nbsp;PyName</a></li>
-</ul>
-</li>
-<li><a class="reference" href="#exception-annotations" id="id130" name="id130">8.4&nbsp;&nbsp;&nbsp;Exception Annotations</a><ul class="auto-toc">
-<li><a class="reference" href="#id18" id="id131" name="id131">8.4.1&nbsp;&nbsp;&nbsp;PyName</a></li>
-</ul>
-</li>
-<li><a class="reference" href="#function-annotations" id="id132" name="id132">8.5&nbsp;&nbsp;&nbsp;Function Annotations</a><ul class="auto-toc">
-<li><a class="reference" href="#autogen" id="id133" name="id133">8.5.1&nbsp;&nbsp;&nbsp;AutoGen</a></li>
-<li><a class="reference" href="#default" id="id134" name="id134">8.5.2&nbsp;&nbsp;&nbsp;Default</a></li>
-<li><a class="reference" href="#factory" id="id135" name="id135">8.5.3&nbsp;&nbsp;&nbsp;Factory</a></li>
-<li><a class="reference" href="#holdgil" id="id136" name="id136">8.5.4&nbsp;&nbsp;&nbsp;HoldGIL</a></li>
-<li><a class="reference" href="#newthread" id="id137" name="id137">8.5.5&nbsp;&nbsp;&nbsp;NewThread</a></li>
-<li><a class="reference" href="#noderived" id="id138" name="id138">8.5.6&nbsp;&nbsp;&nbsp;NoDerived</a></li>
-<li><a class="reference" href="#numeric" id="id139" name="id139">8.5.7&nbsp;&nbsp;&nbsp;Numeric</a></li>
-<li><a class="reference" href="#posthook" id="id140" name="id140">8.5.8&nbsp;&nbsp;&nbsp;PostHook</a></li>
-<li><a class="reference" href="#prehook" id="id141" name="id141">8.5.9&nbsp;&nbsp;&nbsp;PreHook</a></li>
-<li><a class="reference" href="#id19" id="id142" name="id142">8.5.10&nbsp;&nbsp;&nbsp;PyName</a></li>
-<li><a class="reference" href="#releasegil" id="id143" name="id143">8.5.11&nbsp;&nbsp;&nbsp;ReleaseGIL</a></li>
-<li><a class="reference" href="#id20" id="id144" name="id144">8.5.12&nbsp;&nbsp;&nbsp;Transfer</a></li>
-<li><a class="reference" href="#id21" id="id145" name="id145">8.5.13&nbsp;&nbsp;&nbsp;TransferBack</a></li>
-<li><a class="reference" href="#id22" id="id146" name="id146">8.5.14&nbsp;&nbsp;&nbsp;TransferThis</a></li>
-</ul>
-</li>
-<li><a class="reference" href="#license-annotations" id="id147" name="id147">8.6&nbsp;&nbsp;&nbsp;License Annotations</a><ul class="auto-toc">
-<li><a class="reference" href="#licensee" id="id148" name="id148">8.6.1&nbsp;&nbsp;&nbsp;Licensee</a></li>
-<li><a class="reference" href="#signature" id="id149" name="id149">8.6.2&nbsp;&nbsp;&nbsp;Signature</a></li>
-<li><a class="reference" href="#timestamp" id="id150" name="id150">8.6.3&nbsp;&nbsp;&nbsp;Timestamp</a></li>
-<li><a class="reference" href="#type" id="id151" name="id151">8.6.4&nbsp;&nbsp;&nbsp;Type</a></li>
-</ul>
-</li>
-<li><a class="reference" href="#variable-annotations" id="id152" name="id152">8.7&nbsp;&nbsp;&nbsp;Variable Annotations</a><ul class="auto-toc">
-<li><a class="reference" href="#id23" id="id153" name="id153">8.7.1&nbsp;&nbsp;&nbsp;PyName</a></li>
+<li><a class="reference" href="#the-sip-command-line" id="id46" name="id46">5&nbsp;&nbsp;&nbsp;The SIP Command Line</a></li>
+<li><a class="reference" href="#sip-specification-files" id="id47" name="id47">6&nbsp;&nbsp;&nbsp;SIP Specification Files</a><ul class="auto-toc">
+<li><a class="reference" href="#syntax-definition" id="id48" name="id48">6.1&nbsp;&nbsp;&nbsp;Syntax Definition</a></li>
+<li><a class="reference" href="#variable-numbers-of-arguments" id="id49" name="id49">6.2&nbsp;&nbsp;&nbsp;Variable Numbers of Arguments</a></li>
+<li><a class="reference" href="#additional-sip-types" id="id50" name="id50">6.3&nbsp;&nbsp;&nbsp;Additional SIP Types</a><ul class="auto-toc">
+<li><a class="reference" href="#sip-anyslot" id="id51" name="id51">6.3.1&nbsp;&nbsp;&nbsp;SIP_ANYSLOT</a></li>
+<li><a class="reference" href="#sip-pycallable" id="id52" name="id52">6.3.2&nbsp;&nbsp;&nbsp;SIP_PYCALLABLE</a></li>
+<li><a class="reference" href="#sip-pydict" id="id53" name="id53">6.3.3&nbsp;&nbsp;&nbsp;SIP_PYDICT</a></li>
+<li><a class="reference" href="#sip-pylist" id="id54" name="id54">6.3.4&nbsp;&nbsp;&nbsp;SIP_PYLIST</a></li>
+<li><a class="reference" href="#sip-pyobject" id="id55" name="id55">6.3.5&nbsp;&nbsp;&nbsp;SIP_PYOBJECT</a></li>
+<li><a class="reference" href="#sip-pyslice" id="id56" name="id56">6.3.6&nbsp;&nbsp;&nbsp;SIP_PYSLICE</a></li>
+<li><a class="reference" href="#sip-pytuple" id="id57" name="id57">6.3.7&nbsp;&nbsp;&nbsp;SIP_PYTUPLE</a></li>
+<li><a class="reference" href="#sip-pytype" id="id58" name="id58">6.3.8&nbsp;&nbsp;&nbsp;SIP_PYTYPE</a></li>
+<li><a class="reference" href="#sip-qobject" id="id59" name="id59">6.3.9&nbsp;&nbsp;&nbsp;SIP_QOBJECT</a></li>
+<li><a class="reference" href="#sip-rxobj-con" id="id60" name="id60">6.3.10&nbsp;&nbsp;&nbsp;SIP_RXOBJ_CON</a></li>
+<li><a class="reference" href="#sip-rxobj-dis" id="id61" name="id61">6.3.11&nbsp;&nbsp;&nbsp;SIP_RXOBJ_DIS</a></li>
+<li><a class="reference" href="#sip-signal" id="id62" name="id62">6.3.12&nbsp;&nbsp;&nbsp;SIP_SIGNAL</a></li>
+<li><a class="reference" href="#sip-slot" id="id63" name="id63">6.3.13&nbsp;&nbsp;&nbsp;SIP_SLOT</a></li>
+<li><a class="reference" href="#sip-slot-con" id="id64" name="id64">6.3.14&nbsp;&nbsp;&nbsp;SIP_SLOT_CON</a></li>
+<li><a class="reference" href="#sip-slot-dis" id="id65" name="id65">6.3.15&nbsp;&nbsp;&nbsp;SIP_SLOT_DIS</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a class="reference" href="#sip-api-for-handwritten-code" id="id154" name="id154">9&nbsp;&nbsp;&nbsp;SIP API for Handwritten Code</a><ul class="auto-toc">
-<li><a class="reference" href="#sip-api-major-nr" id="id155" name="id155">9.1&nbsp;&nbsp;&nbsp;SIP_API_MAJOR_NR</a></li>
-<li><a class="reference" href="#sip-api-minor-nr" id="id156" name="id156">9.2&nbsp;&nbsp;&nbsp;SIP_API_MINOR_NR</a></li>
-<li><a class="reference" href="#sip-block-threads" id="id157" name="id157">9.3&nbsp;&nbsp;&nbsp;SIP_BLOCK_THREADS</a></li>
-<li><a class="reference" href="#sip-ssize-t" id="id158" name="id158">9.4&nbsp;&nbsp;&nbsp;SIP_SSIZE_T</a></li>
-<li><a class="reference" href="#sip-unblock-threads" id="id159" name="id159">9.5&nbsp;&nbsp;&nbsp;SIP_UNBLOCK_THREADS</a></li>
-<li><a class="reference" href="#sip-version" id="id160" name="id160">9.6&nbsp;&nbsp;&nbsp;SIP_VERSION</a></li>
-<li><a class="reference" href="#sip-version-str" id="id161" name="id161">9.7&nbsp;&nbsp;&nbsp;SIP_VERSION_STR</a></li>
-<li><a class="reference" href="#sipbadcatcherresult" id="id162" name="id162">9.8&nbsp;&nbsp;&nbsp;sipBadCatcherResult()</a></li>
-<li><a class="reference" href="#sipbadlengthforslice" id="id163" name="id163">9.9&nbsp;&nbsp;&nbsp;sipBadLengthForSlice()</a></li>
-<li><a class="reference" href="#sipbuildresult" id="id164" name="id164">9.10&nbsp;&nbsp;&nbsp;sipBuildResult()</a></li>
-<li><a class="reference" href="#sipcallmethod" id="id165" name="id165">9.11&nbsp;&nbsp;&nbsp;sipCallMethod()</a></li>
-<li><a class="reference" href="#sipcanconverttoinstance" id="id166" name="id166">9.12&nbsp;&nbsp;&nbsp;sipCanConvertToInstance()</a></li>
-<li><a class="reference" href="#sipcanconverttomappedtype" id="id167" name="id167">9.13&nbsp;&nbsp;&nbsp;sipCanConvertToMappedType()</a></li>
-<li><a class="reference" href="#sipclassname" id="id168" name="id168">9.14&nbsp;&nbsp;&nbsp;sipClassName()</a></li>
-<li><a class="reference" href="#sipconnectrx" id="id169" name="id169">9.15&nbsp;&nbsp;&nbsp;sipConnectRx()</a></li>
-<li><a class="reference" href="#sipconvertfrominstance" id="id170" name="id170">9.16&nbsp;&nbsp;&nbsp;sipConvertFromInstance()</a></li>
-<li><a class="reference" href="#sipconvertfrommappedtype" id="id171" name="id171">9.17&nbsp;&nbsp;&nbsp;sipConvertFromMappedType()</a></li>
-<li><a class="reference" href="#sipconvertfromnamedenum" id="id172" name="id172">9.18&nbsp;&nbsp;&nbsp;sipConvertFromNamedEnum()</a></li>
-<li><a class="reference" href="#sipconvertfromnewinstance" id="id173" name="id173">9.19&nbsp;&nbsp;&nbsp;sipConvertFromNewInstance()</a></li>
-<li><a class="reference" href="#sipconvertfromsequenceindex" id="id174" name="id174">9.20&nbsp;&nbsp;&nbsp;sipConvertFromSequenceIndex()</a></li>
-<li><a class="reference" href="#sipconvertfromsliceobject" id="id175" name="id175">9.21&nbsp;&nbsp;&nbsp;sipConvertFromSliceObject()</a></li>
-<li><a class="reference" href="#sipconverttocpp" id="id176" name="id176">9.22&nbsp;&nbsp;&nbsp;sipConvertToCpp()</a></li>
-<li><a class="reference" href="#sipconverttoinstance" id="id177" name="id177">9.23&nbsp;&nbsp;&nbsp;sipConvertToInstance()</a></li>
-<li><a class="reference" href="#sipconverttomappedtype" id="id178" name="id178">9.24&nbsp;&nbsp;&nbsp;sipConvertToMappedType()</a></li>
-<li><a class="reference" href="#sipdisconnectrx" id="id179" name="id179">9.25&nbsp;&nbsp;&nbsp;sipDisconnectRx()</a></li>
-<li><a class="reference" href="#sipemitsignal" id="id180" name="id180">9.26&nbsp;&nbsp;&nbsp;sipEmitSignal()</a></li>
-<li><a class="reference" href="#sipexportsymbol" id="id181" name="id181">9.27&nbsp;&nbsp;&nbsp;sipExportSymbol()</a></li>
-<li><a class="reference" href="#sipfindclass" id="id182" name="id182">9.28&nbsp;&nbsp;&nbsp;sipFindClass()</a></li>
-<li><a class="reference" href="#sipfindmappedtype" id="id183" name="id183">9.29&nbsp;&nbsp;&nbsp;sipFindMappedType()</a></li>
-<li><a class="reference" href="#sipfindnamedenum" id="id184" name="id184">9.30&nbsp;&nbsp;&nbsp;sipFindNamedEnum()</a></li>
-<li><a class="reference" href="#sipforceconverttoinstance" id="id185" name="id185">9.31&nbsp;&nbsp;&nbsp;sipForceConvertToInstance()</a></li>
-<li><a class="reference" href="#sipforceconverttomappedtype" id="id186" name="id186">9.32&nbsp;&nbsp;&nbsp;sipForceConvertToMappedType()</a></li>
-<li><a class="reference" href="#sipfree" id="id187" name="id187">9.33&nbsp;&nbsp;&nbsp;sipFree()</a></li>
-<li><a class="reference" href="#sipgetsender" id="id188" name="id188">9.34&nbsp;&nbsp;&nbsp;sipGetSender()</a></li>
-<li><a class="reference" href="#sipgetwrapper" id="id189" name="id189">9.35&nbsp;&nbsp;&nbsp;sipGetWrapper()</a></li>
-<li><a class="reference" href="#sipimportsymbol" id="id190" name="id190">9.36&nbsp;&nbsp;&nbsp;sipImportSymbol()</a></li>
-<li><a class="reference" href="#sipinttypeclassmap" id="id191" name="id191">9.37&nbsp;&nbsp;&nbsp;sipIntTypeClassMap</a></li>
-<li><a class="reference" href="#sipissubclassinstance" id="id192" name="id192">9.38&nbsp;&nbsp;&nbsp;sipIsSubClassInstance()</a></li>
-<li><a class="reference" href="#siplong-asunsignedlong" id="id193" name="id193">9.39&nbsp;&nbsp;&nbsp;sipLong_AsUnsignedLong()</a></li>
-<li><a class="reference" href="#sipmalloc" id="id194" name="id194">9.40&nbsp;&nbsp;&nbsp;sipMalloc()</a></li>
-<li><a class="reference" href="#sipmapinttoclass" id="id195" name="id195">9.41&nbsp;&nbsp;&nbsp;sipMapIntToClass()</a></li>
-<li><a class="reference" href="#sipmapstringtoclass" id="id196" name="id196">9.42&nbsp;&nbsp;&nbsp;sipMapStringToClass()</a></li>
-<li><a class="reference" href="#sipparseresult" id="id197" name="id197">9.43&nbsp;&nbsp;&nbsp;sipParseResult()</a></li>
-<li><a class="reference" href="#sipreleaseinstance" id="id198" name="id198">9.44&nbsp;&nbsp;&nbsp;sipReleaseInstance()</a></li>
-<li><a class="reference" href="#sipreleasemappedtype" id="id199" name="id199">9.45&nbsp;&nbsp;&nbsp;sipReleaseMappedType()</a></li>
-<li><a class="reference" href="#sipstringtypeclassmap" id="id200" name="id200">9.46&nbsp;&nbsp;&nbsp;sipStringTypeClassMap</a></li>
-<li><a class="reference" href="#siptransfer" id="id201" name="id201">9.47&nbsp;&nbsp;&nbsp;sipTransfer()</a></li>
-<li><a class="reference" href="#siptransferback" id="id202" name="id202">9.48&nbsp;&nbsp;&nbsp;sipTransferBack()</a></li>
-<li><a class="reference" href="#siptransferbreak" id="id203" name="id203">9.49&nbsp;&nbsp;&nbsp;sipTransferBreak()</a></li>
-<li><a class="reference" href="#siptransferto" id="id204" name="id204">9.50&nbsp;&nbsp;&nbsp;sipTransferTo()</a></li>
-<li><a class="reference" href="#sipwrapper" id="id205" name="id205">9.51&nbsp;&nbsp;&nbsp;sipWrapper</a></li>
-<li><a class="reference" href="#sipwrapper-check" id="id206" name="id206">9.52&nbsp;&nbsp;&nbsp;sipWrapper_Check()</a></li>
-<li><a class="reference" href="#sipwrappertype" id="id207" name="id207">9.53&nbsp;&nbsp;&nbsp;sipWrapperType</a></li>
-<li><a class="reference" href="#generated-type-convertors" id="id208" name="id208">9.54&nbsp;&nbsp;&nbsp;Generated Type Convertors</a></li>
-<li><a class="reference" href="#generated-type-objects" id="id209" name="id209">9.55&nbsp;&nbsp;&nbsp;Generated Type Objects</a></li>
-<li><a class="reference" href="#generated-named-enum-type-objects" id="id210" name="id210">9.56&nbsp;&nbsp;&nbsp;Generated Named Enum Type Objects</a></li>
-<li><a class="reference" href="#generated-derived-classes" id="id211" name="id211">9.57&nbsp;&nbsp;&nbsp;Generated Derived Classes</a></li>
-<li><a class="reference" href="#generated-exception-objects" id="id212" name="id212">9.58&nbsp;&nbsp;&nbsp;Generated Exception Objects</a></li>
+<li><a class="reference" href="#sip-directives" id="id66" name="id66">7&nbsp;&nbsp;&nbsp;SIP Directives</a><ul class="auto-toc">
+<li><a class="reference" href="#accesscode" id="id67" name="id67">7.1&nbsp;&nbsp;&nbsp;%AccessCode</a></li>
+<li><a class="reference" href="#bigetcharbuffercode" id="id68" name="id68">7.2&nbsp;&nbsp;&nbsp;%BIGetCharBufferCode</a></li>
+<li><a class="reference" href="#bigetreadbuffercode" id="id69" name="id69">7.3&nbsp;&nbsp;&nbsp;%BIGetReadBufferCode</a></li>
+<li><a class="reference" href="#bigetsegcountcode" id="id70" name="id70">7.4&nbsp;&nbsp;&nbsp;%BIGetSegCountCode</a></li>
+<li><a class="reference" href="#bigetwritebuffercode" id="id71" name="id71">7.5&nbsp;&nbsp;&nbsp;%BIGetWriteBufferCode</a></li>
+<li><a class="reference" href="#cmodule" id="id72" name="id72">7.6&nbsp;&nbsp;&nbsp;%CModule</a></li>
+<li><a class="reference" href="#compositemodule" id="id73" name="id73">7.7&nbsp;&nbsp;&nbsp;%CompositeModule</a></li>
+<li><a class="reference" href="#consolidatedmodule" id="id74" name="id74">7.8&nbsp;&nbsp;&nbsp;%ConsolidatedModule</a></li>
+<li><a class="reference" href="#convertfromtypecode" id="id75" name="id75">7.9&nbsp;&nbsp;&nbsp;%ConvertFromTypeCode</a></li>
+<li><a class="reference" href="#converttosubclasscode" id="id76" name="id76">7.10&nbsp;&nbsp;&nbsp;%ConvertToSubClassCode</a></li>
+<li><a class="reference" href="#converttotypecode" id="id77" name="id77">7.11&nbsp;&nbsp;&nbsp;%ConvertToTypeCode</a></li>
+<li><a class="reference" href="#copying" id="id78" name="id78">7.12&nbsp;&nbsp;&nbsp;%Copying</a></li>
+<li><a class="reference" href="#doc" id="id79" name="id79">7.13&nbsp;&nbsp;&nbsp;%Doc</a></li>
+<li><a class="reference" href="#end" id="id80" name="id80">7.14&nbsp;&nbsp;&nbsp;%End</a></li>
+<li><a class="reference" href="#exception" id="id81" name="id81">7.15&nbsp;&nbsp;&nbsp;%Exception</a></li>
+<li><a class="reference" href="#exporteddoc" id="id82" name="id82">7.16&nbsp;&nbsp;&nbsp;%ExportedDoc</a></li>
+<li><a class="reference" href="#exportedheadercode" id="id83" name="id83">7.17&nbsp;&nbsp;&nbsp;%ExportedHeaderCode</a></li>
+<li><a class="reference" href="#feature" id="id84" name="id84">7.18&nbsp;&nbsp;&nbsp;%Feature</a></li>
+<li><a class="reference" href="#gcclearcode" id="id85" name="id85">7.19&nbsp;&nbsp;&nbsp;%GCClearCode</a></li>
+<li><a class="reference" href="#gctraversecode" id="id86" name="id86">7.20&nbsp;&nbsp;&nbsp;%GCTraverseCode</a></li>
+<li><a class="reference" href="#getcode" id="id87" name="id87">7.21&nbsp;&nbsp;&nbsp;%GetCode</a></li>
+<li><a class="reference" href="#if" id="id88" name="id88">7.22&nbsp;&nbsp;&nbsp;%If</a></li>
+<li><a class="reference" href="#import" id="id89" name="id89">7.23&nbsp;&nbsp;&nbsp;%Import</a></li>
+<li><a class="reference" href="#include" id="id90" name="id90">7.24&nbsp;&nbsp;&nbsp;%Include</a></li>
+<li><a class="reference" href="#id14" id="id91" name="id91">7.25&nbsp;&nbsp;&nbsp;%License</a></li>
+<li><a class="reference" href="#mappedtype" id="id92" name="id92">7.26&nbsp;&nbsp;&nbsp;%MappedType</a></li>
+<li><a class="reference" href="#methodcode" id="id93" name="id93">7.27&nbsp;&nbsp;&nbsp;%MethodCode</a></li>
+<li><a class="reference" href="#module" id="id94" name="id94">7.28&nbsp;&nbsp;&nbsp;%Module</a></li>
+<li><a class="reference" href="#modulecode" id="id95" name="id95">7.29&nbsp;&nbsp;&nbsp;%ModuleCode</a></li>
+<li><a class="reference" href="#moduleheadercode" id="id96" name="id96">7.30&nbsp;&nbsp;&nbsp;%ModuleHeaderCode</a></li>
+<li><a class="reference" href="#optionalinclude" id="id97" name="id97">7.31&nbsp;&nbsp;&nbsp;%OptionalInclude</a></li>
+<li><a class="reference" href="#picklecode" id="id98" name="id98">7.32&nbsp;&nbsp;&nbsp;%PickleCode</a></li>
+<li><a class="reference" href="#platforms" id="id99" name="id99">7.33&nbsp;&nbsp;&nbsp;%Platforms</a></li>
+<li><a class="reference" href="#postinitialisationcode" id="id100" name="id100">7.34&nbsp;&nbsp;&nbsp;%PostInitialisationCode</a></li>
+<li><a class="reference" href="#preinitialisationcode" id="id101" name="id101">7.35&nbsp;&nbsp;&nbsp;%PreInitialisationCode</a></li>
+<li><a class="reference" href="#raisecode" id="id102" name="id102">7.36&nbsp;&nbsp;&nbsp;%RaiseCode</a></li>
+<li><a class="reference" href="#setcode" id="id103" name="id103">7.37&nbsp;&nbsp;&nbsp;%SetCode</a></li>
+<li><a class="reference" href="#sipoptions" id="id104" name="id104">7.38&nbsp;&nbsp;&nbsp;%SIPOptions</a></li>
+<li><a class="reference" href="#timeline" id="id105" name="id105">7.39&nbsp;&nbsp;&nbsp;%Timeline</a></li>
+<li><a class="reference" href="#typecode" id="id106" name="id106">7.40&nbsp;&nbsp;&nbsp;%TypeCode</a></li>
+<li><a class="reference" href="#typeheadercode" id="id107" name="id107">7.41&nbsp;&nbsp;&nbsp;%TypeHeaderCode</a></li>
+<li><a class="reference" href="#unitcode" id="id108" name="id108">7.42&nbsp;&nbsp;&nbsp;%UnitCode</a></li>
+<li><a class="reference" href="#virtualcatchercode" id="id109" name="id109">7.43&nbsp;&nbsp;&nbsp;%VirtualCatcherCode</a></li>
 </ul>
 </li>
-<li><a class="reference" href="#using-the-sip-api-when-embedding" id="id213" name="id213">10&nbsp;&nbsp;&nbsp;Using the SIP API when Embedding</a></li>
-<li><a class="reference" href="#using-the-sip-module-in-applications" id="id214" name="id214">11&nbsp;&nbsp;&nbsp;Using the SIP Module in Applications</a></li>
-<li><a class="reference" href="#the-sip-build-system" id="id215" name="id215">12&nbsp;&nbsp;&nbsp;The SIP Build System</a><ul class="auto-toc">
-<li><a class="reference" href="#sipconfig-functions" id="id216" name="id216">12.1&nbsp;&nbsp;&nbsp;<tt class="docutils literal"><span class="pre">sipconfig</span></tt> Functions</a></li>
-<li><a class="reference" href="#sipconfig-classes" id="id217" name="id217">12.2&nbsp;&nbsp;&nbsp;<tt class="docutils literal"><span class="pre">sipconfig</span></tt> Classes</a></li>
+<li><a class="reference" href="#sip-annotations" id="id110" name="id110">8&nbsp;&nbsp;&nbsp;SIP Annotations</a><ul class="auto-toc">
+<li><a class="reference" href="#argument-annotations" id="id111" name="id111">8.1&nbsp;&nbsp;&nbsp;Argument Annotations</a><ul class="auto-toc">
+<li><a class="reference" href="#allownone" id="id112" name="id112">8.1.1&nbsp;&nbsp;&nbsp;AllowNone</a></li>
+<li><a class="reference" href="#array" id="id113" name="id113">8.1.2&nbsp;&nbsp;&nbsp;Array</a></li>
+<li><a class="reference" href="#arraysize" id="id114" name="id114">8.1.3&nbsp;&nbsp;&nbsp;ArraySize</a></li>
+<li><a class="reference" href="#constrained" id="id115" name="id115">8.1.4&nbsp;&nbsp;&nbsp;Constrained</a></li>
+<li><a class="reference" href="#getwrapper" id="id116" name="id116">8.1.5&nbsp;&nbsp;&nbsp;GetWrapper</a></li>
+<li><a class="reference" href="#in" id="id117" name="id117">8.1.6&nbsp;&nbsp;&nbsp;In</a></li>
+<li><a class="reference" href="#out" id="id118" name="id118">8.1.7&nbsp;&nbsp;&nbsp;Out</a></li>
+<li><a class="reference" href="#resultsize" id="id119" name="id119">8.1.8&nbsp;&nbsp;&nbsp;ResultSize</a></li>
+<li><a class="reference" href="#singleshot" id="id120" name="id120">8.1.9&nbsp;&nbsp;&nbsp;SingleShot</a></li>
+<li><a class="reference" href="#transfer" id="id121" name="id121">8.1.10&nbsp;&nbsp;&nbsp;Transfer</a></li>
+<li><a class="reference" href="#transferback" id="id122" name="id122">8.1.11&nbsp;&nbsp;&nbsp;TransferBack</a></li>
+<li><a class="reference" href="#transferthis" id="id123" name="id123">8.1.12&nbsp;&nbsp;&nbsp;TransferThis</a></li>
 </ul>
 </li>
-<li><a class="reference" href="#building-your-extension-with-distutils" id="id218" name="id218">13&nbsp;&nbsp;&nbsp;Building Your Extension with distutils</a></li>
-<li><a class="reference" href="#builtin-modules-and-custom-interpreters" id="id219" name="id219">14&nbsp;&nbsp;&nbsp;Builtin Modules and Custom Interpreters</a></li>
+<li><a class="reference" href="#class-annotations" id="id124" name="id124">8.2&nbsp;&nbsp;&nbsp;Class Annotations</a><ul class="auto-toc">
+<li><a class="reference" href="#abstract" id="id125" name="id125">8.2.1&nbsp;&nbsp;&nbsp;Abstract</a></li>
+<li><a class="reference" href="#delaydtor" id="id126" name="id126">8.2.2&nbsp;&nbsp;&nbsp;DelayDtor</a></li>
+<li><a class="reference" href="#external" id="id127" name="id127">8.2.3&nbsp;&nbsp;&nbsp;External</a></li>
+<li><a class="reference" href="#nodefaultctors" id="id128" name="id128">8.2.4&nbsp;&nbsp;&nbsp;NoDefaultCtors</a></li>
+<li><a class="reference" href="#pyname" id="id129" name="id129">8.2.5&nbsp;&nbsp;&nbsp;PyName</a></li>
+</ul>
+</li>
+<li><a class="reference" href="#mapped-type-annotations" id="id130" name="id130">8.3&nbsp;&nbsp;&nbsp;Mapped Type Annotations</a><ul class="auto-toc">
+<li><a class="reference" href="#norelease" id="id131" name="id131">8.3.1&nbsp;&nbsp;&nbsp;NoRelease</a></li>
+</ul>
+</li>
+<li><a class="reference" href="#enum-annotations" id="id132" name="id132">8.4&nbsp;&nbsp;&nbsp;Enum Annotations</a><ul class="auto-toc">
+<li><a class="reference" href="#id17" id="id133" name="id133">8.4.1&nbsp;&nbsp;&nbsp;PyName</a></li>
+</ul>
+</li>
+<li><a class="reference" href="#exception-annotations" id="id134" name="id134">8.5&nbsp;&nbsp;&nbsp;Exception Annotations</a><ul class="auto-toc">
+<li><a class="reference" href="#id18" id="id135" name="id135">8.5.1&nbsp;&nbsp;&nbsp;PyName</a></li>
+</ul>
+</li>
+<li><a class="reference" href="#function-annotations" id="id136" name="id136">8.6&nbsp;&nbsp;&nbsp;Function Annotations</a><ul class="auto-toc">
+<li><a class="reference" href="#autogen" id="id137" name="id137">8.6.1&nbsp;&nbsp;&nbsp;AutoGen</a></li>
+<li><a class="reference" href="#default" id="id138" name="id138">8.6.2&nbsp;&nbsp;&nbsp;Default</a></li>
+<li><a class="reference" href="#factory" id="id139" name="id139">8.6.3&nbsp;&nbsp;&nbsp;Factory</a></li>
+<li><a class="reference" href="#holdgil" id="id140" name="id140">8.6.4&nbsp;&nbsp;&nbsp;HoldGIL</a></li>
+<li><a class="reference" href="#newthread" id="id141" name="id141">8.6.5&nbsp;&nbsp;&nbsp;NewThread</a></li>
+<li><a class="reference" href="#noargparser" id="id142" name="id142">8.6.6&nbsp;&nbsp;&nbsp;NoArgParser</a></li>
+<li><a class="reference" href="#noderived" id="id143" name="id143">8.6.7&nbsp;&nbsp;&nbsp;NoDerived</a></li>
+<li><a class="reference" href="#numeric" id="id144" name="id144">8.6.8&nbsp;&nbsp;&nbsp;Numeric</a></li>
+<li><a class="reference" href="#posthook" id="id145" name="id145">8.6.9&nbsp;&nbsp;&nbsp;PostHook</a></li>
+<li><a class="reference" href="#prehook" id="id146" name="id146">8.6.10&nbsp;&nbsp;&nbsp;PreHook</a></li>
+<li><a class="reference" href="#id19" id="id147" name="id147">8.6.11&nbsp;&nbsp;&nbsp;PyName</a></li>
+<li><a class="reference" href="#releasegil" id="id148" name="id148">8.6.12&nbsp;&nbsp;&nbsp;ReleaseGIL</a></li>
+<li><a class="reference" href="#id20" id="id149" name="id149">8.6.13&nbsp;&nbsp;&nbsp;Transfer</a></li>
+<li><a class="reference" href="#id21" id="id150" name="id150">8.6.14&nbsp;&nbsp;&nbsp;TransferBack</a></li>
+<li><a class="reference" href="#id22" id="id151" name="id151">8.6.15&nbsp;&nbsp;&nbsp;TransferThis</a></li>
+</ul>
+</li>
+<li><a class="reference" href="#license-annotations" id="id152" name="id152">8.7&nbsp;&nbsp;&nbsp;License Annotations</a><ul class="auto-toc">
+<li><a class="reference" href="#licensee" id="id153" name="id153">8.7.1&nbsp;&nbsp;&nbsp;Licensee</a></li>
+<li><a class="reference" href="#signature" id="id154" name="id154">8.7.2&nbsp;&nbsp;&nbsp;Signature</a></li>
+<li><a class="reference" href="#timestamp" id="id155" name="id155">8.7.3&nbsp;&nbsp;&nbsp;Timestamp</a></li>
+<li><a class="reference" href="#type" id="id156" name="id156">8.7.4&nbsp;&nbsp;&nbsp;Type</a></li>
+</ul>
+</li>
+<li><a class="reference" href="#variable-annotations" id="id157" name="id157">8.8&nbsp;&nbsp;&nbsp;Variable Annotations</a><ul class="auto-toc">
+<li><a class="reference" href="#id23" id="id158" name="id158">8.8.1&nbsp;&nbsp;&nbsp;PyName</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference" href="#sip-api-for-handwritten-code" id="id159" name="id159">9&nbsp;&nbsp;&nbsp;SIP API for Handwritten Code</a><ul class="auto-toc">
+<li><a class="reference" href="#sip-api-major-nr" id="id160" name="id160">9.1&nbsp;&nbsp;&nbsp;SIP_API_MAJOR_NR</a></li>
+<li><a class="reference" href="#sip-api-minor-nr" id="id161" name="id161">9.2&nbsp;&nbsp;&nbsp;SIP_API_MINOR_NR</a></li>
+<li><a class="reference" href="#sip-block-threads" id="id162" name="id162">9.3&nbsp;&nbsp;&nbsp;SIP_BLOCK_THREADS</a></li>
+<li><a class="reference" href="#sip-ssize-t" id="id163" name="id163">9.4&nbsp;&nbsp;&nbsp;SIP_SSIZE_T</a></li>
+<li><a class="reference" href="#sip-unblock-threads" id="id164" name="id164">9.5&nbsp;&nbsp;&nbsp;SIP_UNBLOCK_THREADS</a></li>
+<li><a class="reference" href="#sip-version" id="id165" name="id165">9.6&nbsp;&nbsp;&nbsp;SIP_VERSION</a></li>
+<li><a class="reference" href="#sip-version-str" id="id166" name="id166">9.7&nbsp;&nbsp;&nbsp;SIP_VERSION_STR</a></li>
+<li><a class="reference" href="#sipbadcatcherresult" id="id167" name="id167">9.8&nbsp;&nbsp;&nbsp;sipBadCatcherResult()</a></li>
+<li><a class="reference" href="#sipbadlengthforslice" id="id168" name="id168">9.9&nbsp;&nbsp;&nbsp;sipBadLengthForSlice()</a></li>
+<li><a class="reference" href="#sipbuildresult" id="id169" name="id169">9.10&nbsp;&nbsp;&nbsp;sipBuildResult()</a></li>
+<li><a class="reference" href="#sipcallmethod" id="id170" name="id170">9.11&nbsp;&nbsp;&nbsp;sipCallMethod()</a></li>
+<li><a class="reference" href="#sipcanconverttoinstance" id="id171" name="id171">9.12&nbsp;&nbsp;&nbsp;sipCanConvertToInstance()</a></li>
+<li><a class="reference" href="#sipcanconverttomappedtype" id="id172" name="id172">9.13&nbsp;&nbsp;&nbsp;sipCanConvertToMappedType()</a></li>
+<li><a class="reference" href="#sipclassname" id="id173" name="id173">9.14&nbsp;&nbsp;&nbsp;sipClassName()</a></li>
+<li><a class="reference" href="#sipconnectrx" id="id174" name="id174">9.15&nbsp;&nbsp;&nbsp;sipConnectRx()</a></li>
+<li><a class="reference" href="#sipconvertfromconstvoidptr" id="id175" name="id175">9.16&nbsp;&nbsp;&nbsp;sipConvertFromConstVoidPtr()</a></li>
+<li><a class="reference" href="#sipconvertfromconstvoidptrandsize" id="id176" name="id176">9.17&nbsp;&nbsp;&nbsp;sipConvertFromConstVoidPtrAndSize()</a></li>
+<li><a class="reference" href="#sipconvertfrominstance" id="id177" name="id177">9.18&nbsp;&nbsp;&nbsp;sipConvertFromInstance()</a></li>
+<li><a class="reference" href="#sipconvertfrommappedtype" id="id178" name="id178">9.19&nbsp;&nbsp;&nbsp;sipConvertFromMappedType()</a></li>
+<li><a class="reference" href="#sipconvertfromnamedenum" id="id179" name="id179">9.20&nbsp;&nbsp;&nbsp;sipConvertFromNamedEnum()</a></li>
+<li><a class="reference" href="#sipconvertfromnewinstance" id="id180" name="id180">9.21&nbsp;&nbsp;&nbsp;sipConvertFromNewInstance()</a></li>
+<li><a class="reference" href="#sipconvertfromsequenceindex" id="id181" name="id181">9.22&nbsp;&nbsp;&nbsp;sipConvertFromSequenceIndex()</a></li>
+<li><a class="reference" href="#sipconvertfromsliceobject" id="id182" name="id182">9.23&nbsp;&nbsp;&nbsp;sipConvertFromSliceObject()</a></li>
+<li><a class="reference" href="#sipconvertfromvoidptr" id="id183" name="id183">9.24&nbsp;&nbsp;&nbsp;sipConvertFromVoidPtr()</a></li>
+<li><a class="reference" href="#sipconvertfromvoidptrandsize" id="id184" name="id184">9.25&nbsp;&nbsp;&nbsp;sipConvertFromVoidPtrAndSize()</a></li>
+<li><a class="reference" href="#sipconverttocpp" id="id185" name="id185">9.26&nbsp;&nbsp;&nbsp;sipConvertToCpp()</a></li>
+<li><a class="reference" href="#sipconverttoinstance" id="id186" name="id186">9.27&nbsp;&nbsp;&nbsp;sipConvertToInstance()</a></li>
+<li><a class="reference" href="#sipconverttomappedtype" id="id187" name="id187">9.28&nbsp;&nbsp;&nbsp;sipConvertToMappedType()</a></li>
+<li><a class="reference" href="#sipconverttovoidptr" id="id188" name="id188">9.29&nbsp;&nbsp;&nbsp;sipConvertToVoidPtr()</a></li>
+<li><a class="reference" href="#sipdisconnectrx" id="id189" name="id189">9.30&nbsp;&nbsp;&nbsp;sipDisconnectRx()</a></li>
+<li><a class="reference" href="#sipemitsignal" id="id190" name="id190">9.31&nbsp;&nbsp;&nbsp;sipEmitSignal()</a></li>
+<li><a class="reference" href="#sipexportsymbol" id="id191" name="id191">9.32&nbsp;&nbsp;&nbsp;sipExportSymbol()</a></li>
+<li><a class="reference" href="#sipfindclass" id="id192" name="id192">9.33&nbsp;&nbsp;&nbsp;sipFindClass()</a></li>
+<li><a class="reference" href="#sipfindmappedtype" id="id193" name="id193">9.34&nbsp;&nbsp;&nbsp;sipFindMappedType()</a></li>
+<li><a class="reference" href="#sipfindnamedenum" id="id194" name="id194">9.35&nbsp;&nbsp;&nbsp;sipFindNamedEnum()</a></li>
+<li><a class="reference" href="#sipforceconverttoinstance" id="id195" name="id195">9.36&nbsp;&nbsp;&nbsp;sipForceConvertToInstance()</a></li>
+<li><a class="reference" href="#sipforceconverttomappedtype" id="id196" name="id196">9.37&nbsp;&nbsp;&nbsp;sipForceConvertToMappedType()</a></li>
+<li><a class="reference" href="#sipfree" id="id197" name="id197">9.38&nbsp;&nbsp;&nbsp;sipFree()</a></li>
+<li><a class="reference" href="#sipgetsender" id="id198" name="id198">9.39&nbsp;&nbsp;&nbsp;sipGetSender()</a></li>
+<li><a class="reference" href="#sipgetwrapper" id="id199" name="id199">9.40&nbsp;&nbsp;&nbsp;sipGetWrapper()</a></li>
+<li><a class="reference" href="#sipimportsymbol" id="id200" name="id200">9.41&nbsp;&nbsp;&nbsp;sipImportSymbol()</a></li>
+<li><a class="reference" href="#sipinttypeclassmap" id="id201" name="id201">9.42&nbsp;&nbsp;&nbsp;sipIntTypeClassMap</a></li>
+<li><a class="reference" href="#sipissubclassinstance" id="id202" name="id202">9.43&nbsp;&nbsp;&nbsp;sipIsSubClassInstance()</a></li>
+<li><a class="reference" href="#siplong-asunsignedlong" id="id203" name="id203">9.44&nbsp;&nbsp;&nbsp;sipLong_AsUnsignedLong()</a></li>
+<li><a class="reference" href="#sipmalloc" id="id204" name="id204">9.45&nbsp;&nbsp;&nbsp;sipMalloc()</a></li>
+<li><a class="reference" href="#sipmapinttoclass" id="id205" name="id205">9.46&nbsp;&nbsp;&nbsp;sipMapIntToClass()</a></li>
+<li><a class="reference" href="#sipmapstringtoclass" id="id206" name="id206">9.47&nbsp;&nbsp;&nbsp;sipMapStringToClass()</a></li>
+<li><a class="reference" href="#sipparseresult" id="id207" name="id207">9.48&nbsp;&nbsp;&nbsp;sipParseResult()</a></li>
+<li><a class="reference" href="#sipreleaseinstance" id="id208" name="id208">9.49&nbsp;&nbsp;&nbsp;sipReleaseInstance()</a></li>
+<li><a class="reference" href="#sipreleasemappedtype" id="id209" name="id209">9.50&nbsp;&nbsp;&nbsp;sipReleaseMappedType()</a></li>
+<li><a class="reference" href="#sipstringtypeclassmap" id="id210" name="id210">9.51&nbsp;&nbsp;&nbsp;sipStringTypeClassMap</a></li>
+<li><a class="reference" href="#siptransfer" id="id211" name="id211">9.52&nbsp;&nbsp;&nbsp;sipTransfer()</a></li>
+<li><a class="reference" href="#siptransferback" id="id212" name="id212">9.53&nbsp;&nbsp;&nbsp;sipTransferBack()</a></li>
+<li><a class="reference" href="#siptransferbreak" id="id213" name="id213">9.54&nbsp;&nbsp;&nbsp;sipTransferBreak()</a></li>
+<li><a class="reference" href="#siptransferto" id="id214" name="id214">9.55&nbsp;&nbsp;&nbsp;sipTransferTo()</a></li>
+<li><a class="reference" href="#sipwrapper" id="id215" name="id215">9.56&nbsp;&nbsp;&nbsp;sipWrapper</a></li>
+<li><a class="reference" href="#sipwrapper-check" id="id216" name="id216">9.57&nbsp;&nbsp;&nbsp;sipWrapper_Check()</a></li>
+<li><a class="reference" href="#sipwrappertype" id="id217" name="id217">9.58&nbsp;&nbsp;&nbsp;sipWrapperType</a></li>
+<li><a class="reference" href="#generated-type-convertors" id="id218" name="id218">9.59&nbsp;&nbsp;&nbsp;Generated Type Convertors</a></li>
+<li><a class="reference" href="#generated-type-objects" id="id219" name="id219">9.60&nbsp;&nbsp;&nbsp;Generated Type Objects</a></li>
+<li><a class="reference" href="#generated-named-enum-type-objects" id="id220" name="id220">9.61&nbsp;&nbsp;&nbsp;Generated Named Enum Type Objects</a></li>
+<li><a class="reference" href="#generated-derived-classes" id="id221" name="id221">9.62&nbsp;&nbsp;&nbsp;Generated Derived Classes</a></li>
+<li><a class="reference" href="#generated-exception-objects" id="id222" name="id222">9.63&nbsp;&nbsp;&nbsp;Generated Exception Objects</a></li>
+</ul>
+</li>
+<li><a class="reference" href="#using-the-sip-api-when-embedding" id="id223" name="id223">10&nbsp;&nbsp;&nbsp;Using the SIP API when Embedding</a></li>
+<li><a class="reference" href="#using-the-sip-module-in-applications" id="id224" name="id224">11&nbsp;&nbsp;&nbsp;Using the SIP Module in Applications</a></li>
+<li><a class="reference" href="#the-sip-build-system" id="id225" name="id225">12&nbsp;&nbsp;&nbsp;The SIP Build System</a><ul class="auto-toc">
+<li><a class="reference" href="#sipconfig-functions" id="id226" name="id226">12.1&nbsp;&nbsp;&nbsp;<tt class="docutils literal"><span class="pre">sipconfig</span></tt> Functions</a></li>
+<li><a class="reference" href="#sipconfig-classes" id="id227" name="id227">12.2&nbsp;&nbsp;&nbsp;<tt class="docutils literal"><span class="pre">sipconfig</span></tt> Classes</a></li>
+</ul>
+</li>
+<li><a class="reference" href="#building-your-extension-with-distutils" id="id228" name="id228">13&nbsp;&nbsp;&nbsp;Building Your Extension with distutils</a></li>
+<li><a class="reference" href="#builtin-modules-and-custom-interpreters" id="id229" name="id229">14&nbsp;&nbsp;&nbsp;Builtin Modules and Custom Interpreters</a></li>
 </ul>
 </div>
 <div class="section">
 <h1><a class="toc-backref" href="#id24" id="introduction" name="introduction">1&nbsp;&nbsp;&nbsp;Introduction</a></h1>
-<p>This is the reference guide for SIP 4.7.4.  SIP is a tool for
+<p>This is the reference guide for SIP 4.7.6-snapshot-20080518.  SIP is a tool for
 automatically generating <a class="reference" href="http://www.python.org">Python</a> bindings for C and
 C++ libraries.  SIP was originally developed in 1998 for
-<a class="reference" href="http://www.riverbankcomputing.co.uk/pyqt/">PyQt</a> - the Python bindings for
-the Qt GUI toolkit - but is suitable for generating bindings for any C or C++
-library.</p>
+<a class="reference" href="http://www.riverbankcomputing.com/software/pyqt/">PyQt</a> - the Python
+bindings for the Qt GUI toolkit - but is suitable for generating bindings for
+any C or C++ library.</p>
 <p>This version of SIP generates bindings for Python v2.3 or later.</p>
 <p>There are many other similar tools available.  One of the original such tools
 is <a class="reference" href="http://www.swig.org">SWIG</a> and, in fact, SIP is so called because it
 started out as a small SWIG.  Unlike SWIG, SIP is specifically designed for
 bringing together Python and C/C++ and goes to great lengths to make the
 integration as tight as possible.</p>
-<p>The homepage for SIP is <a class="reference" href="http://www.riverbankcomputing.co.uk/sip/">http://www.riverbankcomputing.co.uk/sip/</a>.  Here you
-will always find the latest stable version, current development snapshots, and
-the latest version of this documentation.</p>
+<p>The homepage for SIP is <a class="reference" href="http://www.riverbankcomputing.com/software/sip/">http://www.riverbankcomputing.com/software/sip/</a>.  Here
+you will always find the latest stable version, current development snapshots,
+and the latest version of this documentation.</p>
 <div class="section">
 <h2><a class="toc-backref" href="#id25" id="license" name="license">1.1&nbsp;&nbsp;&nbsp;License</a></h2>
 <p>SIP is licensed under the same terms as Python itself.  SIP places no
@@ -700,11 +712,9 @@ responsibility for using these to implement the <tt class="docutils literal"><sp
 <div class="section">
 <h2><a class="toc-backref" href="#id33" id="downloading-sip" name="downloading-sip">3.1&nbsp;&nbsp;&nbsp;Downloading SIP</a></h2>
 <p>You can get the latest release of the SIP source code from
-<a class="reference" href="http://www.riverbankcomputing.co.uk/sip/download.php">http://www.riverbankcomputing.co.uk/sip/download.php</a>.</p>
+<a class="reference" href="http://www.riverbankcomputing.com/software/sip/download">http://www.riverbankcomputing.com/software/sip/download</a>.</p>
 <p>SIP is also included with all of the major Linux distributions.  However, it
 may be a version or two out of date.</p>
-<p>You may also find more up to date pre-compiled binaries on
-<a class="reference" href="http://sourceforge.net/project/showfiles.php?group_id=61057">SourceForge</a>.</p>
 </div>
 <div class="section">
 <h2><a class="toc-backref" href="#id34" id="configuring-sip" name="configuring-sip">3.2&nbsp;&nbsp;&nbsp;Configuring SIP</a></h2>
@@ -719,7 +729,7 @@ python configure.py
 <p>This assumes that the Python interpreter is on your path.  Something like the
 following may be appropriate on Windows:</p>
 <pre class="literal-block">
-c:\python25\python configure.py
+c:\python26\python configure.py
 </pre>
 <p>If you have multiple versions of Python installed then make sure you use the
 interpreter for which you wish SIP to generate bindings for.</p>
@@ -763,6 +773,11 @@ system, otherwise a platform specific default will be used.  The
 <tt class="docutils literal"><span class="pre">-h</span></tt> option will display all the supported platform/compilers and
 the default.</td></tr>
 <tr><td class="option-group">
+<kbd><span class="option">-s <var>sdk</var></span></kbd></td>
+<td>If the <tt class="docutils literal"><span class="pre">-n</span></tt> option was given then this specifies the name of the SDK
+directory.  If a path is not given then it is assumed to be a
+sub-directory of <tt class="docutils literal"><span class="pre">/Developer/SDKs</span></tt>.</td></tr>
+<tr><td class="option-group">
 <kbd><span class="option">-u</span></kbd></td>
 <td>The SIP module will be built with debugging symbols.</td></tr>
 <tr><td class="option-group">
@@ -793,7 +808,7 @@ covered in detail in <a class="reference" href="#the-sip-build-system">The SIP B
 GCC.  You must use the <tt class="docutils literal"><span class="pre">-p</span></tt> command line option to specify the correct
 platform.  For example:</p>
 <pre class="literal-block">
-c:\python25\python configure.py -p win32-g++
+c:\python26\python configure.py -p win32-g++
 </pre>
 </div>
 <div class="section">
@@ -802,14 +817,14 @@ c:\python25\python configure.py -p win32-g++
 compiler.  You must use the <tt class="docutils literal"><span class="pre">-p</span></tt> command line option to specify the correct
 platform.  For example:</p>
 <pre class="literal-block">
-c:\python25\python configure.py -p win32-borland
+c:\python26\python configure.py -p win32-borland
 </pre>
 <p>You must also make sure you have a Borland-compatible version of the Python
 library.  If you are using the standard Python distribution (built using the
 Microsoft compiler) then you must convert the format of the Python library.
 For example:</p>
 <pre class="literal-block">
-coff2omf python25.lib python25_bcpp.lib
+coff2omf python26.lib python26_bcpp.lib
 </pre>
 </div>
 </div>
@@ -1291,7 +1306,15 @@ heap using the <tt class="docutils literal"><span class="pre">free()</span></tt>
 <p>See also <a class="reference" href="#siptransferto">sipTransferTo()</a>, <a class="reference" href="#siptransferback">sipTransferBack()</a> and <a class="reference" href="#siptransferbreak">sipTransferBreak()</a>.</p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id43" id="support-for-wide-characters" name="support-for-wide-characters">4.5&nbsp;&nbsp;&nbsp;Support for Wide Characters</a></h2>
+<h2><a class="toc-backref" href="#id43" id="support-for-python-s-buffer-interface" name="support-for-python-s-buffer-interface">4.5&nbsp;&nbsp;&nbsp;Support for Python's Buffer Interface</a></h2>
+<p>SIP supports Python's buffer interface in that whenever C/C++ requires a
+<tt class="docutils literal"><span class="pre">char</span></tt> or <tt class="docutils literal"><span class="pre">char</span> <span class="pre">*</span></tt> type then any Python type that supports the buffer
+interface (including ordinary Python strings) can be used.</p>
+<p>If a buffer is made up of a number of segments then all but the first will be
+ignored.</p>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id44" id="support-for-wide-characters" name="support-for-wide-characters">4.6&nbsp;&nbsp;&nbsp;Support for Wide Characters</a></h2>
 <p>SIP v4.6 introduced support for wide characters (i.e. the <tt class="docutils literal"><span class="pre">wchar_t</span></tt> type).
 Python's C API includes support for converting between unicode objects and wide
 character strings and arrays.  When converting from a unicode object to wide
@@ -1313,7 +1336,7 @@ then SIP does not first free the instance's current string or array.</li>
 </blockquote>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id44" id="the-python-global-interpreter-lock" name="the-python-global-interpreter-lock">4.6&nbsp;&nbsp;&nbsp;The Python Global Interpreter Lock</a></h2>
+<h2><a class="toc-backref" href="#id45" id="the-python-global-interpreter-lock" name="the-python-global-interpreter-lock">4.7&nbsp;&nbsp;&nbsp;The Python Global Interpreter Lock</a></h2>
 <p>Python's Global Interpretor Lock (GIL) must be acquired before calls can be
 made to the Python API.  It should also be released when a potentially
 blocking call to C/C++ library is made in order to allow other Python threads
@@ -1332,7 +1355,7 @@ behaviour when required.</p>
 </div>
 </div>
 <div class="section">
-<h1><a class="toc-backref" href="#id45" id="the-sip-command-line" name="the-sip-command-line">5&nbsp;&nbsp;&nbsp;The SIP Command Line</a></h1>
+<h1><a class="toc-backref" href="#id46" id="the-sip-command-line" name="the-sip-command-line">5&nbsp;&nbsp;&nbsp;The SIP Command Line</a></h1>
 <p>The syntax of the SIP command line is:</p>
 <pre class="literal-block">
 sip [options] [specification]
@@ -1426,7 +1449,7 @@ messages are disabled.</td></tr>
 </table>
 </div>
 <div class="section">
-<h1><a class="toc-backref" href="#id46" id="sip-specification-files" name="sip-specification-files">6&nbsp;&nbsp;&nbsp;SIP Specification Files</a></h1>
+<h1><a class="toc-backref" href="#id47" id="sip-specification-files" name="sip-specification-files">6&nbsp;&nbsp;&nbsp;SIP Specification Files</a></h1>
 <p>A SIP specification consists of some C/C++ type and function declarations and
 some directives.  The declarations may contain annotations which provide SIP
 with additional information that cannot be expressed in C/C++.  SIP does not
@@ -1467,7 +1490,7 @@ public:
 };
 </pre>
 <div class="section">
-<h2><a class="toc-backref" href="#id47" id="syntax-definition" name="syntax-definition">6.1&nbsp;&nbsp;&nbsp;Syntax Definition</a></h2>
+<h2><a class="toc-backref" href="#id48" id="syntax-definition" name="syntax-definition">6.1&nbsp;&nbsp;&nbsp;Syntax Definition</a></h2>
 <p>The following is a semi-formal description of the syntax of a specification
 file.</p>
 <pre class="literal-block">
@@ -1708,80 +1731,80 @@ class or a named enum that has been wrapped in the same module.</li>
 </blockquote>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id48" id="variable-numbers-of-arguments" name="variable-numbers-of-arguments">6.2&nbsp;&nbsp;&nbsp;Variable Numbers of Arguments</a></h2>
+<h2><a class="toc-backref" href="#id49" id="variable-numbers-of-arguments" name="variable-numbers-of-arguments">6.2&nbsp;&nbsp;&nbsp;Variable Numbers of Arguments</a></h2>
 <p>SIP supports the use of <tt class="docutils literal"><span class="pre">...</span></tt> as the last part of a function signature.  Any
 remaining arguments are collected as a Python tuple.</p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id49" id="additional-sip-types" name="additional-sip-types">6.3&nbsp;&nbsp;&nbsp;Additional SIP Types</a></h2>
+<h2><a class="toc-backref" href="#id50" id="additional-sip-types" name="additional-sip-types">6.3&nbsp;&nbsp;&nbsp;Additional SIP Types</a></h2>
 <p>SIP supports a number of additional data types that can be used in Python
 signatures.</p>
 <div class="section">
-<h3><a class="toc-backref" href="#id50" id="sip-anyslot" name="sip-anyslot">6.3.1&nbsp;&nbsp;&nbsp;SIP_ANYSLOT</a></h3>
+<h3><a class="toc-backref" href="#id51" id="sip-anyslot" name="sip-anyslot">6.3.1&nbsp;&nbsp;&nbsp;SIP_ANYSLOT</a></h3>
 <p>This is both a <tt class="docutils literal"><span class="pre">const</span> <span class="pre">char</span> <span class="pre">*</span></tt> and a <tt class="docutils literal"><span class="pre">PyObject</span> <span class="pre">*</span></tt> that is used as the type
 of the member instead of <tt class="docutils literal"><span class="pre">const</span> <span class="pre">char</span> <span class="pre">*</span></tt> in functions that implement the
 connection or disconnection of an explicitly generated signal to a slot.
 Handwritten code must be provided to interpret the conversion correctly.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id51" id="sip-pycallable" name="sip-pycallable">6.3.2&nbsp;&nbsp;&nbsp;SIP_PYCALLABLE</a></h3>
+<h3><a class="toc-backref" href="#id52" id="sip-pycallable" name="sip-pycallable">6.3.2&nbsp;&nbsp;&nbsp;SIP_PYCALLABLE</a></h3>
 <p>This is a <tt class="docutils literal"><span class="pre">PyObject</span> <span class="pre">*</span></tt> that is a Python callable object.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id52" id="sip-pydict" name="sip-pydict">6.3.3&nbsp;&nbsp;&nbsp;SIP_PYDICT</a></h3>
+<h3><a class="toc-backref" href="#id53" id="sip-pydict" name="sip-pydict">6.3.3&nbsp;&nbsp;&nbsp;SIP_PYDICT</a></h3>
 <p>This is a <tt class="docutils literal"><span class="pre">PyObject</span> <span class="pre">*</span></tt> that is a Python dictionary object.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id53" id="sip-pylist" name="sip-pylist">6.3.4&nbsp;&nbsp;&nbsp;SIP_PYLIST</a></h3>
+<h3><a class="toc-backref" href="#id54" id="sip-pylist" name="sip-pylist">6.3.4&nbsp;&nbsp;&nbsp;SIP_PYLIST</a></h3>
 <p>This is a <tt class="docutils literal"><span class="pre">PyObject</span> <span class="pre">*</span></tt> that is a Python list object.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id54" id="sip-pyobject" name="sip-pyobject">6.3.5&nbsp;&nbsp;&nbsp;SIP_PYOBJECT</a></h3>
+<h3><a class="toc-backref" href="#id55" id="sip-pyobject" name="sip-pyobject">6.3.5&nbsp;&nbsp;&nbsp;SIP_PYOBJECT</a></h3>
 <p>This is a <tt class="docutils literal"><span class="pre">PyObject</span> <span class="pre">*</span></tt> of any Python type.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id55" id="sip-pyslice" name="sip-pyslice">6.3.6&nbsp;&nbsp;&nbsp;SIP_PYSLICE</a></h3>
+<h3><a class="toc-backref" href="#id56" id="sip-pyslice" name="sip-pyslice">6.3.6&nbsp;&nbsp;&nbsp;SIP_PYSLICE</a></h3>
 <p>This is a <tt class="docutils literal"><span class="pre">PyObject</span> <span class="pre">*</span></tt> that is a Python slice object.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id56" id="sip-pytuple" name="sip-pytuple">6.3.7&nbsp;&nbsp;&nbsp;SIP_PYTUPLE</a></h3>
+<h3><a class="toc-backref" href="#id57" id="sip-pytuple" name="sip-pytuple">6.3.7&nbsp;&nbsp;&nbsp;SIP_PYTUPLE</a></h3>
 <p>This is a <tt class="docutils literal"><span class="pre">PyObject</span> <span class="pre">*</span></tt> that is a Python tuple object.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id57" id="sip-pytype" name="sip-pytype">6.3.8&nbsp;&nbsp;&nbsp;SIP_PYTYPE</a></h3>
+<h3><a class="toc-backref" href="#id58" id="sip-pytype" name="sip-pytype">6.3.8&nbsp;&nbsp;&nbsp;SIP_PYTYPE</a></h3>
 <p>This is a <tt class="docutils literal"><span class="pre">PyObject</span> <span class="pre">*</span></tt> that is a Python type object.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id58" id="sip-qobject" name="sip-qobject">6.3.9&nbsp;&nbsp;&nbsp;SIP_QOBJECT</a></h3>
+<h3><a class="toc-backref" href="#id59" id="sip-qobject" name="sip-qobject">6.3.9&nbsp;&nbsp;&nbsp;SIP_QOBJECT</a></h3>
 <p>This is a <tt class="docutils literal"><span class="pre">QObject</span> <span class="pre">*</span></tt> that is a C++ instance of a class derived from Qt's
 <tt class="docutils literal"><span class="pre">QObject</span></tt> class.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id59" id="sip-rxobj-con" name="sip-rxobj-con">6.3.10&nbsp;&nbsp;&nbsp;SIP_RXOBJ_CON</a></h3>
+<h3><a class="toc-backref" href="#id60" id="sip-rxobj-con" name="sip-rxobj-con">6.3.10&nbsp;&nbsp;&nbsp;SIP_RXOBJ_CON</a></h3>
 <p>This is a <tt class="docutils literal"><span class="pre">QObject</span> <span class="pre">*</span></tt> that is a C++ instance of a class derived from Qt's
 <tt class="docutils literal"><span class="pre">QObject</span></tt> class.  It is used as the type of the receiver instead of <tt class="docutils literal"><span class="pre">const</span>
 <span class="pre">QObject</span> <span class="pre">*</span></tt> in functions that implement a connection to a slot.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id60" id="sip-rxobj-dis" name="sip-rxobj-dis">6.3.11&nbsp;&nbsp;&nbsp;SIP_RXOBJ_DIS</a></h3>
+<h3><a class="toc-backref" href="#id61" id="sip-rxobj-dis" name="sip-rxobj-dis">6.3.11&nbsp;&nbsp;&nbsp;SIP_RXOBJ_DIS</a></h3>
 <p>This is a <tt class="docutils literal"><span class="pre">QObject</span> <span class="pre">*</span></tt> that is a C++ instance of a class derived from Qt's
 <tt class="docutils literal"><span class="pre">QObject</span></tt> class.  It is used as the type of the receiver instead of <tt class="docutils literal"><span class="pre">const</span>
 <span class="pre">QObject</span> <span class="pre">*</span></tt> in functions that implement a disconnection from a slot.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id61" id="sip-signal" name="sip-signal">6.3.12&nbsp;&nbsp;&nbsp;SIP_SIGNAL</a></h3>
+<h3><a class="toc-backref" href="#id62" id="sip-signal" name="sip-signal">6.3.12&nbsp;&nbsp;&nbsp;SIP_SIGNAL</a></h3>
 <p>This is a <tt class="docutils literal"><span class="pre">const</span> <span class="pre">char</span> <span class="pre">*</span></tt> that is used as the type of the signal instead of
 <tt class="docutils literal"><span class="pre">const</span> <span class="pre">char</span> <span class="pre">*</span></tt> in functions that implement the connection or disconnection
 of an explicitly generated signal to a slot.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id62" id="sip-slot" name="sip-slot">6.3.13&nbsp;&nbsp;&nbsp;SIP_SLOT</a></h3>
+<h3><a class="toc-backref" href="#id63" id="sip-slot" name="sip-slot">6.3.13&nbsp;&nbsp;&nbsp;SIP_SLOT</a></h3>
 <p>This is a <tt class="docutils literal"><span class="pre">const</span> <span class="pre">char</span> <span class="pre">*</span></tt> that is used as the type of the member instead of
 <tt class="docutils literal"><span class="pre">const</span> <span class="pre">char</span> <span class="pre">*</span></tt> in functions that implement the connection or disconnection
 of an explicitly generated signal to a slot.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id63" id="sip-slot-con" name="sip-slot-con">6.3.14&nbsp;&nbsp;&nbsp;SIP_SLOT_CON</a></h3>
+<h3><a class="toc-backref" href="#id64" id="sip-slot-con" name="sip-slot-con">6.3.14&nbsp;&nbsp;&nbsp;SIP_SLOT_CON</a></h3>
 <p>This is a <tt class="docutils literal"><span class="pre">const</span> <span class="pre">char</span> <span class="pre">*</span></tt> that is used as the type of the member instead of
 <tt class="docutils literal"><span class="pre">const</span> <span class="pre">char</span> <span class="pre">*</span></tt> in functions that implement the connection of an internally
 generated signal to a slot.  The type includes a comma separated list of types
@@ -1799,7 +1822,7 @@ bool connectItem(int, SIP_RXOBJ_CON, SIP_SLOT_CON(int));
 </pre>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id64" id="sip-slot-dis" name="sip-slot-dis">6.3.15&nbsp;&nbsp;&nbsp;SIP_SLOT_DIS</a></h3>
+<h3><a class="toc-backref" href="#id65" id="sip-slot-dis" name="sip-slot-dis">6.3.15&nbsp;&nbsp;&nbsp;SIP_SLOT_DIS</a></h3>
 <p>This is a <tt class="docutils literal"><span class="pre">const</span> <span class="pre">char</span> <span class="pre">*</span></tt> that is used as the type of the member instead of
 <tt class="docutils literal"><span class="pre">const</span> <span class="pre">char</span> <span class="pre">*</span></tt> in functions that implement the disconnection of an
 internally generated signal to a slot.  The type includes a comma separated
@@ -1808,7 +1831,7 @@ list of types that is the C++ signature of of the signal.</p>
 </div>
 </div>
 <div class="section">
-<h1><a class="toc-backref" href="#id65" id="sip-directives" name="sip-directives">7&nbsp;&nbsp;&nbsp;SIP Directives</a></h1>
+<h1><a class="toc-backref" href="#id66" id="sip-directives" name="sip-directives">7&nbsp;&nbsp;&nbsp;SIP Directives</a></h1>
 <p>In this section we describe each of the directives that can be used in
 specification files.  All directives begin with <tt class="docutils literal"><span class="pre">%</span></tt> as the first
 non-whitespace character in a line.</p>
@@ -1818,7 +1841,7 @@ are enclosed in [<em>brackets</em>].</p>
 <p>Some directives are used to specify handwritten code.  Handwritten code must
 not define names that start with the prefix <tt class="docutils literal"><span class="pre">sip</span></tt>.</p>
 <div class="section">
-<h2><a class="toc-backref" href="#id66" id="accesscode" name="accesscode">7.1&nbsp;&nbsp;&nbsp;%AccessCode</a></h2>
+<h2><a class="toc-backref" href="#id67" id="accesscode" name="accesscode">7.1&nbsp;&nbsp;&nbsp;%AccessCode</a></h2>
 <pre class="literal-block">
 %AccessCode
     <em>code</em>
@@ -1845,7 +1868,7 @@ Klass *klassInstance;
 </pre>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id67" id="bigetcharbuffercode" name="bigetcharbuffercode">7.2&nbsp;&nbsp;&nbsp;%BIGetCharBufferCode</a></h2>
+<h2><a class="toc-backref" href="#id68" id="bigetcharbuffercode" name="bigetcharbuffercode">7.2&nbsp;&nbsp;&nbsp;%BIGetCharBufferCode</a></h2>
 <pre class="literal-block">
 %BIGetCharBufferCode
     <em>code</em>
@@ -1873,7 +1896,7 @@ i.e. <tt class="docutils literal"><span class="pre">self</span></tt>.</dd>
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id68" id="bigetreadbuffercode" name="bigetreadbuffercode">7.3&nbsp;&nbsp;&nbsp;%BIGetReadBufferCode</a></h2>
+<h2><a class="toc-backref" href="#id69" id="bigetreadbuffercode" name="bigetreadbuffercode">7.3&nbsp;&nbsp;&nbsp;%BIGetReadBufferCode</a></h2>
 <pre class="literal-block">
 %BIGetReadBufferCode
     <em>code</em>
@@ -1900,7 +1923,7 @@ i.e. <tt class="docutils literal"><span class="pre">self</span></tt>.</dd>
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id69" id="bigetsegcountcode" name="bigetsegcountcode">7.4&nbsp;&nbsp;&nbsp;%BIGetSegCountCode</a></h2>
+<h2><a class="toc-backref" href="#id70" id="bigetsegcountcode" name="bigetsegcountcode">7.4&nbsp;&nbsp;&nbsp;%BIGetSegCountCode</a></h2>
 <pre class="literal-block">
 %BIGetSegCountCode
     <em>code</em>
@@ -1926,7 +1949,7 @@ i.e. <tt class="docutils literal"><span class="pre">self</span></tt>.</dd>
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id70" id="bigetwritebuffercode" name="bigetwritebuffercode">7.5&nbsp;&nbsp;&nbsp;%BIGetWriteBufferCode</a></h2>
+<h2><a class="toc-backref" href="#id71" id="bigetwritebuffercode" name="bigetwritebuffercode">7.5&nbsp;&nbsp;&nbsp;%BIGetWriteBufferCode</a></h2>
 <pre class="literal-block">
 %BIGetWriteBufferCode
     <em>code</em>
@@ -1953,7 +1976,7 @@ i.e. <tt class="docutils literal"><span class="pre">self</span></tt>.</dd>
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id71" id="cmodule" name="cmodule">7.6&nbsp;&nbsp;&nbsp;%CModule</a></h2>
+<h2><a class="toc-backref" href="#id72" id="cmodule" name="cmodule">7.6&nbsp;&nbsp;&nbsp;%CModule</a></h2>
 <pre class="literal-block">
 %CModule <em>name</em> [<em>version</em>]
 </pre>
@@ -1966,7 +1989,7 @@ library and to define the name of the module and it's optional version number.</
 </pre>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id72" id="compositemodule" name="compositemodule">7.7&nbsp;&nbsp;&nbsp;%CompositeModule</a></h2>
+<h2><a class="toc-backref" href="#id73" id="compositemodule" name="compositemodule">7.7&nbsp;&nbsp;&nbsp;%CompositeModule</a></h2>
 <pre class="literal-block">
 %CompositeModule <em>name</em>
 </pre>
@@ -1993,7 +2016,7 @@ component module.</p>
 don't have to remember which which individual module an object is defined in.</p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id73" id="consolidatedmodule" name="consolidatedmodule">7.8&nbsp;&nbsp;&nbsp;%ConsolidatedModule</a></h2>
+<h2><a class="toc-backref" href="#id74" id="consolidatedmodule" name="consolidatedmodule">7.8&nbsp;&nbsp;&nbsp;%ConsolidatedModule</a></h2>
 <pre class="literal-block">
 %ConsolidatedModule <em>name</em>
 </pre>
@@ -2022,7 +2045,7 @@ building as a component the <tt class="docutils literal"><span class="pre">-p</s
 specify the name of the consolidated module.</p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id74" id="convertfromtypecode" name="convertfromtypecode">7.9&nbsp;&nbsp;&nbsp;%ConvertFromTypeCode</a></h2>
+<h2><a class="toc-backref" href="#id75" id="convertfromtypecode" name="convertfromtypecode">7.9&nbsp;&nbsp;&nbsp;%ConvertFromTypeCode</a></h2>
 <pre class="literal-block">
 %ConvertFromTypeCode
     <em>code</em>
@@ -2085,7 +2108,7 @@ list of <tt class="docutils literal"><span class="pre">QWidget</span></tt> insta
 </pre>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id75" id="converttosubclasscode" name="converttosubclasscode">7.10&nbsp;&nbsp;&nbsp;%ConvertToSubClassCode</a></h2>
+<h2><a class="toc-backref" href="#id76" id="converttosubclasscode" name="converttosubclasscode">7.10&nbsp;&nbsp;&nbsp;%ConvertToSubClassCode</a></h2>
 <pre class="literal-block">
 %ConvertToSubClassCode
     <em>code</em>
@@ -2163,7 +2186,7 @@ functions that convert integer and string based RTTI to Python type objects
 based on ordered lookup tables.</p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id76" id="converttotypecode" name="converttotypecode">7.11&nbsp;&nbsp;&nbsp;%ConvertToTypeCode</a></h2>
+<h2><a class="toc-backref" href="#id77" id="converttotypecode" name="converttotypecode">7.11&nbsp;&nbsp;&nbsp;%ConvertToTypeCode</a></h2>
 <pre class="literal-block">
 %ConvertToTypeCode
     <em>code</em>
@@ -2298,7 +2321,7 @@ flag <em>must</em> be passed to both these functions to prevent recursive calls 
 handwritten code.</p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id77" id="copying" name="copying">7.12&nbsp;&nbsp;&nbsp;%Copying</a></h2>
+<h2><a class="toc-backref" href="#id78" id="copying" name="copying">7.12&nbsp;&nbsp;&nbsp;%Copying</a></h2>
 <pre class="literal-block">
 %Copying
     <em>text</em>
@@ -2315,7 +2338,7 @@ Copyright (c) 2007 Riverbank Computing Limited
 </pre>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id78" id="doc" name="doc">7.13&nbsp;&nbsp;&nbsp;%Doc</a></h2>
+<h2><a class="toc-backref" href="#id79" id="doc" name="doc">7.13&nbsp;&nbsp;&nbsp;%Doc</a></h2>
 <pre class="literal-block">
 %Doc
     <em>text</em>
@@ -2341,12 +2364,12 @@ which it is defined.
 </pre>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id79" id="end" name="end">7.14&nbsp;&nbsp;&nbsp;%End</a></h2>
+<h2><a class="toc-backref" href="#id80" id="end" name="end">7.14&nbsp;&nbsp;&nbsp;%End</a></h2>
 <p>This isn't a directive in itself, but is used to terminate a number of
 directives that allow a block of handwritten code or text to be specified.</p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id80" id="exception" name="exception">7.15&nbsp;&nbsp;&nbsp;%Exception</a></h2>
+<h2><a class="toc-backref" href="#id81" id="exception" name="exception">7.15&nbsp;&nbsp;&nbsp;%Exception</a></h2>
 <pre class="literal-block">
 %Exception <em>name</em> [(<em>base-exception)]
 {
@@ -2388,7 +2411,7 @@ The new exception is called <tt class="docutils literal"><span class="pre">StdEx
 Python exception <tt class="docutils literal"><span class="pre">Exception</span></tt>.</p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id81" id="exporteddoc" name="exporteddoc">7.16&nbsp;&nbsp;&nbsp;%ExportedDoc</a></h2>
+<h2><a class="toc-backref" href="#id82" id="exporteddoc" name="exporteddoc">7.16&nbsp;&nbsp;&nbsp;%ExportedDoc</a></h2>
 <pre class="literal-block">
 %ExportedDoc
     <em>text</em>
@@ -2413,7 +2436,7 @@ module in which it is defined and all modules that %Import it.
 </pre>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id82" id="exportedheadercode" name="exportedheadercode">7.17&nbsp;&nbsp;&nbsp;%ExportedHeaderCode</a></h2>
+<h2><a class="toc-backref" href="#id83" id="exportedheadercode" name="exportedheadercode">7.17&nbsp;&nbsp;&nbsp;%ExportedHeaderCode</a></h2>
 <pre class="literal-block">
 %ExportedHeaderCode
     <em>code</em>
@@ -2426,7 +2449,7 @@ Python modules should not explicitly call functions in another Python module.</p
 <p>See also <a class="reference" href="#modulecode">%ModuleCode</a> and <a class="reference" href="#moduleheadercode">%ModuleHeaderCode</a>.</p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id83" id="feature" name="feature">7.18&nbsp;&nbsp;&nbsp;%Feature</a></h2>
+<h2><a class="toc-backref" href="#id84" id="feature" name="feature">7.18&nbsp;&nbsp;&nbsp;%Feature</a></h2>
 <pre class="literal-block">
 %Feature <em>name</em>
 </pre>
@@ -2449,7 +2472,7 @@ void foo();
 </pre>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id84" id="gcclearcode" name="gcclearcode">7.19&nbsp;&nbsp;&nbsp;%GCClearCode</a></h2>
+<h2><a class="toc-backref" href="#id85" id="gcclearcode" name="gcclearcode">7.19&nbsp;&nbsp;&nbsp;%GCClearCode</a></h2>
 <pre class="literal-block">
 %GCClearCode
     <em>code</em>
@@ -2496,7 +2519,7 @@ always a Python object and so should be handled by the garbage collector:</p>
 </pre>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id85" id="gctraversecode" name="gctraversecode">7.20&nbsp;&nbsp;&nbsp;%GCTraverseCode</a></h2>
+<h2><a class="toc-backref" href="#id86" id="gctraversecode" name="gctraversecode">7.20&nbsp;&nbsp;&nbsp;%GCTraverseCode</a></h2>
 <pre class="literal-block">
 %GCTraverseCode
     <em>code</em>
@@ -2535,7 +2558,7 @@ collector.</dd>
 </pre>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id86" id="getcode" name="getcode">7.21&nbsp;&nbsp;&nbsp;%GetCode</a></h2>
+<h2><a class="toc-backref" href="#id87" id="getcode" name="getcode">7.21&nbsp;&nbsp;&nbsp;%GetCode</a></h2>
 <pre class="literal-block">
 %GetCode
     <em>code</em>
@@ -2554,6 +2577,11 @@ variable being wrapped is a static class variable.</dd>
 <dd>The handwritten code must set this to the Python representation of the
 class variable or structure member.  If there is an error then the code
 must raise an exception and set this to <tt class="docutils literal"><span class="pre">NULL</span></tt>.</dd>
+<dt>PyObject *sipPyType</dt>
+<dd>If the variable being wrapped is a static class variable then this is the
+Python type object of the class from which the variable was referenced
+(<em>not</em> the class in which it is defined).  It may be safely cast to a
+PyTypeObject * or a sipWrapperType *.</dd>
 </dl>
 <p>For example:</p>
 <pre class="literal-block">
@@ -2590,7 +2618,7 @@ struct Entity
 </pre>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id87" id="if" name="if">7.22&nbsp;&nbsp;&nbsp;%If</a></h2>
+<h2><a class="toc-backref" href="#id88" id="if" name="if">7.22&nbsp;&nbsp;&nbsp;%If</a></h2>
 <pre class="literal-block">
 %If (<em>expression</em>)
     <em>specification</em>
@@ -2674,7 +2702,7 @@ following parts of a specification are affected by it:</p>
 nested <a class="reference" href="#if">%If</a> directives.</p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id88" id="import" name="import">7.23&nbsp;&nbsp;&nbsp;%Import</a></h2>
+<h2><a class="toc-backref" href="#id89" id="import" name="import">7.23&nbsp;&nbsp;&nbsp;%Import</a></h2>
 <pre class="literal-block">
 %Import <em>filename</em>
 </pre>
@@ -2692,7 +2720,7 @@ the <tt class="docutils literal"><span class="pre">-I</span></tt> command line o
 </pre>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id89" id="include" name="include">7.24&nbsp;&nbsp;&nbsp;%Include</a></h2>
+<h2><a class="toc-backref" href="#id90" id="include" name="include">7.24&nbsp;&nbsp;&nbsp;%Include</a></h2>
 <pre class="literal-block">
 %Include <em>filename</em>
 </pre>
@@ -2708,7 +2736,7 @@ specification into manageable pieces.</p>
 </pre>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id90" id="id14" name="id14">7.25&nbsp;&nbsp;&nbsp;%License</a></h2>
+<h2><a class="toc-backref" href="#id91" id="id14" name="id14">7.25&nbsp;&nbsp;&nbsp;%License</a></h2>
 <pre class="literal-block">
 %License /<em>license-annotations</em>/
 </pre>
@@ -2726,7 +2754,7 @@ in a module so that it is accessible to Python scripts.</p>
 </pre>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id91" id="mappedtype" name="mappedtype">7.26&nbsp;&nbsp;&nbsp;%MappedType</a></h2>
+<h2><a class="toc-backref" href="#id92" id="mappedtype" name="mappedtype">7.26&nbsp;&nbsp;&nbsp;%MappedType</a></h2>
 <pre class="literal-block">
 template&lt;<em>type-list</em>&gt;
 %MappedType <em>type</em>
@@ -2858,7 +2886,7 @@ generated code will automatically map this to and from a Python list of QObject
 instances when appropriate.</p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id92" id="methodcode" name="methodcode">7.27&nbsp;&nbsp;&nbsp;%MethodCode</a></h2>
+<h2><a class="toc-backref" href="#id93" id="methodcode" name="methodcode">7.27&nbsp;&nbsp;&nbsp;%MethodCode</a></h2>
 <pre class="literal-block">
 %MethodCode
     <em>code</em>
@@ -2869,9 +2897,13 @@ method, operator, constructor or destructor to specify handwritten code that
 replaces the normally generated call to the function being wrapped.  It is
 usually used to handle argument types and results that SIP cannot deal with
 automatically.</p>
-<p>The specified code is embedded in-line after the function's arguments have
-been successfully converted from Python objects to their C or C++ equivalents.
-The specified code must not include any <tt class="docutils literal"><span class="pre">return</span></tt> statements.</p>
+<p>Normally the specified code is embedded in-line after the function's arguments
+have been successfully converted from Python objects to their C or C++
+equivalents.  In this case the specified code must not include any <tt class="docutils literal"><span class="pre">return</span></tt>
+statements.</p>
+<p>However if the <a class="reference" href="#noargparser">NoArgParser</a> annotation has been used then the specified code
+is also responsible for parsing the arguments.  No other code is generated by
+SIP and the specified code must include a <tt class="docutils literal"><span class="pre">return</span></tt> statement.</p>
 <p>In the context of a destructor the specified code is embedded in-line in the
 Python type's deallocation function.  Unlike other contexts it supplements
 rather than replaces the normally generated code, so it must not include code
@@ -2890,7 +2922,8 @@ Py_END_ALLOW_THREADS
 should be done if the C++ function might block the current thread or take a
 significant amount of time to execute.  (See <a class="reference" href="#the-python-global-interpreter-lock">The Python Global Interpreter
 Lock</a> and the <a class="reference" href="#releasegil">ReleaseGIL</a> and <a class="reference" href="#holdgil">HoldGIL</a> annotations.)</p>
-<p>The following variables are made available to the handwritten code:</p>
+<p>If the <a class="reference" href="#noargparser">NoArgParser</a> annotation has not been used then the following variables
+are made available to the handwritten code:</p>
 <dl class="docutils">
 <dt><em>type</em> a0</dt>
 <dd><p class="first">There is a variable for each argument of the Python signature (excluding
@@ -2916,9 +2949,9 @@ argument.</dd>
 <dd><p class="first">If the directive is used in the context of a class constructor then this
 must be set by the handwritten code to the constructed instance.  If the
 directive is used in the context of a method (but not the standard binary
-operator methods, e.g. <tt class="docutils literal"><span class="pre">__add__</span></tt>) then this is a pointer to the C
-structure or C++ class instance.  Its <em>type</em> is a pointer to the structure
-or class.</p>
+operator methods, e.g. <tt class="docutils literal"><span class="pre">__add__</span></tt>) or a destructor then this is a pointer
+to the C structure or C++ class instance.  Its <em>type</em> is a pointer to the
+structure or class.</p>
 <p class="last">Standard binary operator methods follow the same convention as global
 functions and instead define two arguments called <tt class="docutils literal"><span class="pre">a0</span></tt> and <tt class="docutils literal"><span class="pre">a1</span></tt>.</p>
 </dd>
@@ -2938,7 +2971,7 @@ or class.</li>
 </ul>
 <p class="last"><tt class="docutils literal"><span class="pre">sipRes</span></tt> is not provided for inplace operators (e.g. <tt class="docutils literal"><span class="pre">+=</span></tt> or
 <tt class="docutils literal"><span class="pre">__imul__</span></tt>) as their results are handled automatically, nor for class
-constructors.</p>
+constructors or destructors.</p>
 </dd>
 <dt>PyObject *sipSelf</dt>
 <dd>If the directive is used in the context of a class constructor, destructor
@@ -2956,6 +2989,14 @@ Klass.foo(self, ...)
 self.foo(...)
 </pre>
 </dd>
+</dl>
+<p>If the <a class="reference" href="#noargparser">NoArgParser</a> annotation has been used then only the following
+variables are made available to the handwritten code:</p>
+<dl class="docutils">
+<dt>PyObject *sipArgs</dt>
+<dd>This is the tuple of arguments.</dd>
+<dt>PyObject *sipKwds</dt>
+<dd>This is the dictionary of keyword arguments.</dd>
 </dl>
 <p>The following is a complete example:</p>
 <pre class="literal-block">
@@ -3005,7 +3046,7 @@ handles the reimplementation of C++ virtual methods in Python.</td></tr>
 </table>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id93" id="module" name="module">7.28&nbsp;&nbsp;&nbsp;%Module</a></h2>
+<h2><a class="toc-backref" href="#id94" id="module" name="module">7.28&nbsp;&nbsp;&nbsp;%Module</a></h2>
 <pre class="literal-block">
 %Module <em>name</em> [<em>version</em>]
 </pre>
@@ -3030,7 +3071,7 @@ version number anyway.</p>
 </pre>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id94" id="modulecode" name="modulecode">7.29&nbsp;&nbsp;&nbsp;%ModuleCode</a></h2>
+<h2><a class="toc-backref" href="#id95" id="modulecode" name="modulecode">7.29&nbsp;&nbsp;&nbsp;%ModuleCode</a></h2>
 <pre class="literal-block">
 %ModuleCode
     <em>code</em>
@@ -3053,7 +3094,7 @@ void dump_object(PyObject *o)
 <p>See also <a class="reference" href="#exportedheadercode">%ExportedHeaderCode</a> and <a class="reference" href="#moduleheadercode">%ModuleHeaderCode</a>.</p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id95" id="moduleheadercode" name="moduleheadercode">7.30&nbsp;&nbsp;&nbsp;%ModuleHeaderCode</a></h2>
+<h2><a class="toc-backref" href="#id96" id="moduleheadercode" name="moduleheadercode">7.30&nbsp;&nbsp;&nbsp;%ModuleHeaderCode</a></h2>
 <pre class="literal-block">
 %ModuleHeaderCode
     <em>code</em>
@@ -3071,7 +3112,7 @@ void dump_object(PyObject *o);
 <p>See also <a class="reference" href="#exportedheadercode">%ExportedHeaderCode</a> and <a class="reference" href="#modulecode">%ModuleCode</a>.</p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id96" id="optionalinclude" name="optionalinclude">7.31&nbsp;&nbsp;&nbsp;%OptionalInclude</a></h2>
+<h2><a class="toc-backref" href="#id97" id="optionalinclude" name="optionalinclude">7.31&nbsp;&nbsp;&nbsp;%OptionalInclude</a></h2>
 <pre class="literal-block">
 %OptionalInclude <em>filename</em>
 </pre>
@@ -3083,7 +3124,7 @@ silently continues processing if <em>filename</em> could not be opened.</p>
 </pre>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id97" id="picklecode" name="picklecode">7.32&nbsp;&nbsp;&nbsp;%PickleCode</a></h2>
+<h2><a class="toc-backref" href="#id98" id="picklecode" name="picklecode">7.32&nbsp;&nbsp;&nbsp;%PickleCode</a></h2>
 <pre class="literal-block">
 %PickleCode
     <em>code</em>
@@ -3122,7 +3163,7 @@ being pickled.</p>
 handwritten code.</p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id98" id="platforms" name="platforms">7.33&nbsp;&nbsp;&nbsp;%Platforms</a></h2>
+<h2><a class="toc-backref" href="#id99" id="platforms" name="platforms">7.33&nbsp;&nbsp;&nbsp;%Platforms</a></h2>
 <pre class="literal-block">
 %Platforms {<em>name</em> <em>name</em> ...}
 </pre>
@@ -3146,7 +3187,7 @@ void documented();
 </pre>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id99" id="postinitialisationcode" name="postinitialisationcode">7.34&nbsp;&nbsp;&nbsp;%PostInitialisationCode</a></h2>
+<h2><a class="toc-backref" href="#id100" id="postinitialisationcode" name="postinitialisationcode">7.34&nbsp;&nbsp;&nbsp;%PostInitialisationCode</a></h2>
 <pre class="literal-block">
 %PostInitialisationCode
     <em>code</em>
@@ -3170,7 +3211,7 @@ at the very end of the generated module initialisation code.</p>
 </pre>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id100" id="preinitialisationcode" name="preinitialisationcode">7.35&nbsp;&nbsp;&nbsp;%PreInitialisationCode</a></h2>
+<h2><a class="toc-backref" href="#id101" id="preinitialisationcode" name="preinitialisationcode">7.35&nbsp;&nbsp;&nbsp;%PreInitialisationCode</a></h2>
 <pre class="literal-block">
 %PreInitialisationCode
     <em>code</em>
@@ -3187,7 +3228,7 @@ at the very start of the generated module initialisation code.</p>
 </pre>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id101" id="raisecode" name="raisecode">7.36&nbsp;&nbsp;&nbsp;%RaiseCode</a></h2>
+<h2><a class="toc-backref" href="#id102" id="raisecode" name="raisecode">7.36&nbsp;&nbsp;&nbsp;%RaiseCode</a></h2>
 <pre class="literal-block">
 %RaiseCode
     <em>code</em>
@@ -3215,7 +3256,7 @@ reference is the same as the type defined in the <tt class="docutils literal"><s
 <p>See the <a class="reference" href="#exception">%Exception</a> directive for an example.</p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id102" id="setcode" name="setcode">7.37&nbsp;&nbsp;&nbsp;%SetCode</a></h2>
+<h2><a class="toc-backref" href="#id103" id="setcode" name="setcode">7.37&nbsp;&nbsp;&nbsp;%SetCode</a></h2>
 <pre class="literal-block">
 %SetCode
     <em>code</em>
@@ -3237,17 +3278,22 @@ exception and set this to a non-zero value.  Its initial value will be
 automatically set to zero.</dd>
 <dt>PyObject *sipPy</dt>
 <dd>This is the Python object that the handwritten code should convert.</dd>
+<dt>PyObject *sipPyType</dt>
+<dd>If the variable being wrapped is a static class variable then this is the
+Python type object of the class from which the variable was referenced
+(<em>not</em> the class in which it is defined).  It may be safely cast to a
+PyTypeObject * or a sipWrapperType *.</dd>
 </dl>
 <p>See the <a class="reference" href="#getcode">%GetCode</a> directive for an example.</p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id103" id="sipoptions" name="sipoptions">7.38&nbsp;&nbsp;&nbsp;%SIPOptions</a></h2>
+<h2><a class="toc-backref" href="#id104" id="sipoptions" name="sipoptions">7.38&nbsp;&nbsp;&nbsp;%SIPOptions</a></h2>
 <p>This directive sets one or more options that controls different aspects of
 SIP's behaviour.  In this version all the available options are provided
 specifically to support PyQt and so are not documented.</p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id104" id="timeline" name="timeline">7.39&nbsp;&nbsp;&nbsp;%Timeline</a></h2>
+<h2><a class="toc-backref" href="#id105" id="timeline" name="timeline">7.39&nbsp;&nbsp;&nbsp;%Timeline</a></h2>
 <pre class="literal-block">
 %Timeline {<em>name</em> <em>name</em> ...}
 </pre>
@@ -3274,7 +3320,7 @@ void foo(int = 0);
 libraries to be wrapped in the same module.</p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id105" id="typecode" name="typecode">7.40&nbsp;&nbsp;&nbsp;%TypeCode</a></h2>
+<h2><a class="toc-backref" href="#id106" id="typecode" name="typecode">7.40&nbsp;&nbsp;&nbsp;%TypeCode</a></h2>
 <pre class="literal-block">
 %TypeCode
     <em>code</em>
@@ -3307,7 +3353,7 @@ clashes of function names within a module in case the SIP <tt class="docutils li
 option is used.</p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id106" id="typeheadercode" name="typeheadercode">7.41&nbsp;&nbsp;&nbsp;%TypeHeaderCode</a></h2>
+<h2><a class="toc-backref" href="#id107" id="typeheadercode" name="typeheadercode">7.41&nbsp;&nbsp;&nbsp;%TypeHeaderCode</a></h2>
 <pre class="literal-block">
 %TypeHeaderCode
     <em>code</em>
@@ -3331,7 +3377,7 @@ class Klass
 </pre>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id107" id="unitcode" name="unitcode">7.42&nbsp;&nbsp;&nbsp;%UnitCode</a></h2>
+<h2><a class="toc-backref" href="#id108" id="unitcode" name="unitcode">7.42&nbsp;&nbsp;&nbsp;%UnitCode</a></h2>
 <pre class="literal-block">
 %UnitCode
     <em>code</em>
@@ -3342,7 +3388,7 @@ start of a generated compilation unit (ie. C or C++ source file).  It is
 typically used to <tt class="docutils literal"><span class="pre">#include</span></tt> a C++ precompiled header file.</p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id108" id="virtualcatchercode" name="virtualcatchercode">7.43&nbsp;&nbsp;&nbsp;%VirtualCatcherCode</a></h2>
+<h2><a class="toc-backref" href="#id109" id="virtualcatchercode" name="virtualcatchercode">7.43&nbsp;&nbsp;&nbsp;%VirtualCatcherCode</a></h2>
 <pre class="literal-block">
 %VirtualCatcherCode
     <em>code</em>
@@ -3435,12 +3481,13 @@ public:
 </div>
 </div>
 <div class="section">
-<h1><a class="toc-backref" href="#id109" id="sip-annotations" name="sip-annotations">8&nbsp;&nbsp;&nbsp;SIP Annotations</a></h1>
+<h1><a class="toc-backref" href="#id110" id="sip-annotations" name="sip-annotations">8&nbsp;&nbsp;&nbsp;SIP Annotations</a></h1>
 <p>In this section we describe each of the annotations that can be used in
 specification files.</p>
-<p>Annotations can either be argument annotations, class annotations, enum
-annotations, exception annotations, function annotations, license annotations,
-or variable annotations depending on the context in which they can be used.</p>
+<p>Annotations can either be argument annotations, class annotations, mapped type
+annotations, enum annotations, exception annotations, function annotations,
+license annotations, or variable annotations depending on the context in which
+they can be used.</p>
 <p>Annotations are placed between forward slashes (<tt class="docutils literal"><span class="pre">/</span></tt>).  Multiple annotations
 are comma separated within the slashes.</p>
 <p>Annotations have a type and, possibly, a value.  The type determines the
@@ -3463,15 +3510,15 @@ void exec(QWidget * /Transfer/) /ReleaseGIL, PyName=call_exec/;
 <p>Note that the current version of SIP does not complain about unknown
 annotations, or annotations used out of their correct context.</p>
 <div class="section">
-<h2><a class="toc-backref" href="#id110" id="argument-annotations" name="argument-annotations">8.1&nbsp;&nbsp;&nbsp;Argument Annotations</a></h2>
+<h2><a class="toc-backref" href="#id111" id="argument-annotations" name="argument-annotations">8.1&nbsp;&nbsp;&nbsp;Argument Annotations</a></h2>
 <div class="section">
-<h3><a class="toc-backref" href="#id111" id="allownone" name="allownone">8.1.1&nbsp;&nbsp;&nbsp;AllowNone</a></h3>
+<h3><a class="toc-backref" href="#id112" id="allownone" name="allownone">8.1.1&nbsp;&nbsp;&nbsp;AllowNone</a></h3>
 <p>This boolean annotation specifies that the value of the corresponding argument
 (which should be either <a class="reference" href="#sip-pycallable">SIP_PYCALLABLE</a>, <a class="reference" href="#sip-pydict">SIP_PYDICT</a>, <a class="reference" href="#sip-pylist">SIP_PYLIST</a>,
 <a class="reference" href="#sip-pyslice">SIP_PYSLICE</a>, <a class="reference" href="#sip-pytuple">SIP_PYTUPLE</a> or <a class="reference" href="#sip-pytype">SIP_PYTYPE</a>) may be <tt class="docutils literal"><span class="pre">None</span></tt>.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id112" id="array" name="array">8.1.2&nbsp;&nbsp;&nbsp;Array</a></h3>
+<h3><a class="toc-backref" href="#id113" id="array" name="array">8.1.2&nbsp;&nbsp;&nbsp;Array</a></h3>
 <p>This boolean annotation specifies that the corresponding argument (which
 should be either <tt class="docutils literal"><span class="pre">char</span> <span class="pre">*</span></tt> or <tt class="docutils literal"><span class="pre">unsigned</span> <span class="pre">char</span> <span class="pre">*</span></tt>) refers to an array
 rather than a <tt class="docutils literal"><span class="pre">'\0'</span></tt> terminated string.  There must be a corresponding
@@ -3479,7 +3526,7 @@ argument with the <a class="reference" href="#arraysize">ArraySize</a> annotatio
 specified once in a list of arguments.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id113" id="arraysize" name="arraysize">8.1.3&nbsp;&nbsp;&nbsp;ArraySize</a></h3>
+<h3><a class="toc-backref" href="#id114" id="arraysize" name="arraysize">8.1.3&nbsp;&nbsp;&nbsp;ArraySize</a></h3>
 <p>This boolean annotation specifies that the corresponding argument (which
 should be either <tt class="docutils literal"><span class="pre">short</span></tt>, <tt class="docutils literal"><span class="pre">unsigned</span> <span class="pre">short</span></tt>, <tt class="docutils literal"><span class="pre">int</span></tt>, <tt class="docutils literal"><span class="pre">unsigned</span></tt>,
 <tt class="docutils literal"><span class="pre">long</span></tt> or <tt class="docutils literal"><span class="pre">unsigned</span> <span class="pre">long</span></tt>) refers to the size of an array.  There must be
@@ -3487,7 +3534,7 @@ a corresponding argument with the <a class="reference" href="#array">Array</a> a
 may only be specified once in a list of arguments.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id114" id="constrained" name="constrained">8.1.4&nbsp;&nbsp;&nbsp;Constrained</a></h3>
+<h3><a class="toc-backref" href="#id115" id="constrained" name="constrained">8.1.4&nbsp;&nbsp;&nbsp;Constrained</a></h3>
 <p>Python will automatically convert between certain compatible types.  For
 example, if a floating pointer number is expected and an integer supplied,
 then the integer will be converted appropriately.  This can cause problems
@@ -3515,7 +3562,7 @@ void foo(int);
 </pre>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id115" id="getwrapper" name="getwrapper">8.1.5&nbsp;&nbsp;&nbsp;GetWrapper</a></h3>
+<h3><a class="toc-backref" href="#id116" id="getwrapper" name="getwrapper">8.1.5&nbsp;&nbsp;&nbsp;GetWrapper</a></h3>
 <p>This boolean annotation is only ever used in conjunction with handwritten code
 specified with the <a class="reference" href="#methodcode">%MethodCode</a> directive.  It causes an extra variable to
 be generated for the corresponding argument (which should be a wrapped C
@@ -3524,7 +3571,7 @@ wraps the argument.</p>
 <p>See the <a class="reference" href="#methodcode">%MethodCode</a> directive for more detail.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id116" id="in" name="in">8.1.6&nbsp;&nbsp;&nbsp;In</a></h3>
+<h3><a class="toc-backref" href="#id117" id="in" name="in">8.1.6&nbsp;&nbsp;&nbsp;In</a></h3>
 <p>This boolean annotation is used to specify that the corresponding argument
 (which should be a pointer type) is used to pass a value to the function.</p>
 <p>For pointers to wrapped C structures or C++ class instances, <tt class="docutils literal"><span class="pre">char</span> <span class="pre">*</span></tt> and
@@ -3535,7 +3582,7 @@ if required.  The argument will be dereferenced to obtain the actual value.</p>
 <p>Both <a class="reference" href="#in">In</a> and <a class="reference" href="#out">Out</a> may be specified for the same argument.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id117" id="out" name="out">8.1.7&nbsp;&nbsp;&nbsp;Out</a></h3>
+<h3><a class="toc-backref" href="#id118" id="out" name="out">8.1.7&nbsp;&nbsp;&nbsp;Out</a></h3>
 <p>This boolean annotation is used to specify that the corresponding argument
 (which should be a pointer type) is used by the function to return a value as
 an element of a tuple.</p>
@@ -3547,13 +3594,22 @@ annotation is specified.</p>
 <p>Both <a class="reference" href="#in">In</a> and <a class="reference" href="#out">Out</a> may be specified for the same argument.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id118" id="singleshot" name="singleshot">8.1.8&nbsp;&nbsp;&nbsp;SingleShot</a></h3>
+<h3><a class="toc-backref" href="#id119" id="resultsize" name="resultsize">8.1.8&nbsp;&nbsp;&nbsp;ResultSize</a></h3>
+<p>This boolean annotation is used with functions or methods that return a
+<tt class="docutils literal"><span class="pre">void</span> <span class="pre">*</span></tt> or <tt class="docutils literal"><span class="pre">const</span> <span class="pre">void</span> <span class="pre">*</span></tt>.  It identifies an argument that defines the
+size of the block of memory whose address is being returned.  This allows the
+<tt class="docutils literal"><span class="pre">sip.voidptr</span></tt> object that wraps the address to support the Python buffer
+protocol and allows the memory to be read and updated when wrapped by the
+Python <tt class="docutils literal"><span class="pre">buffer()</span></tt> builtin.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id120" id="singleshot" name="singleshot">8.1.9&nbsp;&nbsp;&nbsp;SingleShot</a></h3>
 <p>This boolean annotation is used only with arguments of type <a class="reference" href="#sip-rxobj-con">SIP_RXOBJ_CON</a> to
 specify that the signal connected to the slot will only ever be emitted once.
 This prevents a certain class of memory leaks.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id119" id="transfer" name="transfer">8.1.9&nbsp;&nbsp;&nbsp;Transfer</a></h3>
+<h3><a class="toc-backref" href="#id121" id="transfer" name="transfer">8.1.10&nbsp;&nbsp;&nbsp;Transfer</a></h3>
 <p>This boolean annotation is used to specify that ownership of the corresponding
 argument (which should be a wrapped C structure or C++ class instance) is
 transferred from Python to C++.  In addition, if the argument is of a class
@@ -3563,7 +3619,7 @@ cyclic garbage collector.</p>
 <p>See <a class="reference" href="#ownership-of-objects">Ownership of Objects</a> for more detail.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id120" id="transferback" name="transferback">8.1.10&nbsp;&nbsp;&nbsp;TransferBack</a></h3>
+<h3><a class="toc-backref" href="#id122" id="transferback" name="transferback">8.1.11&nbsp;&nbsp;&nbsp;TransferBack</a></h3>
 <p>This boolean annotation is used to specify that ownership of the corresponding
 argument (which should be a wrapped C structure or C++ class instance) is
 transferred back to Python from C++.  In addition, any association of the
@@ -3573,7 +3629,7 @@ removed.</p>
 <p>See <a class="reference" href="#ownership-of-objects">Ownership of Objects</a> for more detail.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id121" id="transferthis" name="transferthis">8.1.11&nbsp;&nbsp;&nbsp;TransferThis</a></h3>
+<h3><a class="toc-backref" href="#id123" id="transferthis" name="transferthis">8.1.12&nbsp;&nbsp;&nbsp;TransferThis</a></h3>
 <p>This boolean annotation is only used in C++ constructors or methods.  In the
 context of a constructor or factory method it specifies that ownership of the
 instance being created is transferred from Python to C++ if the corresponding
@@ -3590,15 +3646,15 @@ transferred to last instance that is not <tt class="docutils literal"><span clas
 </div>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id122" id="class-annotations" name="class-annotations">8.2&nbsp;&nbsp;&nbsp;Class Annotations</a></h2>
+<h2><a class="toc-backref" href="#id124" id="class-annotations" name="class-annotations">8.2&nbsp;&nbsp;&nbsp;Class Annotations</a></h2>
 <div class="section">
-<h3><a class="toc-backref" href="#id123" id="abstract" name="abstract">8.2.1&nbsp;&nbsp;&nbsp;Abstract</a></h3>
+<h3><a class="toc-backref" href="#id125" id="abstract" name="abstract">8.2.1&nbsp;&nbsp;&nbsp;Abstract</a></h3>
 <p>This boolean annotation is used to specify that the class has additional pure
 virtual methods that have not been specified and so it cannot be instantiated
 or sub-classed from Python.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id124" id="delaydtor" name="delaydtor">8.2.2&nbsp;&nbsp;&nbsp;DelayDtor</a></h3>
+<h3><a class="toc-backref" href="#id126" id="delaydtor" name="delaydtor">8.2.2&nbsp;&nbsp;&nbsp;DelayDtor</a></h3>
 <p>This boolean annotation is used to specify that the class's destructor should
 not be called until the Python interpreter exits.  It would normally only be
 applied to singleton classes.</p>
@@ -3635,18 +3691,18 @@ last one.</dd>
 Python.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id125" id="external" name="external">8.2.3&nbsp;&nbsp;&nbsp;External</a></h3>
+<h3><a class="toc-backref" href="#id127" id="external" name="external">8.2.3&nbsp;&nbsp;&nbsp;External</a></h3>
 <p>This boolean annotation is used to specify that the class is defined in another
 module.  Declarations of external classes are private to the module in which
 they appear.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id126" id="nodefaultctors" name="nodefaultctors">8.2.4&nbsp;&nbsp;&nbsp;NoDefaultCtors</a></h3>
+<h3><a class="toc-backref" href="#id128" id="nodefaultctors" name="nodefaultctors">8.2.4&nbsp;&nbsp;&nbsp;NoDefaultCtors</a></h3>
 <p>This boolean annotation is used to suppress the automatic generation of default
 constructors for the class.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id127" id="pyname" name="pyname">8.2.5&nbsp;&nbsp;&nbsp;PyName</a></h3>
+<h3><a class="toc-backref" href="#id129" id="pyname" name="pyname">8.2.5&nbsp;&nbsp;&nbsp;PyName</a></h3>
 <p>This name annotation specifies an alternative name for the class being wrapped
 which is used when it is referred to from Python.  It is required when a class
 name is the same as a Python keyword.  It may also be used to avoid name
@@ -3655,9 +3711,19 @@ same name in the same C++ scope.</p>
 </div>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id128" id="enum-annotations" name="enum-annotations">8.3&nbsp;&nbsp;&nbsp;Enum Annotations</a></h2>
+<h2><a class="toc-backref" href="#id130" id="mapped-type-annotations" name="mapped-type-annotations">8.3&nbsp;&nbsp;&nbsp;Mapped Type Annotations</a></h2>
 <div class="section">
-<h3><a class="toc-backref" href="#id129" id="id17" name="id17">8.3.1&nbsp;&nbsp;&nbsp;PyName</a></h3>
+<h3><a class="toc-backref" href="#id131" id="norelease" name="norelease">8.3.1&nbsp;&nbsp;&nbsp;NoRelease</a></h3>
+<p>This boolean annotation is used to specify that the mapped type does not
+support the <a class="reference" href="#sipreleasemappedtype">sipReleaseMappedType()</a> function.  Any <a class="reference" href="#converttotypecode">%ConvertToTypeCode</a>
+should not create temporary instances of the mapped type, i.e. it should not
+return <tt class="docutils literal"><span class="pre">SIP_TEMPORARY</span></tt>.</p>
+</div>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id132" id="enum-annotations" name="enum-annotations">8.4&nbsp;&nbsp;&nbsp;Enum Annotations</a></h2>
+<div class="section">
+<h3><a class="toc-backref" href="#id133" id="id17" name="id17">8.4.1&nbsp;&nbsp;&nbsp;PyName</a></h3>
 <p>This name annotation specifies an alternative name for the enum or enum member
 being wrapped which is used when it is referred to from Python.  It is required
 when an enum or enum member name is the same as a Python keyword.  It may also
@@ -3666,9 +3732,9 @@ functions) that have the same name in the same C++ scope.</p>
 </div>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id130" id="exception-annotations" name="exception-annotations">8.4&nbsp;&nbsp;&nbsp;Exception Annotations</a></h2>
+<h2><a class="toc-backref" href="#id134" id="exception-annotations" name="exception-annotations">8.5&nbsp;&nbsp;&nbsp;Exception Annotations</a></h2>
 <div class="section">
-<h3><a class="toc-backref" href="#id131" id="id18" name="id18">8.4.1&nbsp;&nbsp;&nbsp;PyName</a></h3>
+<h3><a class="toc-backref" href="#id135" id="id18" name="id18">8.5.1&nbsp;&nbsp;&nbsp;PyName</a></h3>
 <p>This name annotation specifies an alternative name for the exception being
 defined which is used when it is referred to from Python.  It is required when
 an exception name is the same as a Python keyword.  It may also be used to
@@ -3677,16 +3743,16 @@ have the same name.</p>
 </div>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id132" id="function-annotations" name="function-annotations">8.5&nbsp;&nbsp;&nbsp;Function Annotations</a></h2>
+<h2><a class="toc-backref" href="#id136" id="function-annotations" name="function-annotations">8.6&nbsp;&nbsp;&nbsp;Function Annotations</a></h2>
 <div class="section">
-<h3><a class="toc-backref" href="#id133" id="autogen" name="autogen">8.5.1&nbsp;&nbsp;&nbsp;AutoGen</a></h3>
+<h3><a class="toc-backref" href="#id137" id="autogen" name="autogen">8.6.1&nbsp;&nbsp;&nbsp;AutoGen</a></h3>
 <p>This optional name annotation is used with class methods to specify that the
 method be automatically included in all sub-classes.  The value is the name of
 a feature (specified using the <a class="reference" href="#feature">%Feature</a> directive) which must be enabled
 for the method to be generated.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id134" id="default" name="default">8.5.2&nbsp;&nbsp;&nbsp;Default</a></h3>
+<h3><a class="toc-backref" href="#id138" id="default" name="default">8.6.2&nbsp;&nbsp;&nbsp;Default</a></h3>
 <p>This boolean annotation is only used with C++ constructors.  Sometimes SIP
 needs to create a class instance.  By default it uses a constructor with no
 compulsory arguments if one is specified.  (SIP will automatically generate a
@@ -3695,24 +3761,29 @@ annotation is used to explicitly specify which constructor to use.  Zero is
 passed as the value of any arguments to the constructor.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id135" id="factory" name="factory">8.5.3&nbsp;&nbsp;&nbsp;Factory</a></h3>
+<h3><a class="toc-backref" href="#id139" id="factory" name="factory">8.6.3&nbsp;&nbsp;&nbsp;Factory</a></h3>
 <p>This boolean annotation specifies that the value returned by the function
 (which should be a wrapped C structure or C++ class instance) is a newly
 created instance and is owned by Python.</p>
 <p>See <a class="reference" href="#ownership-of-objects">Ownership of Objects</a> for more detail.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id136" id="holdgil" name="holdgil">8.5.4&nbsp;&nbsp;&nbsp;HoldGIL</a></h3>
+<h3><a class="toc-backref" href="#id140" id="holdgil" name="holdgil">8.6.4&nbsp;&nbsp;&nbsp;HoldGIL</a></h3>
 <p>This boolean annotation specifies that the Python Global Interpreter Lock (GIL)
 is not released before the call to the underlying C or C++ function.  See
 <a class="reference" href="#the-python-global-interpreter-lock">The Python Global Interpreter Lock</a> and the <a class="reference" href="#releasegil">ReleaseGIL</a> annotation.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id137" id="newthread" name="newthread">8.5.5&nbsp;&nbsp;&nbsp;NewThread</a></h3>
+<h3><a class="toc-backref" href="#id141" id="newthread" name="newthread">8.6.5&nbsp;&nbsp;&nbsp;NewThread</a></h3>
 <p>This boolean annotation specifies that the function will create a new thread.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id138" id="noderived" name="noderived">8.5.6&nbsp;&nbsp;&nbsp;NoDerived</a></h3>
+<h3><a class="toc-backref" href="#id142" id="noargparser" name="noargparser">8.6.6&nbsp;&nbsp;&nbsp;NoArgParser</a></h3>
+<p>This boolean annotation is used with global functions to specify that the
+supplied <a class="reference" href="#methodcode">%MethodCode</a> will handle the parsing of the arguments.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id143" id="noderived" name="noderived">8.6.7&nbsp;&nbsp;&nbsp;NoDerived</a></h3>
 <p>This boolean annotation is only used with C++ constructors.  In many cases SIP
 generates a derived class for each class being wrapped (see <a class="reference" href="#generated-derived-classes">Generated Derived
 Classes</a>).  This derived class contains constructors with the same C++
@@ -3721,7 +3792,7 @@ Python constructor that has no corresponding C++ constructor.  This annotation
 is used to suppress the generation of the constructor in the derived class.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id139" id="numeric" name="numeric">8.5.7&nbsp;&nbsp;&nbsp;Numeric</a></h3>
+<h3><a class="toc-backref" href="#id144" id="numeric" name="numeric">8.6.8&nbsp;&nbsp;&nbsp;Numeric</a></h3>
 <p>This boolean annotation specifies that the operator should be interpreted as a
 numeric operator rather than a sequence operator.  Python uses the <tt class="docutils literal"><span class="pre">+</span></tt>
 operator for adding numbers and concatanating sequences, and the <tt class="docutils literal"><span class="pre">*</span></tt> operator
@@ -3735,21 +3806,21 @@ operators.  This annotation is used to force SIP to treat the operator as
 numeric.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id140" id="posthook" name="posthook">8.5.8&nbsp;&nbsp;&nbsp;PostHook</a></h3>
+<h3><a class="toc-backref" href="#id145" id="posthook" name="posthook">8.6.9&nbsp;&nbsp;&nbsp;PostHook</a></h3>
 <p>This name annotation is used to specify the name of a Python builtin that is
 called immediately after the call to the underlying C or C++ function or any
 handwritten code.  The builtin is not called if an error occurred.  It is
 primarily used to integrate with debuggers.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id141" id="prehook" name="prehook">8.5.9&nbsp;&nbsp;&nbsp;PreHook</a></h3>
+<h3><a class="toc-backref" href="#id146" id="prehook" name="prehook">8.6.10&nbsp;&nbsp;&nbsp;PreHook</a></h3>
 <p>This name annotation is used to specify the name of a Python builtin that is
 called immediately after the function's arguments have been successfully
 parsed and before the call to the underlying C or C++ function or any
 handwritten code.  It is primarily used to integrate with debuggers.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id142" id="id19" name="id19">8.5.10&nbsp;&nbsp;&nbsp;PyName</a></h3>
+<h3><a class="toc-backref" href="#id147" id="id19" name="id19">8.6.11&nbsp;&nbsp;&nbsp;PyName</a></h3>
 <p>This name annotation specifies an alternative name for the function being
 wrapped which is used when it is referred to from Python.  It is required when
 a function or method name is the same as a Python keyword.  It may also be used
@@ -3757,7 +3828,7 @@ to avoid name clashes with other objects (e.g. classes, enums, exceptions) that
 have the same name in the same C++ scope.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id143" id="releasegil" name="releasegil">8.5.11&nbsp;&nbsp;&nbsp;ReleaseGIL</a></h3>
+<h3><a class="toc-backref" href="#id148" id="releasegil" name="releasegil">8.6.12&nbsp;&nbsp;&nbsp;ReleaseGIL</a></h3>
 <p>This boolean annotation specifies that the Python Global Interpreter Lock (GIL)
 is released before the call to the underlying C or C++ function and reacquired
 afterwards.  It should be used for functions that might block or take a
@@ -3765,7 +3836,7 @@ significant amount of time to execute.  See <a class="reference" href="#the-pyth
 Lock</a> and the <a class="reference" href="#holdgil">HoldGIL</a> annotation.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id144" id="id20" name="id20">8.5.12&nbsp;&nbsp;&nbsp;Transfer</a></h3>
+<h3><a class="toc-backref" href="#id149" id="id20" name="id20">8.6.13&nbsp;&nbsp;&nbsp;Transfer</a></h3>
 <p>This boolean annotation specifies that ownership of the value returned by the
 function (which should be a wrapped C structure or C++ class instance) is
 transferred to C++.  It is only used in the context of a class constructor or a
@@ -3778,7 +3849,7 @@ the method is created with regard to the cyclic garbage collector.</p>
 <p>See <a class="reference" href="#ownership-of-objects">Ownership of Objects</a> for more detail.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id145" id="id21" name="id21">8.5.13&nbsp;&nbsp;&nbsp;TransferBack</a></h3>
+<h3><a class="toc-backref" href="#id150" id="id21" name="id21">8.6.14&nbsp;&nbsp;&nbsp;TransferBack</a></h3>
 <p>This boolean annotation specifies that ownership of the value returned by the
 function (which should be a wrapped C structure or C++ class instance) is
 transferred back to Python from C++.  Normally returned values (unless they are
@@ -3789,7 +3860,7 @@ with another instance is removed.</p>
 <p>See <a class="reference" href="#ownership-of-objects">Ownership of Objects</a> for more detail.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id146" id="id22" name="id22">8.5.14&nbsp;&nbsp;&nbsp;TransferThis</a></h3>
+<h3><a class="toc-backref" href="#id151" id="id22" name="id22">8.6.15&nbsp;&nbsp;&nbsp;TransferThis</a></h3>
 <p>This boolean annotation specifies that ownership of <tt class="docutils literal"><span class="pre">this</span></tt> is transferred
 from Python to C++.</p>
 <p>Note that this can also be used as an argument annotation.</p>
@@ -3797,36 +3868,36 @@ from Python to C++.</p>
 </div>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id147" id="license-annotations" name="license-annotations">8.6&nbsp;&nbsp;&nbsp;License Annotations</a></h2>
+<h2><a class="toc-backref" href="#id152" id="license-annotations" name="license-annotations">8.7&nbsp;&nbsp;&nbsp;License Annotations</a></h2>
 <div class="section">
-<h3><a class="toc-backref" href="#id148" id="licensee" name="licensee">8.6.1&nbsp;&nbsp;&nbsp;Licensee</a></h3>
+<h3><a class="toc-backref" href="#id153" id="licensee" name="licensee">8.7.1&nbsp;&nbsp;&nbsp;Licensee</a></h3>
 <p>This optional string annotation specifies the license's licensee.  No
 restrictions are placed on the contents of the string.</p>
 <p>See the <a class="reference" href="#id14">%License</a> directive.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id149" id="signature" name="signature">8.6.2&nbsp;&nbsp;&nbsp;Signature</a></h3>
+<h3><a class="toc-backref" href="#id154" id="signature" name="signature">8.7.2&nbsp;&nbsp;&nbsp;Signature</a></h3>
 <p>This optional string annotation specifies the license's signature.  No
 restrictions are placed on the contents of the string.</p>
 <p>See the <a class="reference" href="#id14">%License</a> directive.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id150" id="timestamp" name="timestamp">8.6.3&nbsp;&nbsp;&nbsp;Timestamp</a></h3>
+<h3><a class="toc-backref" href="#id155" id="timestamp" name="timestamp">8.7.3&nbsp;&nbsp;&nbsp;Timestamp</a></h3>
 <p>This optional string annotation specifies the license's timestamp.  No
 restrictions are placed on the contents of the string.</p>
 <p>See the <a class="reference" href="#id14">%License</a> directive.</p>
 </div>
 <div class="section">
-<h3><a class="toc-backref" href="#id151" id="type" name="type">8.6.4&nbsp;&nbsp;&nbsp;Type</a></h3>
+<h3><a class="toc-backref" href="#id156" id="type" name="type">8.7.4&nbsp;&nbsp;&nbsp;Type</a></h3>
 <p>This string annotation specifies the license's type.  No restrictions are
 placed on the contents of the string.</p>
 <p>See the <a class="reference" href="#id14">%License</a> directive.</p>
 </div>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id152" id="variable-annotations" name="variable-annotations">8.7&nbsp;&nbsp;&nbsp;Variable Annotations</a></h2>
+<h2><a class="toc-backref" href="#id157" id="variable-annotations" name="variable-annotations">8.8&nbsp;&nbsp;&nbsp;Variable Annotations</a></h2>
 <div class="section">
-<h3><a class="toc-backref" href="#id153" id="id23" name="id23">8.7.1&nbsp;&nbsp;&nbsp;PyName</a></h3>
+<h3><a class="toc-backref" href="#id158" id="id23" name="id23">8.8.1&nbsp;&nbsp;&nbsp;PyName</a></h3>
 <p>This name annotation specifies an alternative name for the variable being
 wrapped which is used when it is referred to from Python.  It is required when
 a variable name is the same as a Python keyword.  It may also be used to avoid
@@ -3836,53 +3907,53 @@ name in the same C++ scope.</p>
 </div>
 </div>
 <div class="section">
-<h1><a class="toc-backref" href="#id154" id="sip-api-for-handwritten-code" name="sip-api-for-handwritten-code">9&nbsp;&nbsp;&nbsp;SIP API for Handwritten Code</a></h1>
+<h1><a class="toc-backref" href="#id159" id="sip-api-for-handwritten-code" name="sip-api-for-handwritten-code">9&nbsp;&nbsp;&nbsp;SIP API for Handwritten Code</a></h1>
 <p>In this section we describe the API that can be used by handwritten code in
 specification files.</p>
 <div class="section">
-<h2><a class="toc-backref" href="#id155" id="sip-api-major-nr" name="sip-api-major-nr">9.1&nbsp;&nbsp;&nbsp;SIP_API_MAJOR_NR</a></h2>
+<h2><a class="toc-backref" href="#id160" id="sip-api-major-nr" name="sip-api-major-nr">9.1&nbsp;&nbsp;&nbsp;SIP_API_MAJOR_NR</a></h2>
 <p>This is a C preprocessor symbol that defines the major number of the SIP API.
 Its value is a number.  There is no direct relationship between this and the
 SIP version number.</p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id156" id="sip-api-minor-nr" name="sip-api-minor-nr">9.2&nbsp;&nbsp;&nbsp;SIP_API_MINOR_NR</a></h2>
+<h2><a class="toc-backref" href="#id161" id="sip-api-minor-nr" name="sip-api-minor-nr">9.2&nbsp;&nbsp;&nbsp;SIP_API_MINOR_NR</a></h2>
 <p>This is a C preprocessor symbol that defines the minor number of the SIP API.
 Its value is a number.  There is no direct relationship between this and the
 SIP version number.</p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id157" id="sip-block-threads" name="sip-block-threads">9.3&nbsp;&nbsp;&nbsp;SIP_BLOCK_THREADS</a></h2>
+<h2><a class="toc-backref" href="#id162" id="sip-block-threads" name="sip-block-threads">9.3&nbsp;&nbsp;&nbsp;SIP_BLOCK_THREADS</a></h2>
 <p>This is a C preprocessor macro that will make sure the Python Global
 Interpreter Lock (GIL) is acquired.  Python API calls must only be made when
 the GIL has been acquired.  There must be a corresponding
 <a class="reference" href="#sip-unblock-threads">SIP_UNBLOCK_THREADS</a> at the same lexical scope.</p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id158" id="sip-ssize-t" name="sip-ssize-t">9.4&nbsp;&nbsp;&nbsp;SIP_SSIZE_T</a></h2>
+<h2><a class="toc-backref" href="#id163" id="sip-ssize-t" name="sip-ssize-t">9.4&nbsp;&nbsp;&nbsp;SIP_SSIZE_T</a></h2>
 <p>This is a C preprocessor macro that is defined as <tt class="docutils literal"><span class="pre">Py_ssize_t</span></tt> for Python
 v2.5 and later, and as <tt class="docutils literal"><span class="pre">int</span></tt> for earlier versions of Python.  It makes it
 easier to write PEP 353 compliant handwritten code.</p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id159" id="sip-unblock-threads" name="sip-unblock-threads">9.5&nbsp;&nbsp;&nbsp;SIP_UNBLOCK_THREADS</a></h2>
+<h2><a class="toc-backref" href="#id164" id="sip-unblock-threads" name="sip-unblock-threads">9.5&nbsp;&nbsp;&nbsp;SIP_UNBLOCK_THREADS</a></h2>
 <p>This is a C preprocessor macro that will restore the Python Global Interpreter
 Lock (GIL) to the state it was prior to the corresponding <a class="reference" href="#sip-block-threads">SIP_BLOCK_THREADS</a>.</p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id160" id="sip-version" name="sip-version">9.6&nbsp;&nbsp;&nbsp;SIP_VERSION</a></h2>
+<h2><a class="toc-backref" href="#id165" id="sip-version" name="sip-version">9.6&nbsp;&nbsp;&nbsp;SIP_VERSION</a></h2>
 <p>This is a C preprocessor symbol that defines the SIP version number
 represented as a 3 part hexadecimal number (e.g. v4.0.0 is represented as
 <tt class="docutils literal"><span class="pre">0x040000</span></tt>).</p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id161" id="sip-version-str" name="sip-version-str">9.7&nbsp;&nbsp;&nbsp;SIP_VERSION_STR</a></h2>
+<h2><a class="toc-backref" href="#id166" id="sip-version-str" name="sip-version-str">9.7&nbsp;&nbsp;&nbsp;SIP_VERSION_STR</a></h2>
 <p>This is a C preprocessor symbol that defines the SIP version number
 represented as a string.  For development snapshots it will start with
 <tt class="docutils literal"><span class="pre">snapshot-</span></tt>.</p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id162" id="sipbadcatcherresult" name="sipbadcatcherresult">9.8&nbsp;&nbsp;&nbsp;sipBadCatcherResult()</a></h2>
+<h2><a class="toc-backref" href="#id167" id="sipbadcatcherresult" name="sipbadcatcherresult">9.8&nbsp;&nbsp;&nbsp;sipBadCatcherResult()</a></h2>
 <dl class="docutils">
 <dt>void sipBadCatcherResult(PyObject *method)</dt>
 <dd>This raises a Python exception when the result of a Python reimplementation
@@ -3893,7 +3964,7 @@ handwritten code specified with the <a class="reference" href="#virtualcatcherco
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id163" id="sipbadlengthforslice" name="sipbadlengthforslice">9.9&nbsp;&nbsp;&nbsp;sipBadLengthForSlice()</a></h2>
+<h2><a class="toc-backref" href="#id168" id="sipbadlengthforslice" name="sipbadlengthforslice">9.9&nbsp;&nbsp;&nbsp;sipBadLengthForSlice()</a></h2>
 <dl class="docutils">
 <dt>void sipBadLengthForSlice(SIP_SSIZE_T seqlen, SIP_SSIZE_T slicelen)</dt>
 <dd>This raises a Python exception when the length of a slice object is
@@ -3904,7 +3975,7 @@ versions of Python prior to v2.5 the arguments have type <tt class="docutils lit
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id164" id="sipbuildresult" name="sipbuildresult">9.10&nbsp;&nbsp;&nbsp;sipBuildResult()</a></h2>
+<h2><a class="toc-backref" href="#id169" id="sipbuildresult" name="sipbuildresult">9.10&nbsp;&nbsp;&nbsp;sipBuildResult()</a></h2>
 <dl class="docutils">
 <dt>PyObject *sipBuildResult(int *iserr, const char *format, ...)</dt>
 <dd><p class="first">This creates a Python object based on a format string and associated
@@ -3923,7 +3994,7 @@ to be passed.</p>
 <dt><tt class="docutils literal"><span class="pre">a</span></tt> (string) [char *, int]</dt>
 <dd>Convert a C/C++ character array and its length to a Python string.  If
 the array is <tt class="docutils literal"><span class="pre">NULL</span></tt> then the length is ignored and the result is
-<tt class="docutils literal"><span class="pre">Py_None</span></tt>.</dd>
+<tt class="docutils literal"><span class="pre">Py_None</span></tt>.  This is deprecated, use <tt class="docutils literal"><span class="pre">g</span></tt> instead.</dd>
 <dt><tt class="docutils literal"><span class="pre">b</span></tt> (boolean) [int]</dt>
 <dd>Convert a C/C++ <tt class="docutils literal"><span class="pre">int</span></tt> to a Python boolean.</dd>
 <dt><tt class="docutils literal"><span class="pre">c</span></tt> (string) [char]</dt>
@@ -3934,6 +4005,10 @@ the array is <tt class="docutils literal"><span class="pre">NULL</span></tt> the
 <dd>Convert an anonymous C/C++ <tt class="docutils literal"><span class="pre">enum</span></tt> to a Python integer.</dd>
 <dt><tt class="docutils literal"><span class="pre">f</span></tt> (float) [float]</dt>
 <dd>Convert a C/C++ <tt class="docutils literal"><span class="pre">float</span></tt> to a Python floating point number.</dd>
+<dt><tt class="docutils literal"><span class="pre">g</span></tt> (string) [char *, SIP_SSIZE_T]</dt>
+<dd>Convert a C/C++ character array and its length to a Python string.  If
+the array is <tt class="docutils literal"><span class="pre">NULL</span></tt> then the length is ignored and the result is
+<tt class="docutils literal"><span class="pre">Py_None</span></tt>.</dd>
 <dt><tt class="docutils literal"><span class="pre">h</span></tt> (integer) [short]</dt>
 <dd>Convert a C/C++ <tt class="docutils literal"><span class="pre">short</span></tt> to a Python integer.</dd>
 <dt><tt class="docutils literal"><span class="pre">i</span></tt> (integer) [int]</dt>
@@ -3962,7 +4037,7 @@ unicode object.  If the string pointer is <tt class="docutils literal"><span cla
 <dt><tt class="docutils literal"><span class="pre">A</span></tt> (unicode) [wchar_t *, int]</dt>
 <dd>Convert a C/C++ wide character array and its length to a Python unicode
 object.  If the array is <tt class="docutils literal"><span class="pre">NULL</span></tt> then the length is ignored and the
-result is <tt class="docutils literal"><span class="pre">Py_None</span></tt>.</dd>
+result is <tt class="docutils literal"><span class="pre">Py_None</span></tt>.  This is deprecated, use <tt class="docutils literal"><span class="pre">G</span></tt> instead.</dd>
 <dt><tt class="docutils literal"><span class="pre">B</span></tt> (wrapped instance) [<em>type</em> *, sipWrapperType *, PyObject *]</dt>
 <dd>Convert a new C structure or a new C++ class instance to a Python class
 instance object.  Ownership of the structure or instance is determined
@@ -3996,6 +4071,10 @@ ownership is transferred to C/C++ and the instance associated with the
 <dt><tt class="docutils literal"><span class="pre">E</span></tt> (wrapped enum) [enum, PyTypeObject *]</dt>
 <dd>Convert a named C/C++ <tt class="docutils literal"><span class="pre">enum</span></tt> to an instance of the corresponding
 Python named enum type.</dd>
+<dt><tt class="docutils literal"><span class="pre">G</span></tt> (unicode) [wchar_t *, SIP_SSIZE_T]</dt>
+<dd>Convert a C/C++ wide character array and its length to a Python unicode
+object.  If the array is <tt class="docutils literal"><span class="pre">NULL</span></tt> then the length is ignored and the
+result is <tt class="docutils literal"><span class="pre">Py_None</span></tt>.</dd>
 <dt><tt class="docutils literal"><span class="pre">M</span></tt> (wrapped instance) [<em>type</em> *, sipWrapperType *]</dt>
 <dd>Convert a C structure or a C++ class instance to a Python class
 instance object.  If the structure or class instance has already been
@@ -4040,7 +4119,7 @@ deprecated from SIP v4.4.</dd>
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id165" id="sipcallmethod" name="sipcallmethod">9.11&nbsp;&nbsp;&nbsp;sipCallMethod()</a></h2>
+<h2><a class="toc-backref" href="#id170" id="sipcallmethod" name="sipcallmethod">9.11&nbsp;&nbsp;&nbsp;sipCallMethod()</a></h2>
 <dl class="docutils">
 <dt>PyObject *sipCallMethod(int *iserr, PyObject *method, const char *format, ...)</dt>
 <dd><p class="first">This calls a Python method passing a tuple of arguments based on a format
@@ -4057,7 +4136,7 @@ Python bound method to call.  <em>format</em> is the string of format characters
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id166" id="sipcanconverttoinstance" name="sipcanconverttoinstance">9.12&nbsp;&nbsp;&nbsp;sipCanConvertToInstance()</a></h2>
+<h2><a class="toc-backref" href="#id171" id="sipcanconverttoinstance" name="sipcanconverttoinstance">9.12&nbsp;&nbsp;&nbsp;sipCanConvertToInstance()</a></h2>
 <dl class="docutils">
 <dt>int sipCanConvertToInstance(PyObject *obj, sipWrapperType *type, int flags)</dt>
 <dd><p class="first">This returns a non-zero value if a Python object can be converted to an
@@ -4076,7 +4155,7 @@ check.</p>
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id167" id="sipcanconverttomappedtype" name="sipcanconverttomappedtype">9.13&nbsp;&nbsp;&nbsp;sipCanConvertToMappedType()</a></h2>
+<h2><a class="toc-backref" href="#id172" id="sipcanconverttomappedtype" name="sipcanconverttomappedtype">9.13&nbsp;&nbsp;&nbsp;sipCanConvertToMappedType()</a></h2>
 <dl class="docutils">
 <dt>int sipCanConvertToMappedType(PyObject *obj, const sipMappedType *mt, int flags)</dt>
 <dd><p class="first">This returns a non-zero value if a Python object can be converted to an
@@ -4093,7 +4172,7 @@ following values used to fine tune the check.</p>
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id168" id="sipclassname" name="sipclassname">9.14&nbsp;&nbsp;&nbsp;sipClassName()</a></h2>
+<h2><a class="toc-backref" href="#id173" id="sipclassname" name="sipclassname">9.14&nbsp;&nbsp;&nbsp;sipClassName()</a></h2>
 <dl class="docutils">
 <dt>PyObject *sipClassName(PyObject *obj)</dt>
 <dd>This returns the class name of a wrapped instance as a Python string.  It
@@ -4101,7 +4180,7 @@ comes with a reference.</dd>
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id169" id="sipconnectrx" name="sipconnectrx">9.15&nbsp;&nbsp;&nbsp;sipConnectRx()</a></h2>
+<h2><a class="toc-backref" href="#id174" id="sipconnectrx" name="sipconnectrx">9.15&nbsp;&nbsp;&nbsp;sipConnectRx()</a></h2>
 <dl class="docutils">
 <dt>PyObject *sipConnectRx(PyObject *sender, const char *signal, PyObject *receiver, const char *slot, int type)</dt>
 <dd>This connects a signal to a signal or slot and returns <tt class="docutils literal"><span class="pre">Py_True</span></tt> if the
@@ -4117,13 +4196,32 @@ implement <tt class="docutils literal"><span class="pre">QObject.connect()</span
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id170" id="sipconvertfrominstance" name="sipconvertfrominstance">9.16&nbsp;&nbsp;&nbsp;sipConvertFromInstance()</a></h2>
+<h2><a class="toc-backref" href="#id175" id="sipconvertfromconstvoidptr" name="sipconvertfromconstvoidptr">9.16&nbsp;&nbsp;&nbsp;sipConvertFromConstVoidPtr()</a></h2>
+<dl class="docutils">
+<dt>PyObject *sipConvertFromConstVoidPtr(const void *cpp)</dt>
+<dd>This creates a <tt class="docutils literal"><span class="pre">sip.voidptr</span></tt> object for a memory address.  The object
+will not be writeable and has no associated size.  <em>cpp</em> is the memory
+address.</dd>
+</dl>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id176" id="sipconvertfromconstvoidptrandsize" name="sipconvertfromconstvoidptrandsize">9.17&nbsp;&nbsp;&nbsp;sipConvertFromConstVoidPtrAndSize()</a></h2>
+<dl class="docutils">
+<dt>PyObject *sipConvertFromConstVoidPtrAndSize(const void *cpp, SIP_SSIZE_T size)</dt>
+<dd>This creates a <tt class="docutils literal"><span class="pre">sip.voidptr</span></tt> object for a memory address.  The object
+will not be writeable.  <em>cpp</em> is the memory address.  <em>size</em> is the size
+associated with the address.  The object can be used as an immutable buffer
+object.</dd>
+</dl>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id177" id="sipconvertfrominstance" name="sipconvertfrominstance">9.18&nbsp;&nbsp;&nbsp;sipConvertFromInstance()</a></h2>
 <dl class="docutils">
 <dt>PyObject *sipConvertFromInstance(void *cpp, sipWrapperType *type, PyObject *transferObj)</dt>
-<dd>Convert a C structure or a C++ class instance to a Python class instance
-object.  <em>cpp</em> is the C/C++ instance.  If the instance has already been
-wrapped then the result is a new reference to the existing instance object.
-<em>type</em> is the generated type corresponding to the C/C++ type.
+<dd>This converts a C structure or a C++ class instance to a Python class
+instance object.  <em>cpp</em> is the C/C++ instance.  If the instance has already
+been wrapped then the result is a new reference to the existing instance
+object.  <em>type</em> is the generated type corresponding to the C/C++ type.
 <em>transferObj</em> controls the ownership of the returned value.  If the
 structure or class instance has already been wrapped then the result is a
 new reference to the existing class instance object.  If it is <tt class="docutils literal"><span class="pre">NULL</span></tt> and
@@ -4137,43 +4235,44 @@ C/C++ and the instance associated with <em>transferObj</em> via a call to
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id171" id="sipconvertfrommappedtype" name="sipconvertfrommappedtype">9.17&nbsp;&nbsp;&nbsp;sipConvertFromMappedType()</a></h2>
+<h2><a class="toc-backref" href="#id178" id="sipconvertfrommappedtype" name="sipconvertfrommappedtype">9.19&nbsp;&nbsp;&nbsp;sipConvertFromMappedType()</a></h2>
 <dl class="docutils">
 <dt>PyObject *sipConvertFromMappedType(void *cpp, const sipMappedType *mt, PyObject *transferObj)</dt>
-<dd>Convert a C structure or a C++ class instance wrapped as a mapped type to a
-Python object.  <em>cpp</em> is the C/C++ instance.  <em>mt</em> is the opaque structure
-returned by <a class="reference" href="#sipfindmappedtype">sipFindMappedType()</a>.  <em>transferObj</em> controls any ownership
-changes to <em>obj</em>.  If it is <tt class="docutils literal"><span class="pre">NULL</span></tt> then the ownership is unchanged.  If
-it is <tt class="docutils literal"><span class="pre">Py_None</span></tt> then ownership is transferred to Python via a call to
-<a class="reference" href="#siptransferback">sipTransferBack()</a>.  Otherwise ownership is transferred to C/C++ and the
-instance associated with the <tt class="docutils literal"><span class="pre">PyObject</span> <span class="pre">*</span></tt> argument via a call to
-<a class="reference" href="#siptransferto">sipTransferTo()</a>.</dd>
+<dd>This converts a C structure or a C++ class instance wrapped as a mapped
+type to a Python object.  <em>cpp</em> is the C/C++ instance.  <em>mt</em> is the opaque
+structure returned by <a class="reference" href="#sipfindmappedtype">sipFindMappedType()</a>.  <em>transferObj</em> controls any
+ownership changes to <em>obj</em>.  If it is <tt class="docutils literal"><span class="pre">NULL</span></tt> then the ownership is
+unchanged.  If it is <tt class="docutils literal"><span class="pre">Py_None</span></tt> then ownership is transferred to Python
+via a call to <a class="reference" href="#siptransferback">sipTransferBack()</a>.  Otherwise ownership is transferred to
+C/C++ and the instance associated with the <tt class="docutils literal"><span class="pre">PyObject</span> <span class="pre">*</span></tt> argument via a
+call to <a class="reference" href="#siptransferto">sipTransferTo()</a>.</dd>
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id172" id="sipconvertfromnamedenum" name="sipconvertfromnamedenum">9.18&nbsp;&nbsp;&nbsp;sipConvertFromNamedEnum()</a></h2>
+<h2><a class="toc-backref" href="#id179" id="sipconvertfromnamedenum" name="sipconvertfromnamedenum">9.20&nbsp;&nbsp;&nbsp;sipConvertFromNamedEnum()</a></h2>
 <dl class="docutils">
 <dt>PyObject *sipConvertFromNamedEnum(int eval, PyTypeObject *type)</dt>
-<dd>Convert a named C/C++ <tt class="docutils literal"><span class="pre">enum</span></tt> to an instance of the corresponding Python
-named enum type.  <em>eval</em> is the enumerated value to convert.  <em>type</em> is the
-generated Python type object (see <a class="reference" href="#generated-named-enum-type-objects">Generated Named Enum Type Objects</a>).</dd>
+<dd>This converts a named C/C++ <tt class="docutils literal"><span class="pre">enum</span></tt> to an instance of the corresponding
+Python named enum type.  <em>eval</em> is the enumerated value to convert.  <em>type</em>
+is the generated Python type object (see <a class="reference" href="#generated-named-enum-type-objects">Generated Named Enum Type
+Objects</a>).</dd>
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id173" id="sipconvertfromnewinstance" name="sipconvertfromnewinstance">9.19&nbsp;&nbsp;&nbsp;sipConvertFromNewInstance()</a></h2>
+<h2><a class="toc-backref" href="#id180" id="sipconvertfromnewinstance" name="sipconvertfromnewinstance">9.21&nbsp;&nbsp;&nbsp;sipConvertFromNewInstance()</a></h2>
 <dl class="docutils">
 <dt>PyObject *sipConvertFromNewInstance(void *cpp, sipWrapperType *type, PyObject *transferObj)</dt>
-<dd>Convert a new C structure or a new C++ class instance to a Python class
-instance object.  <em>cpp</em> is the C/C++ instance.  <em>type</em> is the generated
-type corresponding to the C/C++ type.  <em>transferObj</em> controls the ownership
-of the returned value.  If it is <tt class="docutils literal"><span class="pre">NULL</span></tt> or <tt class="docutils literal"><span class="pre">Py_None</span></tt> then ownership
-will be with Python.  Otherwise ownership will be with C/C++ and the
-instance associated with <em>transferObj</em>.  The Python class is influenced by
-any applicable <a class="reference" href="#converttosubclasscode">%ConvertToSubClassCode</a> code.</dd>
+<dd>This converts a new C structure or a new C++ class instance to a Python
+class instance object.  <em>cpp</em> is the C/C++ instance.  <em>type</em> is the
+generated type corresponding to the C/C++ type.  <em>transferObj</em> controls the
+ownership of the returned value.  If it is <tt class="docutils literal"><span class="pre">NULL</span></tt> or <tt class="docutils literal"><span class="pre">Py_None</span></tt> then
+ownership will be with Python.  Otherwise ownership will be with C/C++ and
+the instance associated with <em>transferObj</em>.  The Python class is influenced
+by any applicable <a class="reference" href="#converttosubclasscode">%ConvertToSubClassCode</a> code.</dd>
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id174" id="sipconvertfromsequenceindex" name="sipconvertfromsequenceindex">9.20&nbsp;&nbsp;&nbsp;sipConvertFromSequenceIndex()</a></h2>
+<h2><a class="toc-backref" href="#id181" id="sipconvertfromsequenceindex" name="sipconvertfromsequenceindex">9.22&nbsp;&nbsp;&nbsp;sipConvertFromSequenceIndex()</a></h2>
 <dl class="docutils">
 <dt>SIP_SSIZE_T sipConvertFromSequenceIndex(SIP_SSIZE_T idx, SIP_SSIZE_T len)</dt>
 <dd>This converts a Python sequence index (i.e. where a negative value refers
@@ -4184,7 +4283,7 @@ arguments have type <tt class="docutils literal"><span class="pre">int</span></t
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id175" id="sipconvertfromsliceobject" name="sipconvertfromsliceobject">9.21&nbsp;&nbsp;&nbsp;sipConvertFromSliceObject()</a></h2>
+<h2><a class="toc-backref" href="#id182" id="sipconvertfromsliceobject" name="sipconvertfromsliceobject">9.23&nbsp;&nbsp;&nbsp;sipConvertFromSliceObject()</a></h2>
 <dl class="docutils">
 <dt>int sipConvertFromSliceObject(PyObject *slice, SIP_SSIZE_T length, SIP_SSIZE_T *start, SIP_SSIZE_T *stop, SIP_SSIZE_T *step, SIP_SSIZE_T *slicelength)</dt>
 <dd>This is a thin wrapper around the Python <tt class="docutils literal"><span class="pre">PySlice_GetIndicesEx()</span></tt>
@@ -4193,7 +4292,25 @@ compatible with SIP v3.x and versions of Python earlier that v2.3.</dd>
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id176" id="sipconverttocpp" name="sipconverttocpp">9.22&nbsp;&nbsp;&nbsp;sipConvertToCpp()</a></h2>
+<h2><a class="toc-backref" href="#id183" id="sipconvertfromvoidptr" name="sipconvertfromvoidptr">9.24&nbsp;&nbsp;&nbsp;sipConvertFromVoidPtr()</a></h2>
+<dl class="docutils">
+<dt>PyObject *sipConvertFromVoidPtr(void *cpp)</dt>
+<dd>This creates a <tt class="docutils literal"><span class="pre">sip.voidptr</span></tt> object for a memory address.  The object
+will be writeable but has no associated size.  <em>cpp</em> is the memory address.</dd>
+</dl>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id184" id="sipconvertfromvoidptrandsize" name="sipconvertfromvoidptrandsize">9.25&nbsp;&nbsp;&nbsp;sipConvertFromVoidPtrAndSize()</a></h2>
+<dl class="docutils">
+<dt>PyObject *sipConvertFromVoidPtrAndSize(void *cpp, SIP_SSIZE_T size)</dt>
+<dd>This creates a <tt class="docutils literal"><span class="pre">sip.voidptr</span></tt> object for a memory address.  The object
+will be writeable.  <em>cpp</em> is the memory address.  <em>size</em> is the size
+associated with the address.  The object can be used as a mutable buffer
+object.</dd>
+</dl>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id185" id="sipconverttocpp" name="sipconverttocpp">9.26&nbsp;&nbsp;&nbsp;sipConvertToCpp()</a></h2>
 <dl class="docutils">
 <dt>void *sipConvertToCpp(PyObject *obj, sipWrapperType *type, int *iserr)</dt>
 <dd><p class="first">This function is deprecated from SIP v4.4.  It is equivalent to:</p>
@@ -4204,7 +4321,7 @@ sipConvertToInstance(obj, type, NULL, SIP_NO_CONVERTORS, NULL, iserr);
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id177" id="sipconverttoinstance" name="sipconverttoinstance">9.23&nbsp;&nbsp;&nbsp;sipConvertToInstance()</a></h2>
+<h2><a class="toc-backref" href="#id186" id="sipconverttoinstance" name="sipconverttoinstance">9.27&nbsp;&nbsp;&nbsp;sipConvertToInstance()</a></h2>
 <dl class="docutils">
 <dt>void *sipConvertToInstance(PyObject *obj, sipWrapperType *type, PyObject *transferObj, int flags, int *state, int *iserr)</dt>
 <dd><p class="first">This converts a Python object to an instance of a C structure or C++ class
@@ -4238,7 +4355,7 @@ rather than after each call.)</p>
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id178" id="sipconverttomappedtype" name="sipconverttomappedtype">9.24&nbsp;&nbsp;&nbsp;sipConvertToMappedType()</a></h2>
+<h2><a class="toc-backref" href="#id187" id="sipconverttomappedtype" name="sipconverttomappedtype">9.28&nbsp;&nbsp;&nbsp;sipConvertToMappedType()</a></h2>
 <dl class="docutils">
 <dt>void *sipConvertToMappedType(PyObject *obj, const sipMappedType *mt, PyObject *transferObj, int flags, int *state, int *iserr)</dt>
 <dd><p class="first">This converts a Python object to an instance of a C structure or C++
@@ -4269,7 +4386,17 @@ needs to be tested once rather than after each call.)</p>
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id179" id="sipdisconnectrx" name="sipdisconnectrx">9.25&nbsp;&nbsp;&nbsp;sipDisconnectRx()</a></h2>
+<h2><a class="toc-backref" href="#id188" id="sipconverttovoidptr" name="sipconverttovoidptr">9.29&nbsp;&nbsp;&nbsp;sipConvertToVoidPtr()</a></h2>
+<dl class="docutils">
+<dt>void *sipConvertToVoidPtr(PyObject *obj)</dt>
+<dd>This converts a Python object to a memory address.  <tt class="docutils literal"><span class="pre">obj</span></tt> may be
+<tt class="docutils literal"><span class="pre">Py_None</span></tt>, a <tt class="docutils literal"><span class="pre">sip.voidptr</span></tt> or a PyCObject.  The memory address is
+returned.  <tt class="docutils literal"><span class="pre">PyErr_Occurred()</span></tt> must be used to determine if the conversion
+was successful.</dd>
+</dl>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id189" id="sipdisconnectrx" name="sipdisconnectrx">9.30&nbsp;&nbsp;&nbsp;sipDisconnectRx()</a></h2>
 <dl class="docutils">
 <dt>PyObject *sipDisconnectRx(PyObject *sender, const char *signal, PyObject *receiver, const char *slot)</dt>
 <dd>This disconnects a signal from a signal or slot and returns <tt class="docutils literal"><span class="pre">Py_True</span></tt> if
@@ -4284,7 +4411,7 @@ implement <tt class="docutils literal"><span class="pre">QObject.disconnect()</s
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id180" id="sipemitsignal" name="sipemitsignal">9.26&nbsp;&nbsp;&nbsp;sipEmitSignal()</a></h2>
+<h2><a class="toc-backref" href="#id190" id="sipemitsignal" name="sipemitsignal">9.31&nbsp;&nbsp;&nbsp;sipEmitSignal()</a></h2>
 <dl class="docutils">
 <dt>int sipEmitSignal(PyObject *txobj, const char *signal, PyObject *args)</dt>
 <dd>This emits a signal and returns zero if there was no error.  If there was
@@ -4296,7 +4423,7 @@ implement <tt class="docutils literal"><span class="pre">QObject.emit()</span></
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id181" id="sipexportsymbol" name="sipexportsymbol">9.27&nbsp;&nbsp;&nbsp;sipExportSymbol()</a></h2>
+<h2><a class="toc-backref" href="#id191" id="sipexportsymbol" name="sipexportsymbol">9.32&nbsp;&nbsp;&nbsp;sipExportSymbol()</a></h2>
 <dl class="docutils">
 <dt>int sipExportSymbol(const char *name, void *sym)</dt>
 <dd>Python does not allow extension modules to directly access symbols in
@@ -4308,7 +4435,7 @@ already associated with a symbol or there was some other error.</dd>
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id182" id="sipfindclass" name="sipfindclass">9.28&nbsp;&nbsp;&nbsp;sipFindClass()</a></h2>
+<h2><a class="toc-backref" href="#id192" id="sipfindclass" name="sipfindclass">9.33&nbsp;&nbsp;&nbsp;sipFindClass()</a></h2>
 <dl class="docutils">
 <dt>sipWrapperType *sipFindClass(const char *type)</dt>
 <dd>This returns a pointer to the generated type corresponding to a C/C++ type.
@@ -4318,7 +4445,7 @@ may be saved in a static cache.</dd>
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id183" id="sipfindmappedtype" name="sipfindmappedtype">9.29&nbsp;&nbsp;&nbsp;sipFindMappedType()</a></h2>
+<h2><a class="toc-backref" href="#id193" id="sipfindmappedtype" name="sipfindmappedtype">9.34&nbsp;&nbsp;&nbsp;sipFindMappedType()</a></h2>
 <dl class="docutils">
 <dt>const sipMappedType *sipFindMappedType(const char *type)</dt>
 <dd>This returns a pointer to an opaque structure describing a mapped type.
@@ -4328,7 +4455,7 @@ may be saved in a static cache.</dd>
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id184" id="sipfindnamedenum" name="sipfindnamedenum">9.30&nbsp;&nbsp;&nbsp;sipFindNamedEnum()</a></h2>
+<h2><a class="toc-backref" href="#id194" id="sipfindnamedenum" name="sipfindnamedenum">9.35&nbsp;&nbsp;&nbsp;sipFindNamedEnum()</a></h2>
 <dl class="docutils">
 <dt>PyTypeObject *sipFindNamedEnum(const char *type)</dt>
 <dd>This returns a pointer to the generated type corresponding to a named C/C++
@@ -4338,7 +4465,7 @@ change and may be saved in a static cache.</dd>
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id185" id="sipforceconverttoinstance" name="sipforceconverttoinstance">9.31&nbsp;&nbsp;&nbsp;sipForceConvertToInstance()</a></h2>
+<h2><a class="toc-backref" href="#id195" id="sipforceconverttoinstance" name="sipforceconverttoinstance">9.36&nbsp;&nbsp;&nbsp;sipForceConvertToInstance()</a></h2>
 <dl class="docutils">
 <dt>void *sipForceConvertToInstance(PyObject *obj, sipWrapperType *type, PyObject *transferObj, int flags, int *state, int *iserr)</dt>
 <dd>This converts a Python object to an instance of a C structure or C++ class
@@ -4348,7 +4475,7 @@ description of the arguments.</dd>
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id186" id="sipforceconverttomappedtype" name="sipforceconverttomappedtype">9.32&nbsp;&nbsp;&nbsp;sipForceConvertToMappedType()</a></h2>
+<h2><a class="toc-backref" href="#id196" id="sipforceconverttomappedtype" name="sipforceconverttomappedtype">9.37&nbsp;&nbsp;&nbsp;sipForceConvertToMappedType()</a></h2>
 <dl class="docutils">
 <dt>void *sipForceConvertToMappedType(PyObject *obj, const sipMappedType *mt, PyObject *transferObj, int flags, int *state, int *iserr)</dt>
 <dd>This converts a Python object to an instance of a C structure or C++ class
@@ -4359,7 +4486,7 @@ description of the arguments.</dd>
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id187" id="sipfree" name="sipfree">9.33&nbsp;&nbsp;&nbsp;sipFree()</a></h2>
+<h2><a class="toc-backref" href="#id197" id="sipfree" name="sipfree">9.38&nbsp;&nbsp;&nbsp;sipFree()</a></h2>
 <dl class="docutils">
 <dt>void sipFree(void *mem)</dt>
 <dd>This returns an area of memory allocated by <a class="reference" href="#sipmalloc">sipMalloc()</a> to the heap.
@@ -4367,7 +4494,7 @@ description of the arguments.</dd>
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id188" id="sipgetsender" name="sipgetsender">9.34&nbsp;&nbsp;&nbsp;sipGetSender()</a></h2>
+<h2><a class="toc-backref" href="#id198" id="sipgetsender" name="sipgetsender">9.39&nbsp;&nbsp;&nbsp;sipGetSender()</a></h2>
 <dl class="docutils">
 <dt>const void *sipGetSender()</dt>
 <dd>This returns a pointer to the last <tt class="docutils literal"><span class="pre">QObject</span></tt> instance that emitted a Qt
@@ -4376,7 +4503,7 @@ signal.  It is normally only used by PyQt to implement
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id189" id="sipgetwrapper" name="sipgetwrapper">9.35&nbsp;&nbsp;&nbsp;sipGetWrapper()</a></h2>
+<h2><a class="toc-backref" href="#id199" id="sipgetwrapper" name="sipgetwrapper">9.40&nbsp;&nbsp;&nbsp;sipGetWrapper()</a></h2>
 <dl class="docutils">
 <dt>PyObject *sipGetWrapper(void *cppptr, sipWrapperType *type)</dt>
 <dd>This returns a borrowed reference to the wrapped instance object for a C
@@ -4387,7 +4514,7 @@ raised).  <em>cppptr</em> is the pointer to the structure or class instance.
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id190" id="sipimportsymbol" name="sipimportsymbol">9.36&nbsp;&nbsp;&nbsp;sipImportSymbol()</a></h2>
+<h2><a class="toc-backref" href="#id200" id="sipimportsymbol" name="sipimportsymbol">9.41&nbsp;&nbsp;&nbsp;sipImportSymbol()</a></h2>
 <dl class="docutils">
 <dt>void *sipImportSymbol(const char *name)</dt>
 <dd>Python does not allow extension modules to directly access symbols in
@@ -4399,7 +4526,7 @@ symbol.</dd>
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id191" id="sipinttypeclassmap" name="sipinttypeclassmap">9.37&nbsp;&nbsp;&nbsp;sipIntTypeClassMap</a></h2>
+<h2><a class="toc-backref" href="#id201" id="sipinttypeclassmap" name="sipinttypeclassmap">9.42&nbsp;&nbsp;&nbsp;sipIntTypeClassMap</a></h2>
 <p>This C structure is used with <a class="reference" href="#sipmapinttoclass">sipMapIntToClass()</a> to define a mapping
 between integer based RTTI and <a class="reference" href="#generated-type-objects">generated type objects</a>.  The structure
 elements are as follows.</p>
@@ -4411,7 +4538,7 @@ elements are as follows.</p>
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id192" id="sipissubclassinstance" name="sipissubclassinstance">9.38&nbsp;&nbsp;&nbsp;sipIsSubClassInstance()</a></h2>
+<h2><a class="toc-backref" href="#id202" id="sipissubclassinstance" name="sipissubclassinstance">9.43&nbsp;&nbsp;&nbsp;sipIsSubClassInstance()</a></h2>
 <dl class="docutils">
 <dt>int sipIsSubClassInstance(PyObject *obj, sipWrapperType *type)</dt>
 <dd><p class="first">This function is deprecated from SIP v4.4.  It is equivalent to:</p>
@@ -4422,7 +4549,7 @@ sipCanConvertToInstance(obj, type, SIP_NOT_NONE | SIP_NO_CONVERTORS);
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id193" id="siplong-asunsignedlong" name="siplong-asunsignedlong">9.39&nbsp;&nbsp;&nbsp;sipLong_AsUnsignedLong()</a></h2>
+<h2><a class="toc-backref" href="#id203" id="siplong-asunsignedlong" name="siplong-asunsignedlong">9.44&nbsp;&nbsp;&nbsp;sipLong_AsUnsignedLong()</a></h2>
 <dl class="docutils">
 <dt>unsigned long sipLong_AsUnsignedLong(PyObject *obj)</dt>
 <dd>This function is a thin wrapper around PyLong_AsUnsignedLong() that works
@@ -4430,7 +4557,7 @@ around a bug in Python v2.3.x and earlier when converting integer objects.</dd>
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id194" id="sipmalloc" name="sipmalloc">9.40&nbsp;&nbsp;&nbsp;sipMalloc()</a></h2>
+<h2><a class="toc-backref" href="#id204" id="sipmalloc" name="sipmalloc">9.45&nbsp;&nbsp;&nbsp;sipMalloc()</a></h2>
 <dl class="docutils">
 <dt>void *sipMalloc(size_t nbytes)</dt>
 <dd>This allocates an area of memory of size <em>nytes</em> on the heap using the
@@ -4439,7 +4566,7 @@ returned and a Python exception raised.  See <a class="reference" href="#sipfree
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id195" id="sipmapinttoclass" name="sipmapinttoclass">9.41&nbsp;&nbsp;&nbsp;sipMapIntToClass()</a></h2>
+<h2><a class="toc-backref" href="#id205" id="sipmapinttoclass" name="sipmapinttoclass">9.46&nbsp;&nbsp;&nbsp;sipMapIntToClass()</a></h2>
 <dl class="docutils">
 <dt>sipWrapperType *sipMapIntToClass(int type, const sipIntTypeClassMap *map, int maplen)</dt>
 <dd>This is used in <a class="reference" href="#converttosubclasscode">%ConvertToSubClassCode</a> code as a convenient way of
@@ -4452,7 +4579,7 @@ if <em>type</em> wasn't in <em>map</em>.</dd>
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id196" id="sipmapstringtoclass" name="sipmapstringtoclass">9.42&nbsp;&nbsp;&nbsp;sipMapStringToClass()</a></h2>
+<h2><a class="toc-backref" href="#id206" id="sipmapstringtoclass" name="sipmapstringtoclass">9.47&nbsp;&nbsp;&nbsp;sipMapStringToClass()</a></h2>
 <dl class="docutils">
 <dt>sipWrapperType *sipMapStringToClass(char *type, const sipStringTypeClassMap *map, int maplen)</dt>
 <dd>This is used in <a class="reference" href="#converttosubclasscode">%ConvertToSubClassCode</a> code as a convenient way of
@@ -4465,7 +4592,7 @@ object is returned, or <tt class="docutils literal"><span class="pre">NULL</span
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id197" id="sipparseresult" name="sipparseresult">9.43&nbsp;&nbsp;&nbsp;sipParseResult()</a></h2>
+<h2><a class="toc-backref" href="#id207" id="sipparseresult" name="sipparseresult">9.48&nbsp;&nbsp;&nbsp;sipParseResult()</a></h2>
 <dl class="docutils">
 <dt>int sipParseResult(int *iserr, PyObject *method, PyObject *result, const char *format, ...)</dt>
 <dd><p class="first">This converts a Python object (usually returned by a method) to C/C++ based
@@ -4486,10 +4613,10 @@ entry in parentheses is the Python object type that the format character
 will convert, and the entry in brackets are the types of the C/C++ values
 to be passed.</p>
 <dl class="last docutils">
-<dt><tt class="docutils literal"><span class="pre">a</span></tt> (string) [char **, int *]</dt>
+<dt><tt class="docutils literal"><span class="pre">a</span></tt> (string) [const char **, int *]</dt>
 <dd>Convert a Python string to a C/C++ character array and its length.  If
 the Python object is <tt class="docutils literal"><span class="pre">Py_None</span></tt> then the array and length are <tt class="docutils literal"><span class="pre">NULL</span></tt>
-and zero respectively.</dd>
+and zero respectively.  This is deprecated, use <tt class="docutils literal"><span class="pre">g</span></tt> instead.</dd>
 <dt><tt class="docutils literal"><span class="pre">b</span></tt> (integer) [bool *]</dt>
 <dd>Convert a Python integer to a C/C++ <tt class="docutils literal"><span class="pre">bool</span></tt>.</dd>
 <dt><tt class="docutils literal"><span class="pre">c</span></tt> (string) [char *]</dt>
@@ -4500,6 +4627,10 @@ and zero respectively.</dd>
 <dd>Convert a Python integer to an anonymous C/C++ <tt class="docutils literal"><span class="pre">enum</span></tt>.</dd>
 <dt><tt class="docutils literal"><span class="pre">f</span></tt> (float) [float *]</dt>
 <dd>Convert a Python floating point number to a C/C++ <tt class="docutils literal"><span class="pre">float</span></tt>.</dd>
+<dt><tt class="docutils literal"><span class="pre">g</span></tt> (string) [const char **, SIP_SSIZE_T *]</dt>
+<dd>Convert a Python string to a C/C++ character array and its length.  If
+the Python object is <tt class="docutils literal"><span class="pre">Py_None</span></tt> then the array and length are <tt class="docutils literal"><span class="pre">NULL</span></tt>
+and zero respectively.</dd>
 <dt><tt class="docutils literal"><span class="pre">h</span></tt> (integer) [short *]</dt>
 <dd>Convert a Python integer to a C/C++ <tt class="docutils literal"><span class="pre">short</span></tt>.</dd>
 <dt><tt class="docutils literal"><span class="pre">i</span></tt> (integer) [int *]</dt>
@@ -4512,7 +4643,7 @@ and zero respectively.</dd>
 <dd>Convert a Python long to a C/C++ <tt class="docutils literal"><span class="pre">long</span> <span class="pre">long</span></tt>.</dd>
 <dt><tt class="docutils literal"><span class="pre">o</span></tt> (long) [unsigned long long *]</dt>
 <dd>Convert a Python long to a C/C++ <tt class="docutils literal"><span class="pre">unsigned</span> <span class="pre">long</span> <span class="pre">long</span></tt>.</dd>
-<dt><tt class="docutils literal"><span class="pre">s</span></tt> (string) [char **]</dt>
+<dt><tt class="docutils literal"><span class="pre">s</span></tt> (string) [const char **]</dt>
 <dd>Convert a Python string to a C/C++ <tt class="docutils literal"><span class="pre">'\0'</span></tt> terminated string.  If the
 Python object is <tt class="docutils literal"><span class="pre">Py_None</span></tt> then the string is <tt class="docutils literal"><span class="pre">NULL</span></tt>.</dd>
 <dt><tt class="docutils literal"><span class="pre">t</span></tt> (long) [unsigned short *]</dt>
@@ -4528,7 +4659,8 @@ is <tt class="docutils literal"><span class="pre">NULL</span></tt>.</dd>
 <dt><tt class="docutils literal"><span class="pre">A</span></tt> (unicode) [wchar_t **, int *]</dt>
 <dd>Convert a Python unicode object to a C/C++ wide character array and its
 length.  If the Python object is <tt class="docutils literal"><span class="pre">Py_None</span></tt> then the array and length
-are <tt class="docutils literal"><span class="pre">NULL</span></tt> and zero respectively.</dd>
+are <tt class="docutils literal"><span class="pre">NULL</span></tt> and zero respectively.  This is deprecated, use <tt class="docutils literal"><span class="pre">G</span></tt>
+instead.</dd>
 <dt><tt class="docutils literal"><span class="pre">Cf</span></tt> (wrapped class) [sipWrapperType *, int *, void **]</dt>
 <dd><p class="first">Convert a Python object to a C structure or a C++ class instance and
 return its state as described in <a class="reference" href="#sipconverttoinstance">sipConvertToInstance()</a>.  <tt class="docutils literal"><span class="pre">f</span></tt> is a
@@ -4562,6 +4694,10 @@ not passed if this flag is specified.</dd>
 </dd>
 <dt><tt class="docutils literal"><span class="pre">E</span></tt> (wrapped enum) [PyTypeObject *, enum *]</dt>
 <dd>Convert a Python named enum type to the corresponding C/C++ <tt class="docutils literal"><span class="pre">enum</span></tt>.</dd>
+<dt><tt class="docutils literal"><span class="pre">G</span></tt> (unicode) [wchar_t **, SIP_SSIZE_T *]</dt>
+<dd>Convert a Python unicode object to a C/C++ wide character array and its
+length.  If the Python object is <tt class="docutils literal"><span class="pre">Py_None</span></tt> then the array and length
+are <tt class="docutils literal"><span class="pre">NULL</span></tt> and zero respectively.</dd>
 <dt><tt class="docutils literal"><span class="pre">L</span></tt> (object) [<em>type</em> *(*)(PyObject *obj, int *iserr), void **]</dt>
 <dd>Convert a Python object to a C structure or a C++ class instance using
 a convertor function.  See <a class="reference" href="#generated-type-convertors">Generated Type Convertors</a>.  This is
@@ -4591,7 +4727,7 @@ The Python object may not be <tt class="docutils literal"><span class="pre">Py_N
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id198" id="sipreleaseinstance" name="sipreleaseinstance">9.44&nbsp;&nbsp;&nbsp;sipReleaseInstance()</a></h2>
+<h2><a class="toc-backref" href="#id208" id="sipreleaseinstance" name="sipreleaseinstance">9.49&nbsp;&nbsp;&nbsp;sipReleaseInstance()</a></h2>
 <dl class="docutils">
 <dt>void sipReleaseInstance(void *cpp, sipWrapperType *type, int state)</dt>
 <dd>This destroys a wrapped C/C++ instance if it was a temporary instance.  It
@@ -4602,7 +4738,7 @@ state of the instance.</dd>
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id199" id="sipreleasemappedtype" name="sipreleasemappedtype">9.45&nbsp;&nbsp;&nbsp;sipReleaseMappedType()</a></h2>
+<h2><a class="toc-backref" href="#id209" id="sipreleasemappedtype" name="sipreleasemappedtype">9.50&nbsp;&nbsp;&nbsp;sipReleaseMappedType()</a></h2>
 <dl class="docutils">
 <dt>void sipReleaseMappedType(void *cpp, const sipMappedType *mt, int state)</dt>
 <dd>This destroys a wrapped C/C++ mapped type if it was a temporary instance.
@@ -4613,7 +4749,7 @@ describes the state of the instance.</dd>
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id200" id="sipstringtypeclassmap" name="sipstringtypeclassmap">9.46&nbsp;&nbsp;&nbsp;sipStringTypeClassMap</a></h2>
+<h2><a class="toc-backref" href="#id210" id="sipstringtypeclassmap" name="sipstringtypeclassmap">9.51&nbsp;&nbsp;&nbsp;sipStringTypeClassMap</a></h2>
 <p>This C structure is used with <a class="reference" href="#sipmapstringtoclass">sipMapStringToClass()</a> to define a mapping
 between <tt class="docutils literal"><span class="pre">'\0'</span></tt> terminated string based RTTI and <a class="reference" href="#generated-type-objects">generated type objects</a>.
 The structure elements are as follows.</p>
@@ -4625,7 +4761,7 @@ The structure elements are as follows.</p>
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id201" id="siptransfer" name="siptransfer">9.47&nbsp;&nbsp;&nbsp;sipTransfer()</a></h2>
+<h2><a class="toc-backref" href="#id211" id="siptransfer" name="siptransfer">9.52&nbsp;&nbsp;&nbsp;sipTransfer()</a></h2>
 <dl class="docutils">
 <dt>void sipTransfer(PyObject *obj, int tocpp)</dt>
 <dd><p class="first">This function is deprecated from SIP v4.3.  If <em>tocpp</em> is non-zero then the
@@ -4641,7 +4777,7 @@ sipTransferBack(obj);
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id202" id="siptransferback" name="siptransferback">9.48&nbsp;&nbsp;&nbsp;sipTransferBack()</a></h2>
+<h2><a class="toc-backref" href="#id212" id="siptransferback" name="siptransferback">9.53&nbsp;&nbsp;&nbsp;sipTransferBack()</a></h2>
 <dl class="docutils">
 <dt>void sipTransferBack(PyObject *obj)</dt>
 <dd>This transfers ownership of a Python wrapped instance to Python (see
@@ -4651,7 +4787,7 @@ collector with another instance is removed.</dd>
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id203" id="siptransferbreak" name="siptransferbreak">9.49&nbsp;&nbsp;&nbsp;sipTransferBreak()</a></h2>
+<h2><a class="toc-backref" href="#id213" id="siptransferbreak" name="siptransferbreak">9.54&nbsp;&nbsp;&nbsp;sipTransferBreak()</a></h2>
 <dl class="docutils">
 <dt>void sipTransferBreak(PyObject *obj)</dt>
 <dd>Any association of a Python wrapped instance with regard to the cyclic
@@ -4660,7 +4796,7 @@ instance.  Ownership of the instance should be with C++.</dd>
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id204" id="siptransferto" name="siptransferto">9.50&nbsp;&nbsp;&nbsp;sipTransferTo()</a></h2>
+<h2><a class="toc-backref" href="#id214" id="siptransferto" name="siptransferto">9.55&nbsp;&nbsp;&nbsp;sipTransferTo()</a></h2>
 <dl class="docutils">
 <dt>void sipTransferTo(PyObject *obj, PyObject *owner)</dt>
 <dd>This transfers ownership of a Python wrapped instance to C++ (see
@@ -4674,7 +4810,7 @@ destructor is always transfered to C++.</dd>
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id205" id="sipwrapper" name="sipwrapper">9.51&nbsp;&nbsp;&nbsp;sipWrapper</a></h2>
+<h2><a class="toc-backref" href="#id215" id="sipwrapper" name="sipwrapper">9.56&nbsp;&nbsp;&nbsp;sipWrapper</a></h2>
 <p>This is a C structure that represents a Python wrapped instance.  It is an
 extension of the Python <tt class="docutils literal"><span class="pre">PyObject</span></tt> structure and so may be safely cast to
 <tt class="docutils literal"><span class="pre">PyObject</span></tt>.  It includes a member called <tt class="docutils literal"><span class="pre">user</span></tt> which is of type
@@ -4682,7 +4818,7 @@ extension of the Python <tt class="docutils literal"><span class="pre">PyObject<
 automatically be garbage collected at the appropriate time.</p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id206" id="sipwrapper-check" name="sipwrapper-check">9.52&nbsp;&nbsp;&nbsp;sipWrapper_Check()</a></h2>
+<h2><a class="toc-backref" href="#id216" id="sipwrapper-check" name="sipwrapper-check">9.57&nbsp;&nbsp;&nbsp;sipWrapper_Check()</a></h2>
 <dl class="docutils">
 <dt>int sipWrapper_Check(PyObject *obj)</dt>
 <dd>This returns a non-zero value if a Python object is a wrapped instance.
@@ -4690,14 +4826,14 @@ automatically be garbage collected at the appropriate time.</p>
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id207" id="sipwrappertype" name="sipwrappertype">9.53&nbsp;&nbsp;&nbsp;sipWrapperType</a></h2>
+<h2><a class="toc-backref" href="#id217" id="sipwrappertype" name="sipwrappertype">9.58&nbsp;&nbsp;&nbsp;sipWrapperType</a></h2>
 <p>This is a C structure that represents a SIP generated type object.  It is an
 extension of the Python <tt class="docutils literal"><span class="pre">PyTypeObject</span></tt> structure (which is itself an
 extension of the Python <tt class="docutils literal"><span class="pre">PyObject</span></tt> structure) and so may be safely cast to
 <tt class="docutils literal"><span class="pre">PyTypeObject</span></tt> (and <tt class="docutils literal"><span class="pre">PyObject</span></tt>).</p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id208" id="generated-type-convertors" name="generated-type-convertors">9.54&nbsp;&nbsp;&nbsp;Generated Type Convertors</a></h2>
+<h2><a class="toc-backref" href="#id218" id="generated-type-convertors" name="generated-type-convertors">9.59&nbsp;&nbsp;&nbsp;Generated Type Convertors</a></h2>
 <p>These functions are deprecated from SIP v4.4.</p>
 <p>SIP generates functions for all types being wrapped (including mapped types
 defined with the <a class="reference" href="#mappedtype">%MappedType</a> directive) that convert a Python object to the
@@ -4724,7 +4860,7 @@ raised.</dd>
 code.</p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id209" id="generated-type-objects" name="generated-type-objects">9.55&nbsp;&nbsp;&nbsp;Generated Type Objects</a></h2>
+<h2><a class="toc-backref" href="#id219" id="generated-type-objects" name="generated-type-objects">9.60&nbsp;&nbsp;&nbsp;Generated Type Objects</a></h2>
 <p>SIP generates a type object for each C structure or C++ class being wrapped.
 These are <a class="reference" href="#sipwrappertype">sipWrapperType</a> structures and are used extensively by the SIP API.</p>
 <p>These objects are named with the structure or class name prefixed by
@@ -4733,7 +4869,7 @@ These are <a class="reference" href="#sipwrappertype">sipWrapperType</a> structu
 <p>The type objects of all imported classes are available to handwritten code.</p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id210" id="generated-named-enum-type-objects" name="generated-named-enum-type-objects">9.56&nbsp;&nbsp;&nbsp;Generated Named Enum Type Objects</a></h2>
+<h2><a class="toc-backref" href="#id220" id="generated-named-enum-type-objects" name="generated-named-enum-type-objects">9.61&nbsp;&nbsp;&nbsp;Generated Named Enum Type Objects</a></h2>
 <p>SIP generates a type object for each named enum being wrapped.  These are
 PyTypeObject structures.  (Anonymous enums are wrapped as Python integers.)</p>
 <p>These objects are named with the fully qualified enum name (i.e. including any
@@ -4742,7 +4878,7 @@ enum <tt class="docutils literal"><span class="pre">Enum</span></tt> defined in 
 <p>The type objects of all imported named enums are available to handwritten code.</p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id211" id="generated-derived-classes" name="generated-derived-classes">9.57&nbsp;&nbsp;&nbsp;Generated Derived Classes</a></h2>
+<h2><a class="toc-backref" href="#id221" id="generated-derived-classes" name="generated-derived-classes">9.62&nbsp;&nbsp;&nbsp;Generated Derived Classes</a></h2>
 <p>For most C++ classes being wrapped SIP generates a derived class with the same
 name prefixed by <tt class="docutils literal"><span class="pre">sip</span></tt>.  For example, the derived class for class <tt class="docutils literal"><span class="pre">Klass</span></tt>
 is <tt class="docutils literal"><span class="pre">sipKlass</span></tt>.</p>
@@ -4755,7 +4891,7 @@ exception is that handwritten constructor code specified using the
 has the same C++ signature) rather then the wrapped class's constructor.</p>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id212" id="generated-exception-objects" name="generated-exception-objects">9.58&nbsp;&nbsp;&nbsp;Generated Exception Objects</a></h2>
+<h2><a class="toc-backref" href="#id222" id="generated-exception-objects" name="generated-exception-objects">9.63&nbsp;&nbsp;&nbsp;Generated Exception Objects</a></h2>
 <p>SIP generates a Python object for each exception defined with the <cite>%Exception_</cite>
 directive.</p>
 <p>These objects are named with the fully qualified exception name (i.e. including
@@ -4766,7 +4902,7 @@ object for enum <tt class="docutils literal"><span class="pre">Except</span></tt
 </div>
 </div>
 <div class="section">
-<h1><a class="toc-backref" href="#id213" id="using-the-sip-api-when-embedding" name="using-the-sip-api-when-embedding">10&nbsp;&nbsp;&nbsp;Using the SIP API when Embedding</a></h1>
+<h1><a class="toc-backref" href="#id223" id="using-the-sip-api-when-embedding" name="using-the-sip-api-when-embedding">10&nbsp;&nbsp;&nbsp;Using the SIP API when Embedding</a></h1>
 <p>The SIP API described in the previous section is intended to be called from
 handwritten code in SIP generated modules.  However it is also often necessary
 to call it from C or C++ applications that embed the Python interpreter and
@@ -4826,7 +4962,7 @@ const sipAPIDef *get_sip_api()
 </pre>
 </div>
 <div class="section">
-<h1><a class="toc-backref" href="#id214" id="using-the-sip-module-in-applications" name="using-the-sip-module-in-applications">11&nbsp;&nbsp;&nbsp;Using the SIP Module in Applications</a></h1>
+<h1><a class="toc-backref" href="#id224" id="using-the-sip-module-in-applications" name="using-the-sip-module-in-applications">11&nbsp;&nbsp;&nbsp;Using the SIP Module in Applications</a></h1>
 <p>The main purpose of the SIP module is to provide functionality common to all
 SIP generated bindings.  It is loaded automatically and most of the time you
 will completely ignore it.  However, it does expose some functionality that can
@@ -4897,19 +5033,39 @@ sip.transferback(obj)
 instance <em>obj</em>.</dd>
 <dt>voidptr</dt>
 <dd><p class="first">This is the type object for the type SIP uses to represent a C/C++
-<tt class="docutils literal"><span class="pre">void</span> <span class="pre">*</span></tt>.  The type constructor takes a single argument that must either
-be another <tt class="docutils literal"><span class="pre">voidptr</span></tt>, <tt class="docutils literal"><span class="pre">None</span></tt>, a Python CObject, or an integer.  The
-type has the following methods:</p>
+<tt class="docutils literal"><span class="pre">void</span> <span class="pre">*</span></tt>.  It may have a size associated with the address in which case
+the Python buffer protocol is supported.  This means that the memory can
+be treated as a mutable array of bytes when wrapped with the <tt class="docutils literal"><span class="pre">buffer()</span></tt>
+builtin.  The type has the following methods:</p>
 <dl class="last docutils">
-<dt>__int__()</dt>
-<dd>This returns the pointer as an integer.</dd>
-<dt>__hex__()</dt>
-<dd>This returns the pointer as a hexadecimal string.</dd>
-<dt>ascobject()</dt>
-<dd>This returns the pointer as a Python CObject.</dd>
-<dt>asstring(nbytes)</dt>
-<dd>This returns a copy of the first <em>nbytes</em> of memory at the pointer as a
-Python string.</dd>
+<dt>__init__(self, address, size=-1, writeable=True)</dt>
+<dd><tt class="docutils literal"><span class="pre">address</span></tt> is either another <tt class="docutils literal"><span class="pre">voidptr</span></tt>, <tt class="docutils literal"><span class="pre">None</span></tt>, a Python CObject,
+or an integer.  <tt class="docutils literal"><span class="pre">size</span></tt> is the optional associated size of the block
+of memory and is negative if the size is not known.  <tt class="docutils literal"><span class="pre">writeable</span></tt> is
+set if the memory is writeable.  If it is not specified, and
+<tt class="docutils literal"><span class="pre">address</span></tt> is a <tt class="docutils literal"><span class="pre">voidptr</span></tt> then its value will be used.</dd>
+<dt>__int__(self)</dt>
+<dd>This returns the address as an integer.</dd>
+<dt>__hex__(self)</dt>
+<dd>This returns the address as a hexadecimal string.</dd>
+<dt>ascobject(self)</dt>
+<dd>This returns the address as a Python CObject.</dd>
+<dt>asstring(self, size=-1)</dt>
+<dd>This returns a copy of the block of memory as a Python string.  If
+<tt class="docutils literal"><span class="pre">size</span></tt> is given then it specifies the number of bytes to copy.  If
+it is not given (or is negative) then the size associated with the
+address is used.  If there is no associated size then an exception is
+raised.</dd>
+<dt>getsize(self)</dt>
+<dd>This returns the size associated with the address.  It will be
+negative if there is no associated size.</dd>
+<dt>setsize(self, size)</dt>
+<dd>This sets the size associated with the address.  If <tt class="docutils literal"><span class="pre">size</span></tt> is
+negative then no size is associated.</dd>
+<dt>getwriteable(self)</dt>
+<dd>This returns the writeable state of the memory.</dd>
+<dt>setwriteable(self, writeable)</dt>
+<dd>writeable state of the memory.</dd>
 </dl>
 </dd>
 <dt>wrapinstance(addr, type)</dt>
@@ -4925,7 +5081,7 @@ the instance represented as a number.  <em>type</em> is the type of the object
 </dl>
 </div>
 <div class="section">
-<h1><a class="toc-backref" href="#id215" id="the-sip-build-system" name="the-sip-build-system">12&nbsp;&nbsp;&nbsp;The SIP Build System</a></h1>
+<h1><a class="toc-backref" href="#id225" id="the-sip-build-system" name="the-sip-build-system">12&nbsp;&nbsp;&nbsp;The SIP Build System</a></h1>
 <p>The purpose of the build system is to make it easy for you to write
 configuration scripts in Python for your own bindings.  The build system takes
 care of the details of particular combinations of platform and compiler.  It
@@ -4938,7 +5094,7 @@ with other Python based build systems (e.g.
 <a class="reference" href="http://www.scons.org">SCons</a>).</p>
 <p>An important feature of SIP is the ability to generate bindings that are built
 on top of existing bindings.  For example, both
-<a class="reference" href="http://www.riverbankcomputing.co.uk/pykde/">PyKDE</a> and
+<a class="reference" href="http://www.riverbankcomputing.com/software/pykde/">PyKDE</a> and
 <a class="reference" href="http://pyqwt.sourceforge.net/">PyQwt</a> are built on top of PyQt but all three
 packages are maintained by different developers.  To make this easier PyQt
 includes its own configuration module, <tt class="docutils literal"><span class="pre">pyqtconfig</span></tt>, that contains additional
@@ -4946,7 +5102,7 @@ classes intended to be used by the configuration scripts of bindings built on
 top of PyQt.  The SIP build system includes facilities that do a lot of the
 work of creating these additional configuration modules.</p>
 <div class="section">
-<h2><a class="toc-backref" href="#id216" id="sipconfig-functions" name="sipconfig-functions">12.1&nbsp;&nbsp;&nbsp;<tt class="docutils literal"><span class="pre">sipconfig</span></tt> Functions</a></h2>
+<h2><a class="toc-backref" href="#id226" id="sipconfig-functions" name="sipconfig-functions">12.1&nbsp;&nbsp;&nbsp;<tt class="docutils literal"><span class="pre">sipconfig</span></tt> Functions</a></h2>
 <dl class="docutils">
 <dt>create_config_module(module, template, content, macros=None)</dt>
 <dd><p class="first">This creates a configuration module (e.g. <tt class="docutils literal"><span class="pre">pyqtconfig</span></tt>) from a template
@@ -5054,7 +5210,7 @@ string.</p>
 </dl>
 </div>
 <div class="section">
-<h2><a class="toc-backref" href="#id217" id="sipconfig-classes" name="sipconfig-classes">12.2&nbsp;&nbsp;&nbsp;<tt class="docutils literal"><span class="pre">sipconfig</span></tt> Classes</a></h2>
+<h2><a class="toc-backref" href="#id227" id="sipconfig-classes" name="sipconfig-classes">12.2&nbsp;&nbsp;&nbsp;<tt class="docutils literal"><span class="pre">sipconfig</span></tt> Classes</a></h2>
 <dl class="docutils">
 <dt>Configuration</dt>
 <dd><p class="first">This class encapsulates configuration values that can be accessed as
@@ -5442,7 +5598,7 @@ extension module.</p>
 </div>
 </div>
 <div class="section">
-<h1><a class="toc-backref" href="#id218" id="building-your-extension-with-distutils" name="building-your-extension-with-distutils">13&nbsp;&nbsp;&nbsp;Building Your Extension with distutils</a></h1>
+<h1><a class="toc-backref" href="#id228" id="building-your-extension-with-distutils" name="building-your-extension-with-distutils">13&nbsp;&nbsp;&nbsp;Building Your Extension with distutils</a></h1>
 <p>To build the example in <a class="reference" href="#a-simple-c-example">A Simple C++ Example</a> using distutils, it is
 sufficient to create a standard <tt class="docutils literal"><span class="pre">setup.py</span></tt>, listing <tt class="docutils literal"><span class="pre">word.sip</span></tt> among the
 files to build, and hook-up SIP into distutils:</p>
@@ -5465,7 +5621,7 @@ special line which is needed so that SIP can see and process <tt class="docutils
 Then, running <tt class="docutils literal"><span class="pre">setup.py</span> <span class="pre">build</span></tt> will build our extension module.</p>
 </div>
 <div class="section">
-<h1><a class="toc-backref" href="#id219" id="builtin-modules-and-custom-interpreters" name="builtin-modules-and-custom-interpreters">14&nbsp;&nbsp;&nbsp;Builtin Modules and Custom Interpreters</a></h1>
+<h1><a class="toc-backref" href="#id229" id="builtin-modules-and-custom-interpreters" name="builtin-modules-and-custom-interpreters">14&nbsp;&nbsp;&nbsp;Builtin Modules and Custom Interpreters</a></h1>
 <p>Sometimes you want to create a custom Python interpreter with some modules
 built in to the interpreter itself rather than being dynamically loaded.  To
 do this the module must be created as a static library and linked with a
@@ -5505,7 +5661,7 @@ modified.</li>
 For example, it still allows users to write their own applications that can
 import your builtin modules.  If you want to prevent users from doing that,
 perhaps to protect a proprietary API, then take a look at the
-<a class="reference" href="http://www.riverbankcomputing.co.uk/vendorid/">VendorID</a> package.</p>
+<a class="reference" href="http://www.riverbankcomputing.com/software/vendorid/">VendorID</a> package.</p>
 </div>
 </div>
 </body>

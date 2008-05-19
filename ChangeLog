@@ -1,3 +1,207 @@
+2008/05/18 22:59:23  phil
+Don't install manifests as it doesn't seem to be necessary.
+Make win32-msvc2008 the default platform for Python v2.6.
+
+
+2008/05/17 23:12:01  phil
+Added the -s flag to configure.py to allow the MacOS/X SDK to be specified when
+building universal binaries.
+
+
+2008/05/17 19:25:23  phil
+Updated the win32-msvc2005 spec file.
+The manifest file for .exe files is now installed.
+
+
+2008/05/17 12:09:12  phil
+Added support for MSVC 2008 to the build system.
+Handle quotes in spec files properly.
+
+
+2008/05/16 19:10:20  phil
+Update the spec file for the Intel compiler - v10.x is now required.
+
+
+2008/05/13 10:43:44  phil
+Released as v4.7.5.
+
+
+2008/05/11 10:09:20  phil
+Fixed the last fix.
+
+
+2008/05/10 11:42:19  phil
+Restored the special handling of -Wl,--no-undefined in case some distro has
+stupidly kept it.
+
+
+2008/05/09 13:32:23  phil
+Build system fixes from the move to Ubuntu.
+
+
+2008/05/07 22:14:27  phil
+If a type has a public copy ctor (or is a mapped type that doesn't have
+/NoRelease/ specified) then it is assumed to also have a public assignment
+operator and an assignment helper function is generated.
+
+
+2008/05/05 12:02:02  phil
+Updated the NEWS file.
+Documentation tweaks.
+
+
+2008/05/05 10:38:50  phil
+Small changes to the QMetaObject support to avoid introducing a binary
+incompatibility.
+
+
+2008/05/04 23:48:21  phil
+Tweaks to the meta-object support.
+Exposed sip_api_is_exact_wrapper_type() to the Qt support.
+
+
+2008/05/04 17:56:05  phil
+Improved the handling of variable %GetCode and %SetCode so that, for class
+variables, the referencing type is passed as sipPyType.
+
+
+2008/05/03 13:49:24  phil
+Assume that if an init function doesn't create a C/C++ object but successfully
+parsed a signature then it was because handwritten code decided after the parse
+that it didn't like the signature.
+
+
+2008/04/28 21:28:12  phil
+The %MethodCode supplied to a dtor is now placed in the release function and
+not the dealloc function.
+
+
+2008/04/24 12:33:10  phil
+Fixed a bug that broke binary operators for types with handwritten conversion
+code that supported tuples.
+Fixed a bug cleaning up arguments for unary operators for types with
+handwritten conversion code.
+
+
+2008/04/21 17:16:03  phil
+Added sipParseType() to the internal API (though it may yet prove not to be
+needed).
+
+
+2008/04/21  0:01:53  phil
+Deprecated sipEmitToSlot() in favour of the new sipInvokeSlot() (which handles
+return values from slots).
+
+
+2008/04/20 22:37:08  phil
+Added the /NoArgParser/ function annotation.
+
+
+2008/04/19 23:15:19  phil
+sipConvertToVoidPtr() is now part of the public API.
+Added the /NoRelease/ mapped type annotation.
+
+
+2008/04/18 16:40:31  phil
+Made the sipConvertFromConstVoidPtr(), sipConvertFromConstVoidPtrAndSize(),
+sipConvertFromVoidPtr() and sipConvertFromVoidPtrAndSize() functions part of
+the public API.
+
+
+2008/04/17 19:09:59  phil
+Changes to make sure that the /ArraySize/ annotation works for arrays with
+more than 2^31 elements.
+Added the 'g' and 'G' format characters to sipBuildResult(), sipCallMethod()
+and sipParseResult() and deprecated the 'a' and 'A' characters they replace.
+
+
+2008/04/15 19:54:04  phil
+Various template related bug fixes and enhancements need by PyQt's Phonon
+module.
+
+
+2008/04/13 17:54:36  phil
+Taught the build system about the phonon module.
+
+
+2008/04/13 16:48:29  phil
+Taught the build system about the QtXmlPatterns module.
+
+
+2008/04/13 15:26:57  phil
+Taught the build system about the QtWebKit module.
+
+
+2008/04/12 23:33:23  phil
+Taught the build system about the QtHelp module.
+
+
+2008/04/10 10:18:05  phil
+Backed out the workaround for -Wl,--no-undefined for Qt v4.4rc1 as Trolltech
+have agreed to remove it for the final release.
+
+
+2008/04/09 17:25:30  phil
+Added the sip_api_convert_from_const_void_ptr(),
+sip_api_convert_from_void_ptr_and_size() and
+sip_api_convert_from_const_void_ptr_and_size() functions to the internal API.
+Added the /ResultSize/ argument annotation.
+The sip.voidptr ctor now takes optional size and writeable flags.
+Added the getsize(), setsize(), getwriteable() and setwriteable() methods to
+sip.voidptr.
+sip.voidptr now support the buffer protocol if it has an associated size.
+All these changes mean that sip.voidptr (when wrapped with the buffer()
+builtin) can be used to read and update arbitrary memory locations, and that
+Qt v4.4's support for memory mapped files can be exploited.
+
+
+2008/04/08 16:45:10  phil
+Changed the build system to remove any -Wl,--no-undefined given to LFLAGS when
+creating a Makefile.  (Needed for Qt v4.4.)
+
+
+2008/03/28 14:44:51  phil
+No longer explicitly scope global operators with "::" as this seems to break
+operators defined in C++ as friends.
+
+
+2008/02/29 18:44:22  phil
+Added the (internal) NoQMetaObject annotation.
+
+
+2008/02/27 15:45:22  phil
+A pointer to a QObject sub-class's staticMetaObject is now accessible from the
+Python type object.
+
+
+2008/02/25 15:41:03  phil
+Virtual catchers no longer acquire the GIL when it is known that there is no
+Python reimplementation.
+
+
+2008/02/25 14:11:37  phil
+Allow Python reimplementations of C++ virtuals to be any callable rather than
+just a method.
+Fixed a bug where the exception complaining that an abstract C++ method must be
+reimplemented wasn't being displayed.
+
+
+2008/02/24 17:21:59  phil
+Extended the support for objects that implement Python's buffer interface to
+any 'char' or 'char *' types, and not just arrays.
+
+
+2008/02/24 15:46:59  phil
+Arguments annotated as arrays can now be any object that supports the Python
+buffer interface rather than just strings.
+
+
+2008/02/13 12:24:12  phil
+Extended the use of distutils for 64-bit systems based on Rex Dieter's patch.
+Also removed the use of sys.lib in the hope that it's no longer needed for
+SuSE, Mandriva etc.
+
+
 2008/02/12 13:53:13  phil
 Released as v4.7.4.
 

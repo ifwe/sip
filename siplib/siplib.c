@@ -2,12 +2,12 @@
  * SIP library code.
  *
  * Copyright (c) 2008 Riverbank Computing Limited <info@riverbankcomputing.com>
- *
+ * 
  * This file is part of SIP.
- *
+ * 
  * This copy of SIP is licensed for use under the terms of the SIP License
  * Agreement.  See the file LICENSE for more details.
- *
+ * 
  * SIP is supplied WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  */
@@ -129,6 +129,11 @@ static PyObject *sip_api_convert_from_void_ptr_and_size(void *val,
         SIP_SSIZE_T size);
 static PyObject *sip_api_convert_from_const_void_ptr_and_size(const void *val,
         SIP_SSIZE_T size);
+static int sip_api_is_exact_wrapped_type(sipWrapperType *wt);
+static int sip_api_assign_instance(void *dst, const void *src,
+        sipWrapperType *wt);
+static int sip_api_assign_mapped_type(void *dst, const void *src,
+        sipMappedType *mt);
 
 
 /*
@@ -255,6 +260,9 @@ static const sipAPIDef sip_api = {
      */
     sip_api_invoke_slot,
     sip_api_parse_type,
+    sip_api_is_exact_wrapped_type,
+    sip_api_assign_instance,
+    sip_api_assign_mapped_type,
 };
 
 
@@ -417,7 +425,6 @@ static int addLicense(PyObject *dict, sipLicenseDef *lc);
 static PyObject *cast(PyObject *self, PyObject *args);
 static PyObject *callDtor(PyObject *self, PyObject *args);
 static PyObject *dumpWrapper(PyObject *self, PyObject *args);
-static PyObject* dumpWrapperStream(PyObject* self, PyObject* args, PyObject* kw);
 static PyObject *isDeleted(PyObject *self, PyObject *args);
 static PyObject *setDeleted(PyObject *self, PyObject *args);
 static PyObject *setTraceMask(PyObject *self, PyObject *args);
@@ -443,7 +450,6 @@ static int findEnumArg(sipExportedModuleDef *emd, const char *name, size_t len,
         sipSigArg *at, int indir);
 static int sameScopedName(const char *pyname, const char *name, size_t len);
 static int nameEq(const char *with, const char *name, size_t len);
-static int isExactWrappedType(sipWrapperType *wt);
 static void release(void *addr, sipTypeDef *td, int state);
 static void callPyDtor(sipWrapper *self);
 static int qt_and_sip_api_3_4(void);
@@ -661,6 +667,7 @@ static void print_wrapper(const char *label, sipWrapper *w)
 
     printf("\n");
 }
+
 
 /*
  * Transfer the ownership of an instance to C/C++.
@@ -1250,6 +1257,40 @@ void *sip_api_malloc(size_t nbytes)
 void sip_api_free(void *mem)
 {
     PyMem_Free(mem);
+}
+
+
+/*
+ * Assign a C/C++ instance if it is supported by the type.
+ */
+static int sip_api_assign_instance(void *dst, const void *src,
+        sipWrapperType *wt)
+{
+    sipAssignFunc assign = wt->type->td_assign;
+
+    if (assign == NULL)
+        return FALSE;
+
+    assign(dst, src);
+
+    return TRUE;
+}
+
+
+/*
+ * Assign a C/C++ mapped type if it is supported by the type.
+ */
+static int sip_api_assign_mapped_type(void *dst, const void *src,
+        sipMappedType *mt)
+{
+    sipAssignFunc assign = mt->mt_assign;
+
+    if (assign == NULL)
+        return FALSE;
+
+    assign(dst, src);
+
+    return TRUE;
 }
 
 
@@ -2757,24 +2798,24 @@ static int parsePass1(sipWrapper **selfp, int *selfargp, int *argsParsedp,
         case 'F':
             {
                 /* Python callable object. */
-
+ 
                 if (PyCallable_Check(arg))
                     *va_arg(va,PyObject **) = arg;
                 else
                     valid = PARSE_TYPE;
-
+ 
                 break;
             }
 
         case 'H':
             {
                 /* Python callable object or None. */
-
+ 
                 if (arg == Py_None || PyCallable_Check(arg))
                     *va_arg(va,PyObject **) = arg;
                 else
                     valid = PARSE_TYPE;
-
+ 
                 break;
             }
 
@@ -4253,10 +4294,12 @@ static int handleSetLazyAttr(PyObject *nameobj,PyObject *valobj,
     enm = NULL;
     vmd = NULL;
 
-    findLazyAttr(wt,name,&pmd,&enm,&vmd,NULL);
+    findLazyAttr(wt, name, &pmd, &enm, &vmd, NULL);
 
     if (vmd != NULL)
     {
+        PyObject *res;
+
         if (valobj == NULL)
         {
             PyErr_Format(PyExc_ValueError,"%s.%s cannot be deleted",wt->type->td_name,name);
@@ -4264,22 +4307,18 @@ static int handleSetLazyAttr(PyObject *nameobj,PyObject *valobj,
             return -1;
         }
 
-        if ((vmd->ml_flags & METH_STATIC) != 0 || w != NULL)
-        {
-            PyObject *res;
+        if ((vmd->ml_flags & METH_STATIC) != 0)
+            res = (*vmd->ml_meth)((PyObject *)wt, valobj);
+        else
+            res = (*vmd->ml_meth)((PyObject *)w, valobj);
 
-            if ((res = (*vmd->ml_meth)((PyObject *)w,valobj)) == NULL)
-                return -1;
+        if (res == NULL)
+            return -1;
 
-            /* Ignore the result (which should be Py_None). */
-            Py_DECREF(res);
+        /* Ignore the result (which should be Py_None). */
+        Py_DECREF(res);
 
-            return 0;
-        }
-
-        PyErr_SetObject(PyExc_AttributeError, nameobj);
-
-        return -1;
+        return 0;
     }
 
     /* It isn't a variable. */
@@ -4312,7 +4351,7 @@ static PyObject *handleGetLazyAttr(PyObject *nameobj,sipWrapperType *wt,
     enm = NULL;
     vmd = NULL;
 
-    findLazyAttr(wt,name,&pmd,&enm,&vmd,&in);
+    findLazyAttr(wt, name, &pmd, &enm, &vmd, &in);
 
     if (pmd != NULL)
         return PyCFunction_New(pmd,(PyObject *)w);
@@ -4339,12 +4378,18 @@ static PyObject *handleGetLazyAttr(PyObject *nameobj,sipWrapperType *wt,
     }
 
     if (vmd != NULL)
-        if ((vmd->ml_flags & METH_STATIC) != 0 || w != NULL)
-            return (*vmd->ml_meth)((PyObject *)w,NULL);
+    {
+        PyObject *res;
+
+        if ((vmd->ml_flags & METH_STATIC) != 0)
+            res = (*vmd->ml_meth)((PyObject *)wt, NULL);
+        else
+            res = (*vmd->ml_meth)((PyObject *)w, NULL);
+
+        return res;
+    }
 
     PyErr_Format(PyExc_AttributeError, "'%s' object has no attribute '%s'", ((PyTypeObject*)wt)->tp_name, name);
-
-    //PyErr_SetObject(PyExc_AttributeError, nameobj);
 
     return NULL;
 }
@@ -4374,9 +4419,8 @@ PyObject *sip_api_convert_from_named_enum(int eval, PyTypeObject *et)
 /*
  * Find definition for a lazy class attribute.
  */
-static void findLazyAttr(sipWrapperType *wt,char *name,PyMethodDef **pmdp,
-             sipEnumMemberDef **enmp,PyMethodDef **vmdp,
-             sipTypeDef **in)
+static void findLazyAttr(sipWrapperType *wt, char *name, PyMethodDef **pmdp,
+        sipEnumMemberDef **enmp, PyMethodDef **vmdp, sipTypeDef **in)
 {
     sipTypeDef *td, *nsx;
     sipEncodedClassDef *sup;
@@ -5848,26 +5892,26 @@ void sipSaveMethod(sipPyMethod *pm, PyObject *meth)
 static void sip_api_call_hook(const char *hookname)
 {
     PyObject *dictofmods, *mod, *dict, *hook, *res;
-
+ 
     /* Get the dictionary of modules. */
     if ((dictofmods = PyImport_GetModuleDict()) == NULL)
         return;
-
+ 
     /* Get the __builtin__ module. */
     if ((mod = PyDict_GetItemString(dictofmods,"__builtin__")) == NULL)
         return;
-
+ 
     /* Get it's dictionary. */
     if ((dict = PyModule_GetDict(mod)) == NULL)
         return;
-
+ 
     /* Get the function hook. */
     if ((hook = PyDict_GetItemString(dict,hookname)) == NULL)
         return;
-
+ 
     /* Call the hook and discard any result. */
     res = PyObject_CallObject(hook,NULL);
-
+ 
     Py_XDECREF(res);
 }
 
@@ -6707,13 +6751,14 @@ static PyObject *make_voidptr(void *voidptr, SIP_SSIZE_T size, int rw)
  * Return TRUE if a type is a wrapped type, rather than a sub-type implemented
  * in Python or the super-type.
  */
-static int isExactWrappedType(sipWrapperType *wt)
+static int sip_api_is_exact_wrapped_type(sipWrapperType *wt)
 {
     char *name;
 
     /*
      * We check by comparing the actual type name with the name used to create
-     * the original wrapped type.
+     * the original wrapped type.  An alternative approach would be to add a
+     * flag to sipWrapperType that was only set by createType().
      */
 #if PY_VERSION_HEX >= 0x02050000
     if ((name = PyString_AsString(wt->super.ht_name)) == NULL)
@@ -6824,7 +6869,7 @@ static PyObject *sipWrapperType_getattro(PyObject *obj,PyObject *name)
         dict = ((PyTypeObject *)wt)->tp_dict;
 
         /* The base type doesn't have any type information. */
-        if ((td = wt->type) == NULL || !isExactWrappedType(wt))
+        if ((td = wt->type) == NULL || !sip_api_is_exact_wrapped_type(wt))
         {
             Py_INCREF(dict);
             return dict;
@@ -6892,7 +6937,10 @@ static PyObject *sipWrapperType_getattro(PyObject *obj,PyObject *name)
                 ++pmd;
             }
 
-            /* Do the static variables. */
+            /*
+             * Do the static variables.  Note that the use of METH_STATIC is
+             * historic - METH_CLASS would be more accurate.
+             */
             if ((pmd = td->td_variables) != NULL)
                 while (pmd->ml_name != NULL)
                 {
@@ -6901,7 +6949,7 @@ static PyObject *sipWrapperType_getattro(PyObject *obj,PyObject *name)
                         int rc;
                         PyObject *val;
 
-                        if ((val = (*pmd->ml_meth)(NULL, NULL)) == NULL)
+                        if ((val = (*pmd->ml_meth)(obj, NULL)) == NULL)
                         {
                             Py_DECREF(dict);
                             return NULL;
@@ -7101,6 +7149,14 @@ static int sipWrapper_init(sipWrapper *self,PyObject *args,PyObject *kwds)
             sipInitExtenderDef *ie = wt->iextend;
 
             /*
+             * If the parse was successful but no C/C++ object was created then
+             * we assume that handwritten code decided after the parse that
+             * it didn't want to handle the signature.
+             */
+            if (pstate == PARSE_OK)
+                pstate = PARSE_TYPE;
+
+            /*
              * While we just have signature errors, try any initialiser
              * extenders.
              */
@@ -7117,11 +7173,11 @@ static int sipWrapper_init(sipWrapper *self,PyObject *args,PyObject *kwds)
 
             if (sipNew == NULL)
             {
-                /*
-                 * If the arguments were parsed without error then assume an
-                 * exception has already been raised for why the instance
-                 * wasn't created.
-                 */
+            	/*
+            	 * If the arguments were parsed without error then assume an
+            	 * exception has already been raised for why the instance
+            	 * wasn't created.
+            	 */
                 if (pstate == PARSE_OK)
                     argsparsed = PARSE_RAISED;
 
@@ -7579,7 +7635,7 @@ static PyObject *sipWrapper_getattro(PyObject *obj,PyObject *name)
     {
         PyObject *tmpdict = NULL;
 
-        if (isExactWrappedType(wt) && getNonStaticVariables(wt, w, &tmpdict) < 0)
+        if (sip_api_is_exact_wrapped_type(wt) && getNonStaticVariables(wt, w, &tmpdict) < 0)
         {
             Py_XDECREF(tmpdict);
             return NULL;

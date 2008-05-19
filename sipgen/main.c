@@ -26,7 +26,7 @@
 #define PACKAGE "sip"
 #endif
 
-#define VERSION "4.7.5-snapshot-20080424"
+#define VERSION "4.7.6-snapshot-20080518"
 
 
 /* Global variables - see sip.h for their meaning. */

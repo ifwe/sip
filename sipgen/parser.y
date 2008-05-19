@@ -5162,6 +5162,15 @@ int optAutoProperties(sipSpec *pt)
 
 
 /*
+ * Return TRUE if the AssignmentHelpers option was specified.
+ */
+int optAssignmentHelpers(sipSpec *pt)
+{
+    return optFind(pt, "AssignmentHelpers");
+}
+
+
+/*
  * Return TRUE if a particular option was specified with %SIPOptions.
  */
 static int optFind(sipSpec *pt, const char *opt)

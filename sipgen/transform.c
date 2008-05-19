@@ -80,6 +80,7 @@ static void registerMetaType(classDef *cd);
 static void addComplementarySlots(sipSpec *pt, classDef *cd);
 static void addComplementarySlot(sipSpec *pt, classDef *cd, memberDef *md,
         slotType cslot, const char *cslot_name);
+static void resolveInstantiatedClassTemplate(sipSpec *pt, argDef *type);
 
 static void generateProperties(sipSpec *pt, moduleDef *mod, classDef *cd);
 static void resolveInstantiatedClassTemplate(sipSpec *pt, argDef *type);
@@ -1312,6 +1313,10 @@ static void addDefaultCopyCtor(classDef *cd)
  
         *tailp = copyct;
     }
+
+    /* We assume it has an assignment operator if it has a public copy ctor. */
+    if (isPublicCtor(copyct))
+        setCanAssign(cd);
 }
 
 
@@ -1844,12 +1849,8 @@ static void resolveVariableType(sipSpec *pt, varDef *vd)
     else
         ifaceFileIsUsed(&vd->module->used, vtype);
 
-    /*
-     * Instance variables or static class variables (unless they are constants)
-     * need a handler.
-     */
-    if (vd->ecd != NULL && vd->accessfunc == NULL &&
-        (!isStaticVar(vd) || vtype->nrderefs != 0 || !isConstArg(vtype)))
+    /* Scoped variables need a handler unless they have %AccessCode. */
+    if (vd->ecd != NULL && vd->accessfunc == NULL)
     {
         setNeedsHandler(vd);
         setHasVarHandlers(vd->ecd);

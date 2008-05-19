@@ -76,7 +76,7 @@ static void generateSipImportVariables(FILE *fp);
 static void generateModInitStart(moduleDef *mod, int gen_c, FILE *fp);
 static void generateIfaceCpp(sipSpec *, ifaceFileDef *, const char *,
         const char *, FILE *);
-static void generateMappedTypeCpp(mappedTypeDef *, FILE *);
+static void generateMappedTypeCpp(mappedTypeDef *mtd, sipSpec *pt, FILE *fp);
 static void generateImportedMappedTypeAPI(mappedTypeDef *mtd, moduleDef *mod,
         FILE *fp);
 static void generateMappedTypeAPI(mappedTypeDef *mtd, FILE *fp);
@@ -607,6 +607,12 @@ static void generateInternalAPIHeader(sipSpec *pt, moduleDef *mod,
 "#define sipConvertFromConstVoidPtrAndSize   sipAPI_%s->api_convert_from_const_void_ptr_and_size\n"
 "#define sipInvokeSlot               sipAPI_%s->api_invoke_slot\n"
 "#define sipParseType                sipAPI_%s->api_parse_type\n"
+"#define sipIsExactWrappedType       sipAPI_%s->api_is_exact_wrapped_type\n"
+"#define sipAssignInstance           sipAPI_%s->api_assign_instance\n"
+"#define sipAssignMappedType         sipAPI_%s->api_assign_mapped_type\n"
+        ,mname
+        ,mname
+        ,mname
         ,mname
         ,mname
         ,mname
@@ -737,6 +743,10 @@ static void generateInternalAPIHeader(sipSpec *pt, moduleDef *mod,
     }
 
     if (optQ_OBJECT4(pt))
+        /*
+         * Note that the third argument is no longer used and is there only to
+         * preserve backwards binary compatibility.
+         */
         prcode(fp,
 "\n"
 "typedef const QMetaObject *(*sip_qt_metaobject_func)(sipWrapper *,sipWrapperType *,const QMetaObject *);\n"
@@ -3172,7 +3182,7 @@ static void generateIfaceCpp(sipSpec *pt, ifaceFileDef *iff,
 
     for (mtd = pt->mappedtypes; mtd != NULL; mtd = mtd->next)
         if (mtd->iff == iff)
-            generateMappedTypeCpp(mtd,fp);
+            generateMappedTypeCpp(mtd, pt, fp);
 
     if (master == NULL)
     {
@@ -3205,9 +3215,40 @@ static char *createIfaceFileName(const char *codeDir, ifaceFileDef *iff,
 /*
  * Generate the C++ code for a mapped type version.
  */
-static void generateMappedTypeCpp(mappedTypeDef *mtd, FILE *fp)
+static void generateMappedTypeCpp(mappedTypeDef *mtd, sipSpec *pt, FILE *fp)
 {
     int need_xfer;
+
+    if (optAssignmentHelpers(pt) && !noRelease(mtd))
+    {
+        prcode(fp,
+"\n"
+"\n"
+            );
+
+        if (!generating_c)
+            prcode(fp,
+"extern \"C\" {static void assign_%T(void *, const void*);}\n"
+                , &mtd->type);
+
+        prcode(fp,
+"static void assign_%T(void *sipDst, const void *sipSrc)\n"
+"{\n"
+            , &mtd->type);
+
+        if (generating_c)
+            prcode(fp,
+"    *(%b *)sipDst = *(const %b *)sipSrc;\n"
+                , &mtd->type, &mtd->type);
+        else
+            prcode(fp,
+"    *reinterpret_cast<%b *>(sipDst) = *reinterpret_cast<const %b *>(sipSrc);\n"
+                , &mtd->type, &mtd->type);
+
+        prcode(fp,
+"}\n"
+            );
+    }
 
     if (!noRelease(mtd))
     {
@@ -3302,11 +3343,23 @@ static void generateMappedTypeCpp(mappedTypeDef *mtd, FILE *fp)
     prcode(fp,
 "    forceConvertTo_%T,\n"
 "    convertTo_%T,\n"
-"    convertFrom_%T\n"
-"};\n"
+"    convertFrom_%T,\n"
         , &mtd->type
         , &mtd->type
         , &mtd->type);
+
+    if (optAssignmentHelpers(pt) && !noRelease(mtd))
+        prcode(fp,
+"    assign_%T\n"
+            , &mtd->type);
+    else
+        prcode(fp,
+"    0\n"
+            );
+
+    prcode(fp,
+"};\n"
+        );
 }
 
 
@@ -3771,8 +3824,19 @@ static void generateVariableHandler(classDef *context, varDef *vd, FILE *fp)
         generatePropertyHandler(context, vd, fp);
         return;
     }
-    
-    atype = vd->type.atype;
+
+    argType atype = vd->type.atype;
+    const char *first_arg;
+    int no_setter;
+
+    no_setter = (vd->type.nrderefs == 0 && isConstArg(&vd->type));
+
+    if (generating_c || !isStaticVar(vd))
+        first_arg = "sipSelf";
+    else if (usedInCode(vd->getcode, "sipPyType") || usedInCode(vd->setcode, "sipPyType"))
+        first_arg = "sipPyType";
+    else
+        first_arg = "";
 
     prcode(fp,
 "\n"
@@ -3787,19 +3851,9 @@ static void generateVariableHandler(classDef *context, varDef *vd, FILE *fp)
     prcode(fp,
 "static PyObject *var_%C(PyObject *%s,PyObject *sipPy)\n"
 "{\n"
-        ,vd->fqcname,(isStaticVar(vd) ? "" : "sipSelf"));
+        , vd->fqcname, first_arg);
 
-    if (atype == class_type || atype == mapped_type)
-        prcode(fp,
-"    int sipIsErr = 0;\n"
-            );
-
-    if (vd->type.nrderefs == 0 && (atype == mapped_type || (atype == class_type && vd->type.u.cd->convtocode != NULL)))
-        prcode(fp,
-"    int sipValState;\n"
-            );
-
-    if (vd->getcode == NULL || vd->setcode == NULL)
+    if (vd->getcode == NULL || (vd->setcode == NULL && !no_setter))
     {
         prcode(fp,
 "    ");
@@ -4016,10 +4070,31 @@ static void generateVariableHandler(classDef *context, varDef *vd, FILE *fp)
 "    }\n"
             );
     }
+    else if (no_setter)
+    {
+        prcode(fp,
+"    sipBadSetType(%N,%N);\n"
+"    return NULL;\n"
+"}\n"
+            , vd->ecd->iff->name, vd->pyname);
+
+        return;
+    }
     else
     {
         char *deref;
         int might_be_temp;
+
+        if (vd->type.nrderefs == 0 && (atype == mapped_type || (atype == class_type && vd->type.u.cd->convtocode != NULL)))
+            prcode(fp,
+"    int sipValState;\n"
+                );
+
+        if (atype == class_type || atype == mapped_type)
+            prcode(fp,
+"    int sipIsErr = 0;\n"
+"\n"
+                );
 
         might_be_temp = generateObjToCppConversion(&vd->type,fp);
 
@@ -4742,7 +4817,9 @@ static void generateClassFunctions(sipSpec *pt, moduleDef *mod, classDef *cd,
         /* Generate the release function without compiler warnings. */
         need_ptr = need_state = FALSE;
 
-        if (canCreate(cd) || isPublicDtor(cd))
+        if (cd->dealloccode != NULL)
+            need_ptr = usedInCode(cd->dealloccode, "sipCpp");
+        else if (canCreate(cd) || isPublicDtor(cd))
         {
             if (hasShadow(cd))
                 need_ptr = need_state = TRUE;
@@ -4764,16 +4841,32 @@ static void generateClassFunctions(sipSpec *pt, moduleDef *mod, classDef *cd,
         prcode(fp,
 "static void release_%C(void *%s,int%s)\n"
 "{\n"
-            , classFQCName(cd), (need_ptr ? "ptr" : ""), (need_state ? " state" : ""));
+            , classFQCName(cd), (need_ptr ? "sipCppV" : ""), (need_state ? " state" : ""));
 
-        /*
-         * If there is an explicit public dtor then assume there is
-         * some way to call it which we haven't worked out (because we
-         * don't fully understand C++).
-         */
-        if (canCreate(cd) || isPublicDtor(cd))
+        if (cd->dealloccode != NULL)
+        {
+            if (need_ptr)
+            {
+                prcode(fp,
+"    ");
+
+                generateClassFromVoid(cd, "sipCpp", "sipCppV", fp);
+
+                prcode(fp, ";\n"
+                    );
+            }
+
+            generateCppCodeBlock(cd->dealloccode, fp);
+        }
+        else if (canCreate(cd) || isPublicDtor(cd))
         {
             int rgil = ((release_gil || isReleaseGILDtor(cd)) && !isHoldGILDtor(cd));
+
+            /*
+             * If there is an explicit public dtor then assume there is some
+             * way to call it which we haven't worked out (because we don't
+             * fully understand C++).
+             */
 
             if (rgil)
                 prcode(fp,
@@ -4785,18 +4878,18 @@ static void generateClassFunctions(sipSpec *pt, moduleDef *mod, classDef *cd,
             {
                 prcode(fp,
 "    if (state & SIP_DERIVED_CLASS)\n"
-"        delete reinterpret_cast<sip%C *>(ptr);\n"
+"        delete reinterpret_cast<sip%C *>(sipCppV);\n"
                     , classFQCName(cd));
 
                 if (isPublicDtor(cd))
                     prcode(fp,
 "    else\n"
-"        delete reinterpret_cast<%U *>(ptr);\n"
+"        delete reinterpret_cast<%U *>(sipCppV);\n"
                         , cd);
             }
             else if (isPublicDtor(cd))
                 prcode(fp,
-"    delete reinterpret_cast<%U *>(ptr);\n"
+"    delete reinterpret_cast<%U *>(sipCppV);\n"
                     , cd);
 
             if (rgil)
@@ -5057,6 +5150,38 @@ static void generateClassFunctions(sipSpec *pt, moduleDef *mod, classDef *cd,
             );
     }
 
+    /* The assignment helper. */
+    if (optAssignmentHelpers(pt) && (generating_c || canAssign(cd)))
+    {
+        prcode(fp,
+"\n"
+"\n"
+            );
+
+        if (!generating_c)
+            prcode(fp,
+"extern \"C\" {static void assign_%C(void *, const void*);}\n"
+                , classFQCName(cd));
+
+        prcode(fp,
+"static void assign_%C(void *sipDst, const void *sipSrc)\n"
+"{\n"
+            ,classFQCName(cd));
+
+        if (generating_c)
+            prcode(fp,
+"    *(%S *)sipDst = *(const %S *)sipSrc;\n"
+                , classFQCName(cd), classFQCName(cd));
+        else
+            prcode(fp,
+"    *reinterpret_cast<%S *>(sipDst) = *reinterpret_cast<const %S *>(sipSrc);\n"
+                , classFQCName(cd), classFQCName(cd));
+
+        prcode(fp,
+"}\n"
+            );
+    }
+
     /* The dealloc function. */
     if (needDealloc(cd))
     {
@@ -5095,26 +5220,6 @@ static void generateClassFunctions(sipSpec *pt, moduleDef *mod, classDef *cd,
 "    if (sipIsPyOwned(sipSelf))\n"
 "    {\n"
                 );
-
-            if (cd->dealloccode != NULL)
-            {
-                if (usedInCode(cd->dealloccode, "sipCpp"))
-                {
-                    prcode(fp,
-"        ");
-
-                    generateClassFromVoid(cd, "sipCpp", "sipSelf->u.cppPtr", fp);
-
-                    prcode(fp, ";\n"
-                        );
-                }
-
-                generateCppCodeBlock(cd->dealloccode,fp);
-
-                prcode(fp,
-"\n"
-                    );
-            }
 
             if (isDelayedDtor(cd))
                 prcode(fp,
@@ -5247,7 +5352,7 @@ static void generateShadowCode(sipSpec *pt, moduleDef *mod, classDef *cd,
 "\n"
 "const QMetaObject *sip%C::metaObject() const\n"
 "{\n"
-"    return sip_%s_qt_metaobject(sipPySelf,sipClass_%C,%S::metaObject());\n"
+"    return sip_%s_qt_metaobject(sipPySelf,sipClass_%C,0);\n"
 "}\n"
 "\n"
 "int sip%C::qt_metacall(QMetaObject::Call _c,int _id,void **_a)\n"
@@ -5267,7 +5372,7 @@ static void generateShadowCode(sipSpec *pt, moduleDef *mod, classDef *cd,
 "    return (sip_%s_qt_metacast && sip_%s_qt_metacast(sipPySelf,sipClass_%C,_clname)) ? this : %S::qt_metacast(_clname);\n"
 "}\n"
             , classFQCName(cd)
-            , mod->name, classFQCName(cd), classFQCName(cd)
+            , mod->name, classFQCName(cd)
             , classFQCName(cd)
             , classFQCName(cd)
             , classFQCName(cd)
@@ -8166,6 +8271,15 @@ static void generateTypeDefinition(sipSpec *pt, classDef *cd, FILE *fp)
 "    0,\n"
             );
 
+    if (optAssignmentHelpers(pt) && (generating_c || canAssign(cd)))
+        prcode(fp,
+"    assign_%C,\n"
+            , classFQCName(cd));
+    else
+        prcode(fp,
+"    0,\n"
+            );
+
     if (isQObjectSubClass(cd) && !noQMetaObject(cd) && optQ_OBJECT4(pt))
         prcode(fp,
 "    &%U::staticMetaObject\n"
@@ -10723,17 +10837,17 @@ static FILE *createFile(moduleDef *mod, const char *fname,
         int needComment;
         codeBlock *cb;
         time_t now;
-
-        /* Write the header. */
-        now = time(NULL);
+" * Generated by SIP %s"
+            ,description
+            ,sipVersion);
 
         prcode(fp,
 "/*\n"
 " * %s\n"
 " *\n"
-" * Generated by SIP %s"
+" * Generated by SIP %s on %s"
             ,description
-            ,sipVersion);
+            ,sipVersion,ctime(&now));
 
         if (mod->copying != NULL)
             prcode(fp,
