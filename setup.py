@@ -1,4 +1,3 @@
-
 import sys, os
 
 # show which python SIP will use
@@ -22,5 +21,4 @@ else:
     # do a complete clean build
     os.system('nmake clean')
     if not os.system('nmake'):
-        if not os.system('manifests.bat'):
-            print '*'*80, '\nsuccess\n', '*'*80
+        print '*'*80, '\nsuccess\n', '*'*80
