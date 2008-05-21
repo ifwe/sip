@@ -410,8 +410,8 @@ typedef union YYSTYPE
     exceptionDef    exceptionbase;
     classDef        *klass;
 }
-/* Line 193 of yacc.c.  */
-#line 415 "y.tab.c"
+/* Line 187 of yacc.c.  */
+#line 415 "parser.c"
 	YYSTYPE;
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1
@@ -424,7 +424,7 @@ typedef union YYSTYPE
 
 
 /* Line 216 of yacc.c.  */
-#line 428 "y.tab.c"
+#line 428 "parser.c"
 
 #ifdef short
 # undef short
@@ -474,7 +474,7 @@ typedef short int yytype_int16;
 #define YYSIZE_MAXIMUM ((YYSIZE_T) -1)
 
 #ifndef YY_
-# if defined YYENABLE_NLS && YYENABLE_NLS
+# if YYENABLE_NLS
 #  if ENABLE_NLS
 #   include <libintl.h> /* INFRINGES ON USER NAME SPACE */
 #   define YY_(msgid) dgettext ("bison-runtime", msgid)
@@ -1586,7 +1586,7 @@ while (YYID (0))
    we won't break user code: when these are the locations we know.  */
 
 #ifndef YY_LOCATION_PRINT
-# if defined YYLTYPE_IS_TRIVIAL && YYLTYPE_IS_TRIVIAL
+# if YYLTYPE_IS_TRIVIAL
 #  define YY_LOCATION_PRINT(File, Loc)			\
      fprintf (File, "%d.%d-%d.%d",			\
 	      (Loc).first_line, (Loc).first_column,	\
@@ -5182,7 +5182,7 @@ yyreduce:
 
 
 /* Line 1267 of yacc.c.  */
-#line 5186 "y.tab.c"
+#line 5186 "parser.c"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);
@@ -6962,8 +6962,6 @@ static void newVar(sipSpec *pt,moduleDef *mod,char *name,int isstatic,
     var -> accessfunc = acode;
     var -> getcode = gcode;
     var -> setcode = scode;
-    var -> getter = NULL;
-    var -> setter = NULL;
     var -> next = pt -> vars;
 
     if (isstatic || (escope != NULL && escope->iff->type == namespace_iface))
@@ -7278,11 +7276,6 @@ static const char *getPythonName(optFlags *optflgs, const char *cname)
 
     if ((of = findOptFlag(optflgs, "PyName", name_flag)) != NULL)
         pname = of -> fvalue.sval;
-    else if (optFind(currentSpec, "RenameWx") && 
-             strlen(cname) > 2 &&
-             cname[0] == 'w' &&
-             cname[1] == 'x')
-        pname = cname + 2;
     else
         pname = cname;
 
@@ -8083,14 +8076,6 @@ int optRegisterTypes(sipSpec *pt)
 int optQ_OBJECT4(sipSpec *pt)
 {
     return optFind(pt, "Qt4Q_OBJECT");
-}
-
-/*
- * Return TRUE if property auto generation is enabled.
- */
-int optAutoProperties(sipSpec *pt)
-{
-    return optFind(pt, "AutoProperties");
 }
 
 
