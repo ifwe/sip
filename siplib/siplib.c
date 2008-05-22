@@ -6736,16 +6736,17 @@ static int sip_api_thread_check()
     PyObject *module, *module_dict, *currentThreadFunc, *currentThread,
         *threadName;
 
+	SIP_BLOCK_THREADS
     module = PyImport_ImportModule("threading");
     if (module)
     {
-        module_dict = PyModule_GetDict(module);
+        module_dict = PyModule_GetDict(module); // borrowed reference
         if (module_dict)
         {
-            currentThreadFunc = PyDict_GetItemString(module_dict, "currentThread");
+            currentThreadFunc = PyDict_GetItemString(module_dict, "currentThread"); // borrowed
             if (currentThreadFunc)
             {
-                currentThread = PyObject_CallFunctionObjArgs(currentThreadFunc, NULL);
+                currentThread = PyObject_CallFunction(currentThreadFunc, NULL);
                 if (currentThread)
                 {
                     threadName = PyObject_CallMethod(currentThread, "getName", NULL);
@@ -6761,15 +6762,15 @@ static int sip_api_thread_check()
                     }
                     Py_DECREF(currentThread);
                 }
-                Py_DECREF(currentThreadFunc);
             }
-            Py_DECREF(module_dict);
         }
         Py_DECREF(module);
     }
 
     if (!gotThreadName && !PyErr_Occurred())
         PyErr_SetString(PyExc_AssertionError, "Unknown error getting the current thread name");
+
+	SIP_UNBLOCK_THREADS
 
     return result;
 }

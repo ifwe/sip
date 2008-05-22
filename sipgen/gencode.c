@@ -5576,7 +5576,10 @@ static void generateVirtualCatcher(moduleDef *mod, classDef *cd, int virtNr,
     }
 
     if (thread_check)
-        prcode(fp, "    if (!sipThreadCheck()) return NULL;\n");
+    {
+        prcode(fp, "    if (!sipThreadCheck())\n");
+        generateVirtHandlerErrorReturn(res,fp);
+    }
 
     restoreArgs(od->cppsig);
 
