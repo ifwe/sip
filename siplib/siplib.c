@@ -6736,7 +6736,7 @@ static int sip_api_thread_check()
     PyObject *module, *module_dict, *currentThreadFunc, *currentThread,
         *threadName;
 
-	SIP_BLOCK_THREADS
+    SIP_BLOCK_THREADS
     module = PyImport_ImportModule("threading");
     if (module)
     {
@@ -6770,7 +6770,7 @@ static int sip_api_thread_check()
     if (!gotThreadName && !PyErr_Occurred())
         PyErr_SetString(PyExc_AssertionError, "Unknown error getting the current thread name");
 
-	SIP_UNBLOCK_THREADS
+    SIP_UNBLOCK_THREADS
 
     return result;
 }
