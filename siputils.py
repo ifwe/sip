@@ -696,6 +696,15 @@ class Makefile:
         # Don't do it again because it has side effects.
         self._finalised = 1
 
+    def _add_manifest(self, target=None):
+        """Add the link flags for creating a manifest file.
+        """
+        if target is None:
+            target = "$(TARGET)"
+
+        self.LFLAGS.append("/MANIFEST")
+        self.LFLAGS.append("/MANIFESTFILE:%s.manifest" % target)
+
     def _is_framework(self, mod):
         """Return true if the given Qt module is a framework.
         """
@@ -1296,6 +1305,8 @@ class ModuleMakefile(Makefile):
         self._dir = dir
         self.static = static
 
+        self._manifest = ("embed_manifest_dll" in self.optional_list("CONFIG"))
+
         # Don't strip or restrict the exports if this is a debug or static
         # build.
         if debug or static:
@@ -1322,11 +1333,6 @@ class ModuleMakefile(Makefile):
     def finalise(self):
         """Finalise the macros common to all module Makefiles.
         """
-        if self.console:
-            lflags_console = "LFLAGS_CONSOLE"
-        else:
-            lflags_console = "LFLAGS_WINDOWS"
-
         if self.static:
             self.DEFINES.append("SIP_STATIC_MODULE")
         else:
@@ -1337,10 +1343,9 @@ class ModuleMakefile(Makefile):
 
             if lflags_dll:
                 self.LFLAGS.extend(lflags_dll)
-            elif self.console:
-                lflags_console = "LFLAGS_CONSOLE_DLL"
-            else:
-                lflags_console = "LFLAGS_WINDOWS_DLL"
+
+            if self._manifest:
+                self._add_manifest()
 
             # We use this to explictly create bundles on MacOS.  Apple's Python
             # can handle extension modules that are bundles or dynamic
@@ -1355,8 +1360,6 @@ class ModuleMakefile(Makefile):
                 lflags_plugin = self.optional_list("LFLAGS_SHLIB")
 
             self.LFLAGS.extend(lflags_plugin)
-
-        self.LFLAGS.extend(self.optional_list(lflags_console))
 
         if sys.platform == "darwin":
             # We use the -F flag to explictly specify the directory containing
@@ -1494,7 +1497,7 @@ class ModuleMakefile(Makefile):
                 mfile.write("\t  $(OFILES) $(LIBS)\n")
                 mfile.write("<<\n")
 
-                if "embed_manifest_dll" in self.optional_list("CONFIG"):
+                if self._manifest:
                     mfile.write("\tmt -nologo -manifest $(TARGET).manifest -outputresource:$(TARGET);2\n")
         elif self.generator == "BMAKE":
             if self.static:
@@ -1574,6 +1577,9 @@ class ModuleMakefile(Makefile):
         mfile.write("\nclean:\n")
         self.clean_build_file_objects(mfile, self._build)
 
+        if self._manifest and not self.static:
+            mfile.write("\t-%s $(TARGET).manifest\n" % self.rm)
+
         # Remove any export file on AIX, Linux and Solaris.
         if self._limit_exports and (sys.platform[:5] == 'linux' or
                                     sys.platform[:5] == 'sunos' or
@@ -1609,6 +1615,9 @@ class ProgramMakefile(Makefile):
 
         self._install_dir = install_dir
 
+        self._manifest = ("embed_manifest_exe" in self.optional_list("CONFIG"))
+        self._target = None
+
         if build_file:
             self._build = self.parse_build_file(build_file)
         else:
@@ -1620,13 +1629,15 @@ class ProgramMakefile(Makefile):
 
         source is the name of the source file.
         """
-        self.ready()
-
         # The name of the executable.
-        exe, ignore = os.path.splitext(source)
+        self._target, _ = os.path.splitext(source)
 
         if sys.platform in ("win32", "cygwin"):
-            exe = exe + ".exe"
+            exe = self._target + ".exe"
+        else:
+            exe = self._target
+
+        self.ready()
 
         # The command line.
         build = []
@@ -1701,6 +1712,9 @@ class ProgramMakefile(Makefile):
         if self.generator in ("MSVC", "MSVC.NET"):
             self.LFLAGS.append("/INCREMENTAL:NO")
 
+        if self._manifest:
+            self._add_manifest(self._target)
+
         if self.console:
             lflags_console = "LFLAGS_CONSOLE"
         else:
@@ -1741,15 +1755,15 @@ class ProgramMakefile(Makefile):
             mfile.write("\t$(LINK) $(LFLAGS) /OUT:$(TARGET) @<<\n")
             mfile.write("\t  $(OFILES) $(LIBS)\n")
             mfile.write("<<\n")
-
-            if "embed_manifest_exe" in self.optional_list("CONFIG"):
-                mfile.write("\tmt -nologo -manifest $(TARGET).manifest -outputresource:$(TARGET);1\n")
         elif self.generator == "BMAKE":
             mfile.write("\t$(LINK) @&&|\n")
             mfile.write("\t$(LFLAGS) $(OFILES) ,$(TARGET),,$(LIBS),,\n")
             mfile.write("|\n")
         else:
             mfile.write("\t$(LINK) $(LFLAGS) -o $(TARGET) $(OFILES) $(LIBS)\n")
+
+        if self._manifest:
+            mfile.write("\tmt -nologo -manifest $(TARGET).manifest -outputresource:$(TARGET);1\n")
 
         mfile.write("\n$(OFILES): $(HFILES)\n")
 
@@ -1778,6 +1792,9 @@ class ProgramMakefile(Makefile):
         """
         mfile.write("\nclean:\n")
         self.clean_build_file_objects(mfile, self._build)
+
+        if self._manifest:
+            mfile.write("\t-%s $(TARGET).manifest\n" % self.rm)
 
 
 def _quote(s):

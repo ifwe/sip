@@ -1,3 +1,16 @@
+2008/05/20 16:54:49  phil
+Released as v4.7.6.
+
+
+2008/05/19 15:08:13  phil
+Fixed the manifest support for MSVC 2008.
+
+
+2008/05/19  9:21:18  phil
+No longer pass arguments to object.__new__() as it is deprecated in Python
+v2.6.
+
+
 2008/05/18 22:59:23  phil
 Don't install manifests as it doesn't seem to be necessary.
 Make win32-msvc2008 the default platform for Python v2.6.
