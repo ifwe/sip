@@ -2,12 +2,12 @@
  * The SIP parser.
  *
  * Copyright (c) 2008 Riverbank Computing Limited <info@riverbankcomputing.com>
- * 
+ *
  * This file is part of SIP.
- * 
+ *
  * This copy of SIP is licensed for use under the terms of the SIP License
  * Agreement.  See the file LICENSE for more details.
- * 
+ *
  * SIP is supplied WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  */
@@ -777,15 +777,15 @@ license:    TK_LICENSE optflags {
 
             currentModule -> license -> type = of -> fvalue.sval;
 
-            currentModule -> license -> licensee = 
+            currentModule -> license -> licensee =
                 ((of = findOptFlag(&$2,"Licensee",string_flag)) != NULL)
                     ? of -> fvalue.sval : NULL;
 
-            currentModule -> license -> timestamp = 
+            currentModule -> license -> timestamp =
                 ((of = findOptFlag(&$2,"Timestamp",string_flag)) != NULL)
                     ? of -> fvalue.sval : NULL;
 
-            currentModule -> license -> sig = 
+            currentModule -> license -> sig =
                 ((of = findOptFlag(&$2,"Signature",string_flag)) != NULL)
                     ? of -> fvalue.sval : NULL;
         }
@@ -1139,15 +1139,15 @@ optassign:  {
 expr:       value
     |   expr binop value {
             valueDef *vd;
- 
+
             if ($1 -> vtype == string_value || $3 -> vtype == string_value)
                 yyerror("Invalid binary operator for string");
- 
+
             /* Find the last value in the existing expression. */
- 
+
             for (vd = $1; vd -> next != NULL; vd = vd -> next)
                 ;
- 
+
             vd -> vbinop = $2;
             vd -> next = $3;
 
@@ -1195,14 +1195,14 @@ optunop:    {
 value:      optunop simplevalue {
             if ($1 != '\0' && $2.vtype == string_value)
                 yyerror("Invalid unary operator for string");
- 
+
             /*
              * Convert the value to a simple expression on the
              * heap.
              */
- 
+
             $$ = sipMalloc(sizeof (valueDef));
- 
+
             *$$ = $2;
             $$ -> vunop = $1;
             $$ -> vbinop = '\0';
@@ -1436,7 +1436,7 @@ superclasses:
     ;
 
 superlist:  superclass
-    |   superlist ',' superclass 
+    |   superlist ',' superclass
     ;
 
 superclass: scopedname {
@@ -2476,7 +2476,7 @@ void parse(sipSpec *spec, FILE *fp, char *filename, stringList *tsl,
     classTmplDef *tcd;
 
         /* Initialise the spec. */
- 
+
     spec -> modules = NULL;
     spec -> namecache = NULL;
     spec -> ifacefiles = NULL;
@@ -3026,7 +3026,7 @@ static void finishClass(sipSpec *pt, moduleDef *mod, classDef *cd, optFlags *of)
                 /* Provide a default ctor. */
 
                 cd->ctors = sipMalloc(sizeof (ctorDef));
- 
+
                 cd->ctors->ctorflags = SECT_IS_PUBLIC;
                 cd->ctors->pysig.nrArgs = 0;
                 cd->ctors->cppsig = &cd -> ctors -> pysig;
@@ -4345,7 +4345,7 @@ static const char *getPythonName(optFlags *optflgs, const char *cname)
 
     if ((of = findOptFlag(optflgs, "PyName", name_flag)) != NULL)
         pname = of -> fvalue.sval;
-    else if (optFind(currentSpec, "RenameWx") && 
+    else if (optFind(currentSpec, "RenameWx") &&
              strlen(cname) > 2 &&
              cname[0] == 'w' &&
              cname[1] == 'x')
@@ -5169,6 +5169,13 @@ int optAssignmentHelpers(sipSpec *pt)
     return optFind(pt, "AssignmentHelpers");
 }
 
+/*
+ * Return TRUE if the ThreadChecking option was specified.
+ */
+int optThreadChecking(sipSpec *pt)
+{
+    return optFind(pt, "ThreadChecking");
+}
 
 /*
  * Return TRUE if a particular option was specified with %SIPOptions.

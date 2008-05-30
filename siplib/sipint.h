@@ -88,6 +88,7 @@ int sip_api_same_connection(sipSlotConnection *conn, void *tx, const char *sig,
         PyObject *rxObj, const char *slot);
 PyObject *sip_api_invoke_slot(const sipSlot *slot, PyObject *sigargs);
 void sip_api_parse_type(const char *type, sipSigArg *arg);
+void sip_api_threadcheck();
 
 
 /*

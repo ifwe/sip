@@ -2,12 +2,12 @@
  * SIP library code.
  *
  * Copyright (c) 2008 Riverbank Computing Limited <info@riverbankcomputing.com>
- * 
+ *
  * This file is part of SIP.
- * 
+ *
  * This copy of SIP is licensed for use under the terms of the SIP License
  * Agreement.  See the file LICENSE for more details.
- * 
+ *
  * SIP is supplied WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  */
@@ -129,6 +129,7 @@ static PyObject *sip_api_convert_from_void_ptr_and_size(void *val,
         SIP_SSIZE_T size);
 static PyObject *sip_api_convert_from_const_void_ptr_and_size(const void *val,
         SIP_SSIZE_T size);
+static int sip_api_thread_check();
 static int sip_api_is_exact_wrapped_type(sipWrapperType *wt);
 static int sip_api_assign_instance(void *dst, const void *src,
         sipWrapperType *wt);
@@ -254,6 +255,7 @@ static const sipAPIDef sip_api = {
     sip_api_convert_from_const_void_ptr,
     sip_api_convert_from_void_ptr_and_size,
     sip_api_convert_from_const_void_ptr_and_size,
+    sip_api_thread_check,
     /*
      * The following may be used by Qt support code but by no other handwritten
      * code.
@@ -2798,24 +2800,24 @@ static int parsePass1(sipWrapper **selfp, int *selfargp, int *argsParsedp,
         case 'F':
             {
                 /* Python callable object. */
- 
+
                 if (PyCallable_Check(arg))
                     *va_arg(va,PyObject **) = arg;
                 else
                     valid = PARSE_TYPE;
- 
+
                 break;
             }
 
         case 'H':
             {
                 /* Python callable object or None. */
- 
+
                 if (arg == Py_None || PyCallable_Check(arg))
                     *va_arg(va,PyObject **) = arg;
                 else
                     valid = PARSE_TYPE;
- 
+
                 break;
             }
 
@@ -5892,26 +5894,26 @@ void sipSaveMethod(sipPyMethod *pm, PyObject *meth)
 static void sip_api_call_hook(const char *hookname)
 {
     PyObject *dictofmods, *mod, *dict, *hook, *res;
- 
+
     /* Get the dictionary of modules. */
     if ((dictofmods = PyImport_GetModuleDict()) == NULL)
         return;
- 
+
     /* Get the __builtin__ module. */
     if ((mod = PyDict_GetItemString(dictofmods,"__builtin__")) == NULL)
         return;
- 
+
     /* Get it's dictionary. */
     if ((dict = PyModule_GetDict(mod)) == NULL)
         return;
- 
+
     /* Get the function hook. */
     if ((hook = PyDict_GetItemString(dict,hookname)) == NULL)
         return;
- 
+
     /* Call the hook and discard any result. */
     res = PyObject_CallObject(hook,NULL);
- 
+
     Py_XDECREF(res);
 }
 
@@ -6722,6 +6724,57 @@ static PyObject *sip_api_convert_from_const_void_ptr_and_size(const void *val,
     return make_voidptr((void *)val, size, FALSE);
 }
 
+/*
+ * Check that the current thread is the main thread.
+ */
+static int sip_api_thread_check()
+{
+    int result = FALSE;
+    int gotThreadName = 0;
+    char* threadNameCString;
+
+    PyObject *module, *module_dict, *currentThreadFunc, *currentThread,
+        *threadName;
+
+    SIP_BLOCK_THREADS
+    module = PyImport_ImportModule("threading");
+    if (module)
+    {
+        module_dict = PyModule_GetDict(module); // borrowed reference
+        if (module_dict)
+        {
+            currentThreadFunc = PyDict_GetItemString(module_dict, "currentThread"); // borrowed
+            if (currentThreadFunc)
+            {
+                currentThread = PyObject_CallFunction(currentThreadFunc, NULL);
+                if (currentThread)
+                {
+                    threadName = PyObject_CallMethod(currentThread, "getName", NULL);
+                    if (threadName)
+                    {
+                        gotThreadName = TRUE;
+                        threadNameCString = PyString_AsString(threadName);
+                        if (threadNameCString && 0 == strcmp("MainThread", threadNameCString))
+                            result = TRUE;
+                        else
+                            PyErr_Format(PyExc_AssertionError, "Called from the wrong thread: %s", threadNameCString);
+                        Py_DECREF(threadName);
+                    }
+                    Py_DECREF(currentThread);
+                }
+            }
+        }
+        Py_DECREF(module);
+    }
+
+    if (!gotThreadName && !PyErr_Occurred())
+        PyErr_SetString(PyExc_AssertionError, "Unknown error getting the current thread name");
+
+    SIP_UNBLOCK_THREADS
+
+    return result;
+}
+
 
 /*
  * Do the work of converting a void pointer.
@@ -7177,11 +7230,11 @@ static int sipWrapper_init(sipWrapper *self,PyObject *args,PyObject *kwds)
 
             if (sipNew == NULL)
             {
-            	/*
-            	 * If the arguments were parsed without error then assume an
-            	 * exception has already been raised for why the instance
-            	 * wasn't created.
-            	 */
+                /*
+                 * If the arguments were parsed without error then assume an
+                 * exception has already been raised for why the instance
+                 * wasn't created.
+                 */
                 if (pstate == PARSE_OK)
                     argsparsed = PARSE_RAISED;
 
