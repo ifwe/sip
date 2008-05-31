@@ -19,3 +19,4 @@ sip.so
 sipconfig.py
 
 .project
+.pydevproject
