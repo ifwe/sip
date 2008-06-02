@@ -2,12 +2,12 @@
  * The main module for SIP.
  *
  * Copyright (c) 2008 Riverbank Computing Limited <info@riverbankcomputing.com>
- *
+ * 
  * This file is part of SIP.
- *
+ * 
  * This copy of SIP is licensed for use under the terms of the SIP License
  * Agreement.  See the file LICENSE for more details.
- *
+ * 
  * SIP is supplied WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  */
@@ -26,7 +26,7 @@
 #define PACKAGE "sip"
 #endif
 
-#define VERSION "4.7.6"
+#define VERSION "4.7.7-snapshot-20080530"
 
 
 /* Global variables - see sip.h for their meaning. */

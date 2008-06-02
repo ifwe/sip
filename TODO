@@ -1,34 +1,3 @@
-- sip generated files aren't "unique" enough for a wildcard in an ignore file
-
-- calling methods on an object before its __init__ has been called results in
-  a slightly misleading exception: 
-       "RuntimeError: underlying C/C++ object has been deleted"
-
-- the documentation for /Transfer/ and its related annotations is weak
-  - MenuItem* Menu::CreateItem(const char* title)
-    - how do I make MenuItem owned by Menu?
-  - does the /Transfer/ family work for %MethodCode functions
-
-- Make all QT features removable at compiletime
-  - sipWrapperType has a void *qt_qobject
-
-- use argument names instead of a0, a1, etc., in %MethodCode% functions (this
-  might be a nice side effect of keyword args support, since named args will
-  be necessary for that
-
-- make "class is abstract" errors show more detailed information about why the
-  class is abstract, and what you can do about it
-
-- some exceptions from SIP aren't as helpful as they could be
-  - type errors:
-    instead of    "TypeError: argument 3 of wxSizer.Add() has an invalid type"
-    we could have "TypeError: argument 3 of wxSizer.Add() expected %r but you gave %r"
-  - attribute errors: (done)
-    instead of    "AttributeError: r"
-    we could have "AttributeError: 'Foo' object has no attribute 'r'"
-
----
-
 1.	Make the parser aware of Python keywords so they can't be used as
 member function names.
 

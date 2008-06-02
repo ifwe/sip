@@ -22,8 +22,8 @@ import siputils
 
 
 # Initialise the globals.
-sip_version = 0x040706
-sip_version_str = "4.7.6"
+sip_version = 0x040707
+sip_version_str = "4.7.7-snapshot-20080530"
 py_version = sys.hexversion >> 8
 plat_py_site_dir = None
 plat_py_inc_dir = None
@@ -222,10 +222,7 @@ def set_platform_directories():
     plat_py_conf_inc_dir = os.path.dirname(sysconfig.get_config_h_filename())
 
     if sys.platform == "win32":
-        if sysconfig.python_build:
-            plat_py_lib_dir = sysconfig.project_base
-        else:
-            plat_py_lib_dir = sys.prefix + "\\libs"
+        plat_py_lib_dir = sys.prefix + "\\libs"
         plat_bin_dir = sys.exec_prefix
         plat_sip_dir = sys.prefix + "\\sip"
     else:

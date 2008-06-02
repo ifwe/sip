@@ -2,12 +2,12 @@
  * SIP library code.
  *
  * Copyright (c) 2008 Riverbank Computing Limited <info@riverbankcomputing.com>
- *
+ * 
  * This file is part of SIP.
- *
+ * 
  * This copy of SIP is licensed for use under the terms of the SIP License
  * Agreement.  See the file LICENSE for more details.
- *
+ * 
  * SIP is supplied WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  */
@@ -129,7 +129,6 @@ static PyObject *sip_api_convert_from_void_ptr_and_size(void *val,
         SIP_SSIZE_T size);
 static PyObject *sip_api_convert_from_const_void_ptr_and_size(const void *val,
         SIP_SSIZE_T size);
-static int sip_api_thread_check();
 static int sip_api_is_exact_wrapped_type(sipWrapperType *wt);
 static int sip_api_assign_instance(void *dst, const void *src,
         sipWrapperType *wt);
@@ -255,7 +254,6 @@ static const sipAPIDef sip_api = {
     sip_api_convert_from_const_void_ptr,
     sip_api_convert_from_void_ptr_and_size,
     sip_api_convert_from_const_void_ptr_and_size,
-    sip_api_thread_check,
     /*
      * The following may be used by Qt support code but by no other handwritten
      * code.
@@ -436,7 +434,6 @@ static PyObject *transfer(PyObject *self, PyObject *args);
 static PyObject *transferBack(PyObject *self, PyObject *args);
 static PyObject *transferTo(PyObject *self, PyObject *args);
 static void print_wrapper(const char *label, sipWrapper *w);
-static PyObject* wrapper_isPyOwned(PyObject* self, PyObject* args);
 static int sipWrapperType_Check(PyObject *op);
 static void addToParent(sipWrapper *self, sipWrapper *owner);
 static void removeFromParent(sipWrapper *self);
@@ -485,7 +482,6 @@ PyMODINIT_FUNC initsip(void)
         {"cast", cast, METH_VARARGS, NULL},
         {"delete", callDtor, METH_VARARGS, NULL},
         {"dump", dumpWrapper, METH_VARARGS, NULL},
-        {"ispyowned", wrapper_isPyOwned, METH_VARARGS, NULL},
         {"isdeleted", isDeleted, METH_VARARGS, NULL},
         {"setdeleted", setDeleted, METH_VARARGS, NULL},
         {"settracemask", setTraceMask, METH_VARARGS, NULL},
@@ -641,18 +637,6 @@ static PyObject *dumpWrapper(PyObject *self, PyObject *args)
     return NULL;
 }
 
-/*
- * Returns True if the sipWrapper object is owned by Python, and False if it's
- * owned by C++.
- */
-static PyObject* wrapper_isPyOwned(PyObject* self, PyObject* args)
-{
-    sipWrapper* w;
-    if (!PyArg_ParseTuple(args, "O!:ispyowned", &sipWrapper_Type, &w))
-        return NULL;
-
-    return PyBool_FromLong(sipIsPyOwned(w));
-}
 
 /*
  * Write a reference to a wrapper to stdout.
@@ -2800,24 +2784,24 @@ static int parsePass1(sipWrapper **selfp, int *selfargp, int *argsParsedp,
         case 'F':
             {
                 /* Python callable object. */
-
+ 
                 if (PyCallable_Check(arg))
                     *va_arg(va,PyObject **) = arg;
                 else
                     valid = PARSE_TYPE;
-
+ 
                 break;
             }
 
         case 'H':
             {
                 /* Python callable object or None. */
-
+ 
                 if (arg == Py_None || PyCallable_Check(arg))
                     *va_arg(va,PyObject **) = arg;
                 else
                     valid = PARSE_TYPE;
-
+ 
                 break;
             }
 
@@ -4391,7 +4375,7 @@ static PyObject *handleGetLazyAttr(PyObject *nameobj,sipWrapperType *wt,
         return res;
     }
 
-    PyErr_Format(PyExc_AttributeError, "'%s' object has no attribute '%s'", ((PyTypeObject*)wt)->tp_name, name);
+    PyErr_SetObject(PyExc_AttributeError,nameobj);
 
     return NULL;
 }
@@ -5894,26 +5878,26 @@ void sipSaveMethod(sipPyMethod *pm, PyObject *meth)
 static void sip_api_call_hook(const char *hookname)
 {
     PyObject *dictofmods, *mod, *dict, *hook, *res;
-
+ 
     /* Get the dictionary of modules. */
     if ((dictofmods = PyImport_GetModuleDict()) == NULL)
         return;
-
+ 
     /* Get the __builtin__ module. */
     if ((mod = PyDict_GetItemString(dictofmods,"__builtin__")) == NULL)
         return;
-
+ 
     /* Get it's dictionary. */
     if ((dict = PyModule_GetDict(mod)) == NULL)
         return;
-
+ 
     /* Get the function hook. */
     if ((hook = PyDict_GetItemString(dict,hookname)) == NULL)
         return;
-
+ 
     /* Call the hook and discard any result. */
     res = PyObject_CallObject(hook,NULL);
-
+ 
     Py_XDECREF(res);
 }
 
@@ -6724,57 +6708,6 @@ static PyObject *sip_api_convert_from_const_void_ptr_and_size(const void *val,
     return make_voidptr((void *)val, size, FALSE);
 }
 
-/*
- * Check that the current thread is the main thread.
- */
-static int sip_api_thread_check()
-{
-    int result = FALSE;
-    int gotThreadName = 0;
-    char* threadNameCString;
-
-    PyObject *module, *module_dict, *currentThreadFunc, *currentThread,
-        *threadName;
-
-    SIP_BLOCK_THREADS
-    module = PyImport_ImportModule("threading");
-    if (module)
-    {
-        module_dict = PyModule_GetDict(module); // borrowed reference
-        if (module_dict)
-        {
-            currentThreadFunc = PyDict_GetItemString(module_dict, "currentThread"); // borrowed
-            if (currentThreadFunc)
-            {
-                currentThread = PyObject_CallFunction(currentThreadFunc, NULL);
-                if (currentThread)
-                {
-                    threadName = PyObject_CallMethod(currentThread, "getName", NULL);
-                    if (threadName)
-                    {
-                        gotThreadName = TRUE;
-                        threadNameCString = PyString_AsString(threadName);
-                        if (threadNameCString && 0 == strcmp("MainThread", threadNameCString))
-                            result = TRUE;
-                        else
-                            PyErr_Format(PyExc_AssertionError, "Called from the wrong thread: %s", threadNameCString);
-                        Py_DECREF(threadName);
-                    }
-                    Py_DECREF(currentThread);
-                }
-            }
-        }
-        Py_DECREF(module);
-    }
-
-    if (!gotThreadName && !PyErr_Occurred())
-        PyErr_SetString(PyExc_AssertionError, "Unknown error getting the current thread name");
-
-    SIP_UNBLOCK_THREADS
-
-    return result;
-}
-
 
 /*
  * Do the work of converting a void pointer.
@@ -7127,7 +7060,7 @@ static PyObject *sipWrapper_new(sipWrapperType *wt,PyObject *args,PyObject *kwds
     /* Check sip.wrapper is not being used directly. */
     if (wt == &sipWrapper_Type)
     {
-        PyErr_Format(PyExc_TypeError,"the %s type cannot be instantiated or sub-classed (wt == &sipWrapper_Type)", ((PyTypeObject *)wt)->tp_name);
+        PyErr_Format(PyExc_TypeError,"the %s type cannot be instantiated or sub-classed", ((PyTypeObject *)wt)->tp_name);
 
         return NULL;
     }
@@ -7152,7 +7085,7 @@ static PyObject *sipWrapper_new(sipWrapperType *wt,PyObject *args,PyObject *kwds
          */
         if (wt->type->td_init == NULL)
         {
-            PyErr_Format(PyExc_TypeError,"%s cannot be instantiated or sub-classed (type->td_init == NULL)", wt->type->td_name);
+            PyErr_Format(PyExc_TypeError,"%s cannot be instantiated or sub-classed", wt->type->td_name);
 
             return NULL;
         }
@@ -7206,12 +7139,13 @@ static int sipWrapper_init(sipWrapper *self,PyObject *args,PyObject *kwds)
             sipInitExtenderDef *ie = wt->iextend;
 
             /*
-             * If the parse was successful but no C/C++ object was created then
-             * we assume that handwritten code decided after the parse that
-             * it didn't want to handle the signature.
+             * If the parse was successful, and no exception has been raised,
+             * but no C/C++ object was created then we assume that handwritten
+             * code decided after the parse that it didn't want to handle the
+             * signature.
              */
-            if (pstate == PARSE_OK)
-                pstate = PARSE_TYPE;
+            if (pstate == PARSE_OK && !PyErr_Occurred())
+                pstate = argsparsed = PARSE_TYPE;
 
             /*
              * While we just have signature errors, try any initialiser
@@ -7230,11 +7164,11 @@ static int sipWrapper_init(sipWrapper *self,PyObject *args,PyObject *kwds)
 
             if (sipNew == NULL)
             {
-                /*
-                 * If the arguments were parsed without error then assume an
-                 * exception has already been raised for why the instance
-                 * wasn't created.
-                 */
+            	/*
+            	 * If the arguments were parsed without error then assume an
+            	 * exception has already been raised for why the instance
+            	 * wasn't created.
+            	 */
                 if (pstate == PARSE_OK)
                     argsparsed = PARSE_RAISED;
 

@@ -7,7 +7,7 @@
 -----------------
 
 :Contact:   info@riverbankcomputing.com
-:Version:   4.7.6
+:Version:   4.7.7-snapshot-20080530
 :Copyright: Copyright (c) 2008 Riverbank Computing Limited
 
 .. contents::
@@ -17,7 +17,7 @@
 Introduction
 ============
 
-This is the reference guide for SIP 4.7.6.  SIP is a tool for
+This is the reference guide for SIP 4.7.7-snapshot-20080530.  SIP is a tool for
 automatically generating `Python <http://www.python.org>`__ bindings for C and
 C++ libraries.  SIP was originally developed in 1998 for
 `PyQt <http://www.riverbankcomputing.com/software/pyqt/>`__ - the Python
@@ -2614,11 +2614,15 @@ PyObject \*a0Wrapper
 
 *type* \*sipCpp
     If the directive is used in the context of a class constructor then this
-    must be set by the handwritten code to the constructed instance.  If the
-    directive is used in the context of a method (but not the standard binary
-    operator methods, e.g. ``__add__``) or a destructor then this is a pointer
-    to the C structure or C++ class instance.  Its *type* is a pointer to the
-    structure or class.
+    must be set by the handwritten code to the constructed instance.  If it is
+    set to ``0`` and no Python exception is raised then SIP will continue to
+    try other Python signatures.
+    
+    If the directive is used in the context of a method (but not the standard
+    binary operator methods, e.g. ``__add__``) or a destructor then this is a
+    pointer to the C structure or C++ class instance.
+    
+    Its *type* is a pointer to the structure or class.
     
     Standard binary operator methods follow the same convention as global
     functions and instead define two arguments called ``a0`` and ``a1``.

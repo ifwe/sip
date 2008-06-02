@@ -2,12 +2,12 @@
  * The code generator module for SIP.
  *
  * Copyright (c) 2008 Riverbank Computing Limited <info@riverbankcomputing.com>
- *
+ * 
  * This file is part of SIP.
- *
+ * 
  * This copy of SIP is licensed for use under the terms of the SIP License
  * Agreement.  See the file LICENSE for more details.
- *
+ * 
  * SIP is supplied WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  */
@@ -55,7 +55,7 @@ static int generating_c;                /* Set if generating C. */
 static int release_gil;                 /* Set if always releasing the GIL. */
 static const char *prcode_last = NULL;  /* The last prcode format string. */
 static int prcode_xml = FALSE;          /* Set if prcode is XML aware. */
-static int thread_check = 0;
+
 
 static void generateDocumentation(sipSpec *pt, const char *docFile);
 static void generateBuildFile(sipSpec *pt, const char *buildFile,
@@ -139,7 +139,6 @@ static void generateBinarySlotCall(classDef *cd, overDef *od, const char *op,
         int deref, FILE *fp);
 static void generateNumberSlotCall(overDef *od, char *op, FILE *fp);
 static void generateVariableHandler(classDef *, varDef *, FILE *);
-static void generatePropertyHandler(classDef* context, varDef *, FILE *);
 static int generateObjToCppConversion(argDef *, FILE *);
 static void generateVarClassConversion(varDef *, FILE *);
 static void generateVarMember(varDef *vd, FILE *fp);
@@ -237,7 +236,6 @@ void generateCode(sipSpec *pt, char *codeDir, char *buildfile, char *docFile,
 {
     exceptions = except;
     tracing = trace;
-    thread_check = optThreadChecking(pt);
     release_gil = releaseGIL;
     generating_c = pt->genc;
 
@@ -416,10 +414,10 @@ void generateExpression(valueDef *vd, FILE *fp)
             generateSimpleFunctionCall(vd->u.fcd,fp);
             break;
         }
-
+ 
         if (vd->vbinop != '\0')
             prcode(fp," %c ",vd->vbinop);
-
+ 
         vd = vd->next;
     }
 }
@@ -607,13 +605,11 @@ static void generateInternalAPIHeader(sipSpec *pt, moduleDef *mod,
 "#define sipConvertFromConstVoidPtr  sipAPI_%s->api_convert_from_const_void_ptr\n"
 "#define sipConvertFromVoidPtrAndSize    sipAPI_%s->api_convert_from_void_ptr_and_size\n"
 "#define sipConvertFromConstVoidPtrAndSize   sipAPI_%s->api_convert_from_const_void_ptr_and_size\n"
-"#define sipThreadCheck              sipAPI_%s->api_thread_check\n"
 "#define sipInvokeSlot               sipAPI_%s->api_invoke_slot\n"
 "#define sipParseType                sipAPI_%s->api_parse_type\n"
 "#define sipIsExactWrappedType       sipAPI_%s->api_is_exact_wrapped_type\n"
 "#define sipAssignInstance           sipAPI_%s->api_assign_instance\n"
 "#define sipAssignMappedType         sipAPI_%s->api_assign_mapped_type\n"
-        ,mname
         ,mname
         ,mname
         ,mname
@@ -3383,15 +3379,12 @@ static void generateClassCpp(classDef *cd, sipSpec *pt, FILE *fp)
 
     generateAccessFunctions(pt, mod, cd, fp);
 
-    /* Generate the variable and property handlers. */
+    /* Generate the variable handlers. */
     if (hasVarHandlers(cd))
     {
         for (vd = pt->vars; vd != NULL; vd = vd->next)
             if (vd->ecd == cd && needsHandler(vd))
-                if (isProperty(vd))
-                    generatePropertyHandler(cd, vd, fp);
-                else
-                    generateVariableHandler(cd, vd, fp);
+                generateVariableHandler(cd, vd, fp);
 
         /* Generate the variable table. */
         prcode(fp,
@@ -3775,49 +3768,6 @@ static void generateConvertToDefinitions(mappedTypeDef *mtd,classDef *cd,
         );
 }
 
-/*
- * Generate a property handler.
- */
-static void generatePropertyHandler(classDef* context, varDef *vd, FILE *fp)
-{
-    prcode(fp, "\n\n");
-    if (!generating_c)
-        prcode(fp, "extern \"C\" {static PyObject *var_%C(PyObject *, PyObject *);}\n"
-                    , vd->fqcname);
-    prcode(fp,
-        "static PyObject *var_%C(PyObject *%s,PyObject *sipPy)\n"
-        "{\n", vd->fqcname, "sipSelf"); // always need self? (isStaticVar(vd) ? "" : "sipSelf"));
-
-    prcode(fp,
-        "    if (sipPy == NULL)\n"
-        "    {\n"
-        "        PyObject* args = PyTuple_New(0);\n"
-        "        PyObject* res = meth_");
-
-    /* getter */
-    prcode(fp, "%s_%s(sipSelf, args);\n", classBaseName(context), vd->getter->cppname);
-
-    prcode(fp,
-        "        Py_DECREF(args);\n"
-        "        return res;\n"
-        "    }\n\n");
-
-    if (vd->setter != NULL)
-    {
-        /* setter */
-        prcode(fp,  "    return meth_");
-        prcode(fp, "%s_%s(sipSelf, sipPy);\n", classBaseName(context), vd->setter->cppname);
-    }
-    else
-    {
-        /* no setter--raise an attribute error */
-        prcode(fp, "    PyErr_SetString(PyExc_AttributeError, \"%s is a read-only property\");  \n",
-            vd->pyname->text);
-        prcode(fp, "    return NULL;\n");
-    }
-
-    prcode(fp, "}\n\n");
-}
 
 /*
  * Generate a variable handler.
@@ -5199,9 +5149,6 @@ static void generateClassFunctions(sipSpec *pt, moduleDef *mod, classDef *cd,
 "{\n"
             ,classFQCName(cd));
 
-        if (thread_check)
-            prcode(fp, "    if (!sipThreadCheck()) return;\n");
-
         if (tracing)
             prcode(fp,
 "    sipTrace(SIP_TRACE_DEALLOCS,\"dealloc_%C()\\n\");\n"
@@ -5316,9 +5263,6 @@ static void generateShadowCode(sipSpec *pt, moduleDef *mod, classDef *cd,
                 ,ct->exceptions);
         }
 
-        if (thread_check)
-            prcode(fp, "    if (!sipThreadCheck()) return;\n");
-
         prcode(fp,
 "    sipCommonCtor(%s,%d);\n"
 "}\n"
@@ -5340,9 +5284,6 @@ static void generateShadowCode(sipSpec *pt, moduleDef *mod, classDef *cd,
 "    sipTrace(SIP_TRACE_DTORS,\"sip%C::~sip%C()%X (this=0x%%08x)\\n\",this);\n"
 "\n"
                 ,classFQCName(cd),classFQCName(cd),cd->dtorexceptions);
-
-        if (thread_check)
-            prcode(fp, "    if (!sipThreadCheck()) return;\n");
 
         if (cd->dtorcode != NULL)
             generateCppCodeBlock(cd->dtorcode,fp);
@@ -5390,9 +5331,9 @@ static void generateShadowCode(sipSpec *pt, moduleDef *mod, classDef *cd,
     }
 
     /* Generate the virtual catchers. */
-
+ 
     virtNr = 0;
-
+ 
     for (vod = cd->vmembers; vod != NULL; vod = vod->next)
     {
         overDef *od = &vod->o;
@@ -5575,12 +5516,6 @@ static void generateVirtualCatcher(moduleDef *mod, classDef *cd, int virtNr,
             ,(isConst(od) ? " const" : ""),od->exceptions);
     }
 
-    if (thread_check)
-    {
-        prcode(fp, "    if (!sipThreadCheck())\n");
-        generateVirtHandlerErrorReturn(res,fp);
-    }
-
     restoreArgs(od->cppsig);
 
     saved = *vhd->cppsig;
@@ -5675,10 +5610,10 @@ static void generateVirtualCatcher(moduleDef *mod, classDef *cd, int virtNr,
             generateUnambiguousClass(cd,vod->scope,fp);
 
             prcode(fp,"::%O(",od);
-
+ 
             for (a = 0; a < od->cppsig->nrArgs; ++a)
                 prcode(fp,"%sa%d",(a == 0 ? "" : ","),a);
-
+ 
             prcode(fp,");\n"
                 );
 
@@ -5717,7 +5652,7 @@ static void generateVirtualCatcher(moduleDef *mod, classDef *cd, int virtNr,
 
         ++ad;
     }
-
+ 
     prcode(fp,");\n"
         );
 
@@ -7328,7 +7263,7 @@ static void generateShadowClassDeclaration(sipSpec *pt,classDef *cd,FILE *fp)
 
         prcode(fp,
 "    ");
-
+ 
         prOverloadDecl(fp, cd, od, FALSE);
         prcode(fp, ";\n");
     }
@@ -7371,7 +7306,7 @@ void prOverloadDecl(FILE *fp, classDef *context, overDef *od, int defval)
     normaliseArgs(od->cppsig);
 
     generateBaseType(context, &od->cppsig->result, fp);
-
+ 
     prcode(fp, " %O(", od);
 
     for (a = 0; a < od->cppsig->nrArgs; ++a)
@@ -7389,7 +7324,7 @@ void prOverloadDecl(FILE *fp, classDef *context, overDef *od, int defval)
             generateExpression(ad->defval, fp);
         }
     }
-
+ 
     prcode(fp, ")%s%X", (isConst(od) ? " const" : ""), od->exceptions);
 
     restoreArgs(od->cppsig);
@@ -8583,9 +8518,6 @@ static void generateTypeInit(classDef *cd, FILE *fp)
 "    sipTrace(SIP_TRACE_INITS,\"init_%C()\\n\");\n"
             ,classFQCName(cd));
 
-    if (thread_check)
-        prcode(fp, "    if (!sipThreadCheck()) return NULL;\n");
-
     /*
      * Generate the code that parses the Python arguments and calls the
      * correct constructor.
@@ -8660,17 +8592,17 @@ static int countVirtuals(classDef *cd)
 {
     int nrvirts;
     virtOverDef *vod;
-
+ 
     nrvirts = 0;
-
+ 
     for (vod = cd->vmembers; vod != NULL; vod = vod->next)
         if (!isPrivate(&vod->o))
             ++nrvirts;
-
+ 
     return nrvirts;
 }
 
-
+ 
 /*
  * Generate the try block for a call.
  */
@@ -8996,9 +8928,6 @@ static void generateFunction(memberDef *md, overDef *overs, classDef *cd,
 "    sipTrace(SIP_TRACE_METHODS,\"meth_%C_%s()\\n\");\n"
 "\n"
                 ,classFQCName(cd),pname);
-
-        if (thread_check)
-            prcode(fp, "    if (!sipThreadCheck()) return NULL;\n");
 
         if (need_args)
             prcode(fp,
@@ -10856,13 +10785,18 @@ static FILE *createFile(moduleDef *mod, const char *fname,
     {
         int needComment;
         codeBlock *cb;
+        time_t now;
+
+        /* Write the header. */
+        now = time(NULL);
+
         prcode(fp,
 "/*\n"
 " * %s\n"
 " *\n"
-" * Generated by SIP %s"
+" * Generated by SIP %s on %s"
             ,description
-            ,sipVersion);
+            ,sipVersion,ctime(&now));
 
         if (mod->copying != NULL)
             prcode(fp,
@@ -11505,9 +11439,6 @@ static int needDealloc(classDef *cd)
     /* All of these conditions cause some code to be generated. */
 
     if (tracing)
-        return TRUE;
-
-    if (thread_check)
         return TRUE;
 
     if (generating_c)

@@ -2,12 +2,12 @@
  * The SIP module interface.
  *
  * Copyright (c) 2008 Riverbank Computing Limited <info@riverbankcomputing.com>
- *
+ * 
  * This file is part of SIP.
- *
+ * 
  * This copy of SIP is licensed for use under the terms of the SIP License
  * Agreement.  See the file LICENSE for more details.
- *
+ * 
  * SIP is supplied WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  */
@@ -50,8 +50,8 @@ extern "C" {
 /*
  * Define the SIP version number.
  */
-#define SIP_VERSION         0x040706
-#define SIP_VERSION_STR     "4.7.6"
+#define SIP_VERSION         0x040707
+#define SIP_VERSION_STR     "4.7.7-snapshot-20080530"
 
 
 /*
@@ -1266,7 +1266,6 @@ typedef struct _sipAPIDef {
             SIP_SSIZE_T size);
     PyObject *(*api_convert_from_const_void_ptr_and_size)(const void *val,
             SIP_SSIZE_T size);
-    int (*api_thread_check)();
 
     /*
      * The following may be used by Qt support code but no other handwritten

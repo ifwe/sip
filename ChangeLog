@@ -1,3 +1,8 @@
+2008/05/30 19:20:19  phil
+Hopefully fixed a regression introduced when allowing ctor %MethodCode to
+indicate that the next signature should be tried.
+
+
 2008/05/20 16:54:49  phil
 Released as v4.7.6.
 
