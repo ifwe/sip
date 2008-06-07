@@ -129,7 +129,7 @@ static PyObject *sip_api_convert_from_void_ptr_and_size(void *val,
         SIP_SSIZE_T size);
 static PyObject *sip_api_convert_from_const_void_ptr_and_size(const void *val,
         SIP_SSIZE_T size);
-static int sip_api_thread_check();
+static int sip_api_thread_check(const char* file, int line);
 static int sip_api_is_exact_wrapped_type(sipWrapperType *wt);
 static int sip_api_assign_instance(void *dst, const void *src,
         sipWrapperType *wt);
@@ -6727,7 +6727,7 @@ static PyObject *sip_api_convert_from_const_void_ptr_and_size(const void *val,
 /*
  * Check that the current thread is the main thread.
  */
-static int sip_api_thread_check()
+static int sip_api_thread_check(const char* file, int line)
 {
     int result = FALSE;
     int gotThreadName = 0;
@@ -6757,7 +6757,7 @@ static int sip_api_thread_check()
                         if (threadNameCString && 0 == strcmp("MainThread", threadNameCString))
                             result = TRUE;
                         else
-                            PyErr_Format(PyExc_AssertionError, "Called from the wrong thread: %s", threadNameCString);
+                            PyErr_Format(PyExc_AssertionError, "Called from the thread %s: %s:%d", threadNameCString, file, line);
                         Py_DECREF(threadName);
                     }
                     Py_DECREF(currentThread);

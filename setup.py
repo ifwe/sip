@@ -1,4 +1,4 @@
-import sys, os
+import sys, os.path
 
 # show which python SIP will use
 print '*'* 80
@@ -13,10 +13,14 @@ else:
     import distutils.sysconfig as s
     s.python_build = True
 
-
     # configures SIP to build locally
     import configure
-    configure.main('configure.py -b sipgen -d siplib -e siplib -v siplib'.split())
+    args = 'configure.py -b sipgen -d siplib -e siplib -v siplib'.split()
+    DEBUG = os.path.splitext(sys.executable)[0].endswith('_d')
+
+    if DEBUG: args.append('-u')
+
+    configure.main(args)
 
     # do a complete clean build
     os.system('nmake clean')

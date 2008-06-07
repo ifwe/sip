@@ -607,7 +607,7 @@ static void generateInternalAPIHeader(sipSpec *pt, moduleDef *mod,
 "#define sipConvertFromConstVoidPtr  sipAPI_%s->api_convert_from_const_void_ptr\n"
 "#define sipConvertFromVoidPtrAndSize    sipAPI_%s->api_convert_from_void_ptr_and_size\n"
 "#define sipConvertFromConstVoidPtrAndSize   sipAPI_%s->api_convert_from_const_void_ptr_and_size\n"
-"#define sipThreadCheck              sipAPI_%s->api_thread_check\n"
+"#define SIP_THREAD_CHECK            sipAPI_%s->api_thread_check(__FILE__, __LINE__)\n"
 "#define sipInvokeSlot               sipAPI_%s->api_invoke_slot\n"
 "#define sipParseType                sipAPI_%s->api_parse_type\n"
 "#define sipIsExactWrappedType       sipAPI_%s->api_is_exact_wrapped_type\n"
@@ -5199,8 +5199,12 @@ static void generateClassFunctions(sipSpec *pt, moduleDef *mod, classDef *cd,
 "{\n"
             ,classFQCName(cd));
 
-        if (thread_check)
-            prcode(fp, "    if (!sipThreadCheck()) return;\n");
+        //
+        // deallocation can apparantly happen on any thread
+        // if the garbage collector deems it necessary....
+        //
+        //if (thread_check)
+        //    prcode(fp, "    if (!SIP_THREAD_CHECK) return;\n");
 
         if (tracing)
             prcode(fp,
@@ -5317,7 +5321,7 @@ static void generateShadowCode(sipSpec *pt, moduleDef *mod, classDef *cd,
         }
 
         if (thread_check)
-            prcode(fp, "    if (!sipThreadCheck()) return;\n");
+            prcode(fp, "    if (!SIP_THREAD_CHECK) return;\n");
 
         prcode(fp,
 "    sipCommonCtor(%s,%d);\n"
@@ -5341,8 +5345,8 @@ static void generateShadowCode(sipSpec *pt, moduleDef *mod, classDef *cd,
 "\n"
                 ,classFQCName(cd),classFQCName(cd),cd->dtorexceptions);
 
-        if (thread_check)
-            prcode(fp, "    if (!sipThreadCheck()) return;\n");
+//      if (thread_check)
+//          prcode(fp, "    if (!SIP_THREAD_CHECK) return;\n");
 
         if (cd->dtorcode != NULL)
             generateCppCodeBlock(cd->dtorcode,fp);
@@ -5577,7 +5581,7 @@ static void generateVirtualCatcher(moduleDef *mod, classDef *cd, int virtNr,
 
     if (thread_check)
     {
-        prcode(fp, "    if (!sipThreadCheck())\n");
+        prcode(fp, "    if (!SIP_THREAD_CHECK)\n");
         generateVirtHandlerErrorReturn(res,fp);
     }
 
@@ -8584,7 +8588,7 @@ static void generateTypeInit(classDef *cd, FILE *fp)
             ,classFQCName(cd));
 
     if (thread_check)
-        prcode(fp, "    if (!sipThreadCheck()) return NULL;\n");
+        prcode(fp, "    if (!SIP_THREAD_CHECK) return NULL;\n");
 
     /*
      * Generate the code that parses the Python arguments and calls the
@@ -8998,7 +9002,7 @@ static void generateFunction(memberDef *md, overDef *overs, classDef *cd,
                 ,classFQCName(cd),pname);
 
         if (thread_check)
-            prcode(fp, "    if (!sipThreadCheck()) return NULL;\n");
+            prcode(fp, "    if (!SIP_THREAD_CHECK) return NULL;\n");
 
         if (need_args)
             prcode(fp,

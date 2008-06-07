@@ -1266,7 +1266,7 @@ typedef struct _sipAPIDef {
             SIP_SSIZE_T size);
     PyObject *(*api_convert_from_const_void_ptr_and_size)(const void *val,
             SIP_SSIZE_T size);
-    int (*api_thread_check)();
+    int (*api_thread_check)(const char*, int);
 
     /*
      * The following may be used by Qt support code but no other handwritten
