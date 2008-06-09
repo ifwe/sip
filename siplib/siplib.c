@@ -934,7 +934,7 @@ static int sip_api_export_module(sipExportedModuleDef *client,
 
             return -1;
         }
-
+#ifdef SIP_QT
         /* Only one module can claim to wrap QObject. */
         if (em->em_qt_api != NULL && client->em_qt_api != NULL)
         {
@@ -942,6 +942,7 @@ static int sip_api_export_module(sipExportedModuleDef *client,
 
             return -1;
         }
+#endif
     }
 
     /* Import any required modules. */
@@ -1021,12 +1022,14 @@ static int sip_api_export_module(sipExportedModuleDef *client,
                 return -1;
         }
 
+#ifdef SIP_QT
     /* Set any Qt support API. */
     if (client->em_qt_api != NULL)
     {
         sipQtSupport = client->em_qt_api;
         sipQObjectClass = *sipQtSupport->qt_qobject;
     }
+#endif
 
     /* Append any initialiser extenders to the relevant classes. */
     if ((ie = client->em_initextend) != NULL)
@@ -2616,7 +2619,7 @@ static int parsePass1(sipWrapper **selfp, int *selfargp, int *argsParsedp,
             valid = PARSE_RAISED;
             break;
 #endif
-
+#ifdef SIP_QT
         case 'U':
             {
                 /* Slot name or callable, return the name or callable. */
@@ -2681,7 +2684,7 @@ static int parsePass1(sipWrapper **selfp, int *selfargp, int *argsParsedp,
 
                 break;
             }
-
+#endif // SIP_QT
         case 'J':
             {
                 /* Class instance. */
@@ -2784,7 +2787,7 @@ static int parsePass1(sipWrapper **selfp, int *selfargp, int *argsParsedp,
 
                 break;
             }
-
+#ifdef SIP_QT
         case 'R':
             {
                 /* Sub-class of QObject. */
@@ -2796,7 +2799,7 @@ static int parsePass1(sipWrapper **selfp, int *selfargp, int *argsParsedp,
 
                 break;
             }
-
+#endif
         case 'F':
             {
                 /* Python callable object. */
@@ -2820,7 +2823,7 @@ static int parsePass1(sipWrapper **selfp, int *selfargp, int *argsParsedp,
 
                 break;
             }
-
+#ifdef SIP_QT
         case 'q':
             {
                 /* Qt receiver to connect. */
@@ -2877,7 +2880,7 @@ static int parsePass1(sipWrapper **selfp, int *selfargp, int *argsParsedp,
 
                 break;
             }
-
+#endif // SIP_QT
         case 'a':
             {
                 /*
@@ -3357,6 +3360,7 @@ static int parsePass2(sipWrapper *self, int selfarg, int nrargs,
          */
         switch (ch)
         {
+#ifdef SIP_QT
         case 'q':
             {
                 /* Qt receiver to connect. */
@@ -3422,7 +3426,7 @@ static int parsePass2(sipWrapper *self, int selfarg, int nrargs,
                 *rx = sipGetRx(self,sig,arg,NULL,slot);
                 break;
             }
-
+#endif // SIP_QT
         case 'J':
             {
                 /* Class instance. */
@@ -7298,7 +7302,7 @@ static int sipWrapper_traverse(sipWrapper *self, visitproc visit, void *arg)
             if ((vret = ctd->td_traverse(ptr, visit, arg)) != 0)
                 return vret;
     }
-
+#ifdef SIP_QT
     if (qt_and_sip_api_3_4() && sipIsPyOwned(self))
     {
         void *tx = sipGetAddress(self);
@@ -7327,7 +7331,7 @@ static int sipWrapper_traverse(sipWrapper *self, visitproc visit, void *arg)
             if ((vret = visitSlot(&psrx->rx, visit, arg)) != 0)
                 return vret;
     }
-
+#endif // SIP_QT
     if (self->user != NULL)
         if ((vret = visit(self->user, arg)) != 0)
             return vret;
@@ -7382,7 +7386,7 @@ static int sipWrapper_clear(sipWrapper *self)
         if (ctd->td_clear != NULL)
             vret = ctd->td_clear(ptr);
     }
-
+#ifdef SIP_QT
     /* Remove any slots connected via a proxy. */
     if (qt_and_sip_api_3_4() && sipIsPyOwned(self) && sipPossibleProxy(self))
     {
@@ -7411,7 +7415,7 @@ static int sipWrapper_clear(sipWrapper *self)
         for (psrx = ps->rxlist; psrx != NULL; psrx = psrx->next)
             clearAnySlotReference(&psrx->rx);
     }
-
+#endif // SIP_QT
     /* Remove any user object. */
     tmp = self->user;
     self->user = NULL;
@@ -8561,7 +8565,11 @@ static void *sip_api_import_symbol(const char *name)
  */
 static int qt_and_sip_api_3_4(void)
 {
+#ifdef SIP_QT
     return (sipQtSupport != NULL && sipQObjectClass->type->td_module->em_api_minor >= 4);
+#else
+    return 0;
+#endif
 }
 
 

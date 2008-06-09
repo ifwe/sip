@@ -189,8 +189,10 @@ typedef struct _sipWrapperType {
     /* The list of init extenders. */
     struct _sipInitExtenderDef *iextend;
 
+#ifdef SIP_QT
     /* The optional PyQt defined Q_OBJECT information. */
     void *qt_qobject;
+#endif
 } sipWrapperType;
 
 
