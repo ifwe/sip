@@ -10,6 +10,7 @@ sip.so
 *.obj
 *.exe.manifest
 *.exe
+*.ilk
 *.lib
 *.pyd
 *.pyd.manifest
