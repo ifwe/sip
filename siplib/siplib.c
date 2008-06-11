@@ -826,6 +826,11 @@ static PyObject *isDeleted(PyObject *self, PyObject *args)
     return res;
 }
 
+static int sipWrapper_nonzero(sipWrapper* w)
+{
+    return sipGetAddress(w) != NULL;
+}
+
 
 /*
  * Mark an instance as having been deleted.
@@ -7786,6 +7791,32 @@ static int sipWrapper_setattro(PyObject *obj,PyObject *name,PyObject *value)
     return PyBaseObject_Type.tp_setattro(obj,name,value);
 }
 
+/* The number methods data structure. */
+static PyNumberMethods sipWrapperType_NumberMethods = {
+    0,                      /* nb_add */
+    0,                      /* nb_subtract */
+    0,                      /* nb_multiply */
+    0,                      /* nb_divide */
+    0,                      /* nb_remainder */
+    0,                      /* nb_divmod */
+    0,                      /* nb_power */
+    0,                      /* nb_negative */
+    0,                      /* nb_positive */
+    0,                      /* nb_absolute */
+    0,//sipWrapper_nonzero,     /* nb_nonzero */
+    0,                      /* nb_invert */
+    0,                      /* nb_lshift */
+    0,                      /* nb_rshift */
+    0,                      /* nb_and */
+    0,                      /* nb_xor */
+    0,                      /* nb_or */
+    0,                      /* nb_coerce */
+    0,                      /* nb_int */
+    0,                      /* nb_long */
+    0,                      /* nb_float */
+    0,                      /* nb_oct */
+    0,                      /* nb_hex */
+};
 
 /*
  * The type data structure.  Note that we pretend to be a mapping object and a
@@ -7809,7 +7840,7 @@ static sipWrapperType sipWrapper_Type = {
             0,              /* tp_setattr */
             0,              /* tp_compare */
             0,              /* tp_repr */
-            0,              /* tp_as_number */
+            0,//&sipWrapperType_NumberMethods, /* tp_as_number */
             0,              /* tp_as_sequence */
             0,              /* tp_as_mapping */
             0,              /* tp_hash */
