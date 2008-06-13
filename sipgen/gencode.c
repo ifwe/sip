@@ -1088,6 +1088,7 @@ static void generateCpp(sipSpec *pt, moduleDef *mod, const char *codeDir,
      */
     generateUsedIncludes(mod->used, fp);
 
+#ifdef SIP_QT
     /*
      * If there should be a Qt support API then generate stubs values for the
      * optional parts.  These should be undefined in %ModuleCode if a C++
@@ -1105,6 +1106,7 @@ static void generateCpp(sipSpec *pt, moduleDef *mod, const char *codeDir,
 "#define sipQtEmitSignal                     0\n"
 "#define sipQtCreateUniversalSlotEx          0\n"
             );
+#endif
 
     /* Define the names. */
     if (mod->container == NULL)
@@ -1181,6 +1183,7 @@ static void generateCpp(sipSpec *pt, moduleDef *mod, const char *codeDir,
             );
     }
 
+#ifdef SIP_QT
     /* Generate any slot extender table. */
     if (slot_extenders)
     {
@@ -1224,6 +1227,7 @@ static void generateCpp(sipSpec *pt, moduleDef *mod, const char *codeDir,
 "};\n"
             );
     }
+#endif // SIP_QT
 
     /* Generate the global access functions. */
     generateAccessFunctions(pt, mod, NULL, fp);
