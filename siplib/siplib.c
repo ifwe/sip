@@ -326,6 +326,7 @@ typedef struct _sipPyObject {
 static PyTypeObject sipWrapperType_Type;
 static sipWrapperType sipWrapper_Type;
 static PyTypeObject sipVoidPtr_Type;
+static PyObject* sipExcDeadObject;
 
 PyInterpreterState *sipInterpreter = NULL;
 sipQtAPI *sipQtSupport = NULL;
@@ -555,6 +556,9 @@ PyMODINIT_FUNC initsip(void)
     PyDict_SetItemString(mod_dict, "wrappertype", (PyObject *)&sipWrapperType_Type);
     PyDict_SetItemString(mod_dict, "wrapper", (PyObject *)&sipWrapper_Type);
     PyDict_SetItemString(mod_dict, "voidptr", (PyObject *)&sipVoidPtr_Type);
+
+    sipExcDeadObject = PyErr_NewException("sip.DeadObjectException", NULL, NULL);
+    PyDict_SetItemString(mod_dict, "DeadObjectException", sipExcDeadObject);
 
     /* Initialise the module if it hasn't already been done. */
     if (sipInterpreter == NULL)
@@ -5477,7 +5481,7 @@ static int checkPointer(void *ptr)
 {
     if (ptr == NULL)
     {
-        PyErr_SetString(PyExc_RuntimeError,"underlying C/C++ object has been deleted");
+        PyErr_SetString(sipExcDeadObject, "underlying C/C++ object has been deleted");
         return -1;
     }
 
@@ -7337,10 +7341,11 @@ static int sipWrapper_traverse(sipWrapper *self, visitproc visit, void *arg)
                 return vret;
     }
 #endif // SIP_QT
+#ifdef SIP_USER_OBJECT
     if (self->user != NULL)
         if ((vret = visit(self->user, arg)) != 0)
             return vret;
-
+#endif
     if (self->dict != NULL)
         if ((vret = visit(self->dict, arg)) != 0)
             return vret;
@@ -7422,9 +7427,11 @@ static int sipWrapper_clear(sipWrapper *self)
     }
 #endif // SIP_QT
     /* Remove any user object. */
+#ifdef SIP_USER_OBJECT
     tmp = self->user;
     self->user = NULL;
     Py_XDECREF(tmp);
+#endif
 
     /* Remove the instance dictionary. */
     tmp = self->dict;
@@ -7551,7 +7558,7 @@ static void sipWrapper_dealloc(sipWrapper *self)
      * removed too soon (if they were connected to QObject.destroyed()).
      */
     sipWrapper_clear(self);
-
+#ifdef SIP_QT
     while (self->pySigList != NULL)
     {
         sipPySig *ps;
@@ -7570,7 +7577,7 @@ static void sipWrapper_dealloc(sipWrapper *self)
         sip_api_free(ps->name);
         sip_api_free(ps);
     }
-
+#endif
     /* Call the standard super-type dealloc. */
     PyBaseObject_Type.tp_dealloc((PyObject *)self);
 }

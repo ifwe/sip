@@ -3,12 +3,12 @@
  * supplied Qt support.
  *
  * Copyright (c) 2008 Riverbank Computing Limited <info@riverbankcomputing.com>
- * 
+ *
  * This file is part of SIP.
- * 
+ *
  * This copy of SIP is licensed for use under the terms of the SIP License
  * Agreement.  See the file LICENSE for more details.
- * 
+ *
  * SIP is supplied WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  */
@@ -545,11 +545,13 @@ int sip_api_emit_signal(PyObject *self,const char *sig,PyObject *sigargs)
  */
 static sipPySig *findPySignal(sipWrapper *w,const char *sig)
 {
+#ifdef SIP_QT
     sipPySig *ps;
 
     for (ps = w -> pySigList; ps != NULL; ps = ps -> next)
         if (sipQtSupport->qt_same_name(ps -> name,sig))
             return ps;
+#endif
 
     return NULL;
 }
@@ -562,6 +564,7 @@ static sipPySig *findPySignal(sipWrapper *w,const char *sig)
  */
 static int emitQtSig(sipWrapper *w,const char *sig,PyObject *sigargs)
 {
+#ifdef SIP_QT
     sipQtSignal *tab;
 
     /* Search the table. */
@@ -589,7 +592,9 @@ static int emitQtSig(sipWrapper *w,const char *sig,PyObject *sigargs)
 
     /* It wasn't found if we got this far. */
     PyErr_Format(PyExc_NameError,"Invalid signal %s",&sig[1]);
-
+#else
+    PyErr_Format(PyExc_AssertionError, "SIP was not compiled with QT support");
+#endif
     return -1;
 }
 
@@ -869,6 +874,7 @@ static int emitToSlotList(sipSlotList *rxlist,PyObject *sigargs)
 static int addSlotToPySigList(sipWrapper *txSelf,const char *sig,
                   PyObject *rxObj,const char *slot)
 {
+#ifdef SIP_QT
     sipPySig *ps;
     sipSlotList *psrx;
 
@@ -902,8 +908,10 @@ static int addSlotToPySigList(sipWrapper *txSelf,const char *sig,
 
     psrx -> next = ps -> rxlist;
     ps -> rxlist = psrx;
-
     return 0;
+#else
+    return -1;
+#endif
 }
 
 

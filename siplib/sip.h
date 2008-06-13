@@ -202,8 +202,10 @@ typedef struct _sipWrapperType {
 typedef struct _sipWrapper {
     PyObject_HEAD
 
+//#ifdef SIP_USER_OBJECT
     /* For the user to use. */
     PyObject *user;
+//#endif
 
     union {
         /* C/C++ object pointer. */
@@ -219,8 +221,10 @@ typedef struct _sipWrapper {
     /* The instance dictionary. */
     PyObject *dict;
 
+#ifdef SIP_QT
     /* Python signal list (complex). */
     struct _sipPySig *pySigList;
+#endif
 
     /* Next object at this address. */
     struct _sipWrapper *next;
@@ -588,9 +592,10 @@ typedef struct _sipTypeDef {
 
     /* The convert to function. */
     sipConvertToFunc td_cto;
-
+#ifdef SIP_QT
     /* Emit table for Qt signals. */
     struct _sipQtSignal *td_emit;
+#endif
 
     /* The static instances. */
     sipInstancesDef td_instances;
@@ -604,8 +609,10 @@ typedef struct _sipTypeDef {
     /* The assignment function. */
     sipAssignFunc td_assign;
 
+#ifdef SIP_QT
     /* The optional PyQt defined information. */
     const void *td_qt;
+#endif
 } sipTypeDef;
 
 

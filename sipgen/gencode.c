@@ -8209,6 +8209,7 @@ static void generateTypeDefinition(sipSpec *pt, classDef *cd, FILE *fp)
                 );
     }
 
+#ifdef SIP_QT
     if (!optNoEmitters(pt) && hasSigSlots(cd))
         prcode(fp,
 "    signals_%C,\n"
@@ -8217,6 +8218,7 @@ static void generateTypeDefinition(sipSpec *pt, classDef *cd, FILE *fp)
         prcode(fp,
 "    0,\n"
             );
+#endif
 
     prcode(fp,
 "    {");
@@ -8298,6 +8300,7 @@ static void generateTypeDefinition(sipSpec *pt, classDef *cd, FILE *fp)
 "    0,\n"
             );
 
+#ifdef SIP_QT
     if (isQObjectSubClass(cd) && !noQMetaObject(cd) && optQ_OBJECT4(pt))
         prcode(fp,
 "    &%U::staticMetaObject\n"
@@ -8306,6 +8309,7 @@ static void generateTypeDefinition(sipSpec *pt, classDef *cd, FILE *fp)
         prcode(fp,
 "    0\n"
             );
+#endif
 
     prcode(fp,
 "};\n"
