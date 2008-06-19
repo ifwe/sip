@@ -5372,7 +5372,7 @@ static PyObject *sip_api_is_py_method(sip_gilstate_t *gil,
         }
         else
         {
-            PyObject* method = PyMethod_New(pymc->pyMethod.mfunc, pymc->pyMethod.mself, pymc->pyMethod.mclass);
+            PyObject* method = PyMethod_New(pymc->pyMethod.mfunc, im_self, pymc->pyMethod.mclass);
             Py_DECREF(im_self);
             return method;
         }
@@ -5909,8 +5909,13 @@ static PyTypeObject *sip_api_find_named_enum(const char *type)
  */
 void sipSaveMethod(sipPyMethod *pm, PyObject *meth)
 {
+    PyObject* self;
+
     pm->mfunc  = PyMethod_GET_FUNCTION(meth);
-    pm->mself  = PyWeakref_NewRef(PyMethod_GET_SELF(meth), NULL);
+
+    self = PyMethod_GET_SELF(meth);
+    pm->mself = self ? PyWeakref_NewRef(self, NULL) : NULL;
+
     pm->mclass = PyMethod_GET_CLASS(meth);
 }
 
