@@ -295,13 +295,14 @@ static const sipAPIDef sip_api = {
 #define SIP_MC_METHOD           0x02    /* The reimp is a method. */
 #define SIP_MC_CALLABLE         0x04    /* The reimp is another callable. */
 
-#define sipNoReimp(m)           ((m)->mcflags == SIP_MC_CHECKED)
-#define sipCheckedReimp(m)      ((m)->mcflags & SIP_MC_CHECKED)
-#define sipSetCheckedReimp(m)   ((m)->mcflags |= SIP_MC_CHECKED)
-#define sipMethodReimp(m)       ((m)->mcflags & SIP_MC_METHOD)
-#define sipSetMethodReimp(m)    ((m)->mcflags |= SIP_MC_METHOD)
-#define sipCallableReimp(m)     ((m)->mcflags & SIP_MC_CALLABLE)
-#define sipSetCallableReimp(m)  ((m)->mcflags |= SIP_MC_CALLABLE)
+#define sipNoReimp(m)            ((m)->mcflags == SIP_MC_CHECKED)
+#define sipCheckedReimp(m)       ((m)->mcflags & SIP_MC_CHECKED)
+#define sipSetCheckedReimp(m)    ((m)->mcflags |= SIP_MC_CHECKED)
+#define sipSetNotCheckedReimp(m) ((m)->mcflags &= ~SIP_MC_CHECKED)
+#define sipMethodReimp(m)        ((m)->mcflags & SIP_MC_METHOD)
+#define sipSetMethodReimp(m)     ((m)->mcflags |= SIP_MC_METHOD)
+#define sipCallableReimp(m)      ((m)->mcflags & SIP_MC_CALLABLE)
+#define sipSetCallableReimp(m)   ((m)->mcflags |= SIP_MC_CALLABLE)
 
 
 /*
@@ -5361,8 +5362,21 @@ static PyObject *sip_api_is_py_method(sip_gilstate_t *gil,
     }
 
     if (sipMethodReimp(pymc))
-        return PyMethod_New(pymc->pyMethod.mfunc, pymc->pyMethod.mself,
-                pymc->pyMethod.mclass);
+    {
+        PyObject* im_self = PyWeakref_GET_OBJECT(pymc->pyMethod.mself);
+        if (im_self == Py_None)
+        {
+            sipSetNotCheckedReimp(pymc);
+            Py_DECREF(im_self);
+            return sip_api_is_py_method(gil, pymc, sipSelf, cname, mname);
+        }
+        else
+        {
+            PyObject* method = PyMethod_New(pymc->pyMethod.mfunc, pymc->pyMethod.mself, pymc->pyMethod.mclass);
+            Py_DECREF(im_self);
+            return method;
+        }
+    }
 
     if (sipCallableReimp(pymc))
     {
@@ -5895,8 +5909,8 @@ static PyTypeObject *sip_api_find_named_enum(const char *type)
  */
 void sipSaveMethod(sipPyMethod *pm, PyObject *meth)
 {
-    pm->mfunc = PyMethod_GET_FUNCTION(meth);
-    pm->mself = PyMethod_GET_SELF(meth);
+    pm->mfunc  = PyMethod_GET_FUNCTION(meth);
+    pm->mself  = PyWeakref_NewRef(PyMethod_GET_SELF(meth), NULL);
     pm->mclass = PyMethod_GET_CLASS(meth);
 }
 
