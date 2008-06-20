@@ -5305,6 +5305,22 @@ static PyObject *sip_api_is_py_method(sip_gilstate_t *gil,
     *gil = PyGILState_Ensure();
 #endif
 
+//    {
+//        // hack: don't cache anything.
+//        PyObject* myreimp = PyObject_GetAttrString((PyObject *)sipSelf, mname);
+//        if (myreimp != NULL)
+//        {
+//            if (PyCFunction_Check(myreimp) || !PyCallable_Check(myreimp))
+//                Py_DECREF(myreimp);
+//            else
+//                return myreimp;
+//        }
+//        else
+//            PyErr_Clear();
+//
+//        return NULL;
+//    }
+
     /* See if we have already looked for a Python reimplementation. */
     if (!sipCheckedReimp(pymc))
     {
