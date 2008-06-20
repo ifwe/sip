@@ -5304,73 +5304,87 @@ static PyObject *sip_api_is_py_method(sip_gilstate_t *gil,
     *gil = PyGILState_Ensure();
 #endif
 
-    /* See if we have already looked for a Python reimplementation. */
-    if (!sipCheckedReimp(pymc))
+//    /* See if we have already looked for a Python reimplementation. */
+//    if (!sipCheckedReimp(pymc))
+//    {
+//        PyObject *reimp = PyObject_GetAttrString((PyObject *)sipSelf, mname);
+//
+//        /*
+//         * This should always succeed unless there are bugs in the code
+//         * generation.
+//         */
+//        if (reimp != NULL)
+//        {
+//            /*
+//             * Ignore if it's not a callable or if it is a builtin function or
+//             * method.  The latter is the most common case as it represents the
+//             * wrapper around the generated C++ implementation.  We don't want
+//             * to use it because we'd rather handle it faster as a direct call.
+//             */
+//            if (PyCFunction_Check(reimp) || !PyCallable_Check(reimp))
+//                Py_DECREF(reimp);
+//            else if (PyMethod_Check(reimp))
+//            {
+//                sipSaveMethod(&pymc->pyMethod, reimp);
+//                sipSetMethodReimp(pymc);
+//            }
+//            else
+//            {
+//                /*
+//                 * Note that the callable is never garbage collected.  The main
+//                 * reason for this is that it's not possible to get hold of the
+//                 * method cache without make incompatible changes to the SIP
+//                 * API, particularly to support the cyclic garbage collector.
+//                 * It would be a lot easier if the cache was held in the
+//                 * Python object rather than the derived C++ class (and this
+//                 * function would be passed a cache index instead of a pointer
+//                 * to the cache entry).  Dropping the cache completely should
+//                 * also be considered which would have the advantage of making
+//                 * monkey patching predictable.  With cyclic garbage collector
+//                 * support we could also just save a reference to a
+//                 * reimplementation that was a method rather than save the
+//                 * separate components, which would also allow a borrowed
+//                 * reference to the reimplementation to be returned so that the
+//                 * virtual handler wouldn't need to decrement its reference
+//                 * count.
+//                 */
+//
+//                pymc->pyMethod.mfunc = reimp;
+//                sipSetCallableReimp(pymc);
+//            }
+//        }
+//        else
+//            PyErr_Clear();
+//
+//        /* Don't check again. */
+//        sipSetCheckedReimp(pymc);
+//    }
+//
+//    if (sipMethodReimp(pymc))
+//        return PyMethod_New(pymc->pyMethod.mfunc, pymc->pyMethod.mself,
+//                pymc->pyMethod.mclass);
+//
+//    if (sipCallableReimp(pymc))
+//    {
+//        PyObject *reimp = pymc->pyMethod.mfunc;
+//
+//        Py_INCREF(reimp);
+//        return reimp;
+//    }
+
     {
-        PyObject *reimp = PyObject_GetAttrString((PyObject *)sipSelf, mname);
-
-        /*
-         * This should always succeed unless there are bugs in the code
-         * generation.
-         */
-        if (reimp != NULL)
-        {
-            /*
-             * Ignore if it's not a callable or if it is a builtin function or
-             * method.  The latter is the most common case as it represents the
-             * wrapper around the generated C++ implementation.  We don't want
-             * to use it because we'd rather handle it faster as a direct call.
-             */
-            if (PyCFunction_Check(reimp) || !PyCallable_Check(reimp))
-                Py_DECREF(reimp);
-            else if (PyMethod_Check(reimp))
-            {
-                sipSaveMethod(&pymc->pyMethod, reimp);
-                sipSetMethodReimp(pymc);
-            }
-            else
-            {
-                /*
-                 * Note that the callable is never garbage collected.  The main
-                 * reason for this is that it's not possible to get hold of the
-                 * method cache without make incompatible changes to the SIP
-                 * API, particularly to support the cyclic garbage collector.
-                 * It would be a lot easier if the cache was held in the
-                 * Python object rather than the derived C++ class (and this
-                 * function would be passed a cache index instead of a pointer
-                 * to the cache entry).  Dropping the cache completely should
-                 * also be considered which would have the advantage of making
-                 * monkey patching predictable.  With cyclic garbage collector
-                 * support we could also just save a reference to a
-                 * reimplementation that was a method rather than save the
-                 * separate components, which would also allow a borrowed
-                 * reference to the reimplementation to be returned so that the
-                 * virtual handler wouldn't need to decrement its reference
-                 * count.
-                 */
-
-                pymc->pyMethod.mfunc = reimp;
-                sipSetCallableReimp(pymc);
-            }
-        }
+    PyObject *reimp = PyObject_GetAttrString((PyObject *)sipSelf, mname);
+    if (reimp != NULL)
+    {
+        if (PyCFunction_Check(reimp) || !PyCallable_Check(reimp))
+            Py_DECREF(reimp);
         else
-            PyErr_Clear();
-
-        /* Don't check again. */
-        sipSetCheckedReimp(pymc);
+            return reimp;
+    }
+    else
+        PyErr_Clear();
     }
 
-    if (sipMethodReimp(pymc))
-        return PyMethod_New(pymc->pyMethod.mfunc, pymc->pyMethod.mself,
-                pymc->pyMethod.mclass);
-
-    if (sipCallableReimp(pymc))
-    {
-        PyObject *reimp = pymc->pyMethod.mfunc;
-
-        Py_INCREF(reimp);
-        return reimp;
-    }
 
     if (cname != NULL)
     {
