@@ -3,12 +3,12 @@
 # locations, version numbers etc., and provides some classes and functions.
 #
 # Copyright (c) 2008 Riverbank Computing Limited <info@riverbankcomputing.com>
-# 
+#
 # This file is part of SIP.
-# 
+#
 # This copy of SIP is licensed for use under the terms of the SIP License
 # Agreement.  See the file LICENSE for more details.
-# 
+#
 # SIP is supplied WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
@@ -176,16 +176,16 @@ class _Macro:
         for el in value:
             self.append(el)
 
-    def remove(self, value): 
-        """Remove a value from the macro.  It doesn't matter if the value 
-        wasn't present. 
- 
-        value is the value to remove. 
-        """ 
-        try: 
-            self._macro.remove(value) 
-        except: 
-            pass 
+    def remove(self, value):
+        """Remove a value from the macro.  It doesn't matter if the value
+        wasn't present.
+
+        value is the value to remove.
+        """
+        try:
+            self._macro.remove(value)
+        except:
+            pass
 
     def as_list(self):
         """Return the macro as a list.
@@ -389,6 +389,9 @@ class Makefile:
 
         if self._python:
             incdir.append(self.config.py_inc_dir)
+            if os.name == 'nt':
+                incdir.append(os.path.join(self.config.py_inc_dir, '../PC'))
+
             incdir.append(self.config.py_conf_inc_dir)
 
             if sys.platform == "cygwin":
@@ -1427,7 +1430,7 @@ class ModuleMakefile(Makefile):
         # This made an appearence in Qt v4.4rc1 and breaks extension modules so
         # remove it.  It was removed at my request but some stupid distros may
         # have kept it.
-        self.LFLAGS.remove('-Wl,--no-undefined') 
+        self.LFLAGS.remove('-Wl,--no-undefined')
 
     def module_as_lib(self, mname):
         """Return the name of a SIP v3.x module when it is used as a library.
@@ -2034,7 +2037,7 @@ def error(msg):
     sys.stderr.write(format("Error: " + msg) + "\n")
     sys.exit(1)
 
- 
+
 def inform(msg):
     """Display an information message.
 
