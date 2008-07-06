@@ -2,12 +2,12 @@
  * The main header file for SIP.
  *
  * Copyright (c) 2008 Riverbank Computing Limited <info@riverbankcomputing.com>
- *
+ * 
  * This file is part of SIP.
- *
+ * 
  * This copy of SIP is licensed for use under the terms of the SIP License
  * Agreement.  See the file LICENSE for more details.
- *
+ * 
  * SIP is supplied WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  */
@@ -275,14 +275,11 @@
 
 #define VAR_IS_STATIC       0x01    /* It is a static variable. */
 #define VAR_NEEDS_HANDLER   0x02    /* It the variable needs a handler. */
-#define VAR_IS_PROPERTY     0x04    /* It is a Getter/Setter wrapper. */
 
 #define isStaticVar(v)      ((v)->varflags & VAR_IS_STATIC)
 #define setIsStaticVar(v)   ((v)->varflags |= VAR_IS_STATIC)
 #define needsHandler(v)     ((v)->varflags & VAR_NEEDS_HANDLER)
 #define setNeedsHandler(v)  ((v)->varflags |= VAR_NEEDS_HANDLER)
-#define isProperty(v)       ((v)->varflags & VAR_IS_PROPERTY)
-#define setIsProperty(v)    ((v)->varflags |= VAR_IS_PROPERTY)
 
 
 /* Handle argument flags. */
@@ -791,8 +788,6 @@ typedef struct _varDef {
     codeBlock *accessfunc;              /* The access function. */
     codeBlock *getcode;                 /* The get code. */
     codeBlock *setcode;                 /* The set code. */
-    struct _overDef* getter;                    /* The name of the getter function. */
-    struct _overDef* setter;                    /* The name of the setter function. */
     struct _varDef *next;               /* Next in the list. */
 } varDef;
 
@@ -1050,8 +1045,6 @@ int optNoEmitters(sipSpec *pt);
 int optRegisterTypes(sipSpec *pt);
 int optQ_OBJECT4(sipSpec *pt);
 int optAssignmentHelpers(sipSpec *pt);
-int optThreadChecking(sipSpec *pt);
-int optAutoProperties(sipSpec *pt);
 void yywarning(char *);
 nameDef *cacheName(sipSpec *pt, const char *name);
 

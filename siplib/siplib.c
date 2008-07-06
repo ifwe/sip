@@ -2,12 +2,12 @@
  * SIP library code.
  *
  * Copyright (c) 2008 Riverbank Computing Limited <info@riverbankcomputing.com>
- *
+ * 
  * This file is part of SIP.
- *
+ * 
  * This copy of SIP is licensed for use under the terms of the SIP License
  * Agreement.  See the file LICENSE for more details.
- *
+ * 
  * SIP is supplied WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  */
@@ -2812,24 +2812,24 @@ static int parsePass1(sipWrapper **selfp, int *selfargp, int *argsParsedp,
         case 'F':
             {
                 /* Python callable object. */
-
+ 
                 if (PyCallable_Check(arg))
                     *va_arg(va,PyObject **) = arg;
                 else
                     valid = PARSE_TYPE;
-
+ 
                 break;
             }
 
         case 'H':
             {
                 /* Python callable object or None. */
-
+ 
                 if (arg == Py_None || PyCallable_Check(arg))
                     *va_arg(va,PyObject **) = arg;
                 else
                     valid = PARSE_TYPE;
-
+ 
                 break;
             }
 #ifdef SIP_QT
@@ -5907,26 +5907,26 @@ void sipSaveMethod(sipPyMethod *pm, PyObject *meth)
 static void sip_api_call_hook(const char *hookname)
 {
     PyObject *dictofmods, *mod, *dict, *hook, *res;
-
+ 
     /* Get the dictionary of modules. */
     if ((dictofmods = PyImport_GetModuleDict()) == NULL)
         return;
-
+ 
     /* Get the __builtin__ module. */
     if ((mod = PyDict_GetItemString(dictofmods,"__builtin__")) == NULL)
         return;
-
+ 
     /* Get it's dictionary. */
     if ((dict = PyModule_GetDict(mod)) == NULL)
         return;
-
+ 
     /* Get the function hook. */
     if ((hook = PyDict_GetItemString(dict,hookname)) == NULL)
         return;
-
+ 
     /* Call the hook and discard any result. */
     res = PyObject_CallObject(hook,NULL);
-
+ 
     Py_XDECREF(res);
 }
 
@@ -7219,12 +7219,13 @@ static int sipWrapper_init(sipWrapper *self,PyObject *args,PyObject *kwds)
             sipInitExtenderDef *ie = wt->iextend;
 
             /*
-             * If the parse was successful but no C/C++ object was created then
-             * we assume that handwritten code decided after the parse that
-             * it didn't want to handle the signature.
+             * If the parse was successful, and no exception has been raised,
+             * but no C/C++ object was created then we assume that handwritten
+             * code decided after the parse that it didn't want to handle the
+             * signature.
              */
-            if (pstate == PARSE_OK)
-                pstate = PARSE_TYPE;
+            if (pstate == PARSE_OK && !PyErr_Occurred())
+                pstate = argsparsed = PARSE_TYPE;
 
             /*
              * While we just have signature errors, try any initialiser
@@ -7243,11 +7244,11 @@ static int sipWrapper_init(sipWrapper *self,PyObject *args,PyObject *kwds)
 
             if (sipNew == NULL)
             {
-                /*
-                 * If the arguments were parsed without error then assume an
-                 * exception has already been raised for why the instance
-                 * wasn't created.
-                 */
+            	/*
+            	 * If the arguments were parsed without error then assume an
+            	 * exception has already been raised for why the instance
+            	 * wasn't created.
+            	 */
                 if (pstate == PARSE_OK)
                     argsparsed = PARSE_RAISED;
 
@@ -7798,32 +7799,6 @@ static int sipWrapper_setattro(PyObject *obj,PyObject *name,PyObject *value)
     return PyBaseObject_Type.tp_setattro(obj,name,value);
 }
 
-/* The number methods data structure. */
-static PyNumberMethods sipWrapperType_NumberMethods = {
-    0,                      /* nb_add */
-    0,                      /* nb_subtract */
-    0,                      /* nb_multiply */
-    0,                      /* nb_divide */
-    0,                      /* nb_remainder */
-    0,                      /* nb_divmod */
-    0,                      /* nb_power */
-    0,                      /* nb_negative */
-    0,                      /* nb_positive */
-    0,                      /* nb_absolute */
-    0,//sipWrapper_nonzero,     /* nb_nonzero */
-    0,                      /* nb_invert */
-    0,                      /* nb_lshift */
-    0,                      /* nb_rshift */
-    0,                      /* nb_and */
-    0,                      /* nb_xor */
-    0,                      /* nb_or */
-    0,                      /* nb_coerce */
-    0,                      /* nb_int */
-    0,                      /* nb_long */
-    0,                      /* nb_float */
-    0,                      /* nb_oct */
-    0,                      /* nb_hex */
-};
 
 /*
  * The type data structure.  Note that we pretend to be a mapping object and a
@@ -7847,7 +7822,7 @@ static sipWrapperType sipWrapper_Type = {
             0,              /* tp_setattr */
             0,              /* tp_compare */
             0,              /* tp_repr */
-            0,//&sipWrapperType_NumberMethods, /* tp_as_number */
+            0,              /* tp_as_number */
             0,              /* tp_as_sequence */
             0,              /* tp_as_mapping */
             0,              /* tp_hash */
