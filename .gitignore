@@ -5,6 +5,8 @@ Makefile
 sip
 sip.so
 
+*.bat
+
 # windows binary files
 *.pdb
 *.obj
