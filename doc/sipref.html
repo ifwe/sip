@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<meta name="generator" content="Docutils 0.4.1: http://docutils.sourceforge.net/" />
+<meta name="generator" content="Docutils 0.4: http://docutils.sourceforge.net/" />
 <title>SIP - A Tool for Generating Python Bindings for C and C++ Libraries</title>
 <meta name="copyright" content="Copyright (c) 2008 Riverbank Computing Limited" />
 <style type="text/css">
@@ -301,7 +301,7 @@ ul.auto-toc {
 <tr><th class="docinfo-name">Contact:</th>
 <td><a class="first last reference" href="mailto:info&#64;riverbankcomputing.com">info&#64;riverbankcomputing.com</a></td></tr>
 <tr><th class="docinfo-name">Version:</th>
-<td>4.7.6</td></tr>
+<td>4.7.7-snapshot-20080615</td></tr>
 <tr><th class="docinfo-name">Copyright:</th>
 <td>Copyright (c) 2008 Riverbank Computing Limited</td></tr>
 </tbody>
@@ -557,7 +557,7 @@ ul.auto-toc {
 </div>
 <div class="section">
 <h1><a class="toc-backref" href="#id24" id="introduction" name="introduction">1&nbsp;&nbsp;&nbsp;Introduction</a></h1>
-<p>This is the reference guide for SIP 4.7.6.  SIP is a tool for
+<p>This is the reference guide for SIP 4.7.7-snapshot-20080615.  SIP is a tool for
 automatically generating <a class="reference" href="http://www.python.org">Python</a> bindings for C and
 C++ libraries.  SIP was originally developed in 1998 for
 <a class="reference" href="http://www.riverbankcomputing.com/software/pyqt/">PyQt</a> - the Python
@@ -2947,11 +2947,13 @@ specified.  The variable is a pointer to the Python object that wraps the
 argument.</dd>
 <dt><em>type</em> *sipCpp</dt>
 <dd><p class="first">If the directive is used in the context of a class constructor then this
-must be set by the handwritten code to the constructed instance.  If the
-directive is used in the context of a method (but not the standard binary
-operator methods, e.g. <tt class="docutils literal"><span class="pre">__add__</span></tt>) or a destructor then this is a pointer
-to the C structure or C++ class instance.  Its <em>type</em> is a pointer to the
-structure or class.</p>
+must be set by the handwritten code to the constructed instance.  If it is
+set to <tt class="docutils literal"><span class="pre">0</span></tt> and no Python exception is raised then SIP will continue to
+try other Python signatures.</p>
+<p>If the directive is used in the context of a method (but not the standard
+binary operator methods, e.g. <tt class="docutils literal"><span class="pre">__add__</span></tt>) or a destructor then this is a
+pointer to the C structure or C++ class instance.</p>
+<p>Its <em>type</em> is a pointer to the structure or class.</p>
 <p class="last">Standard binary operator methods follow the same convention as global
 functions and instead define two arguments called <tt class="docutils literal"><span class="pre">a0</span></tt> and <tt class="docutils literal"><span class="pre">a1</span></tt>.</p>
 </dd>

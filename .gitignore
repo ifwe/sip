@@ -1,3 +1,9 @@
 *.o
 .DS_Store
+*.pyc
+*.so
+sipgen/sip
+Makefile
+
+
 
