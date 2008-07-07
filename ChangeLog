@@ -1,3 +1,9 @@
+2008/07/06 17:20:40  phil
+Add the first child wrapper to the output of sip.dump().
+Fixed a reference count bug introduced when allowing a Python reimplementation
+to be any callable and not just a method.
+
+
 2008/06/15 22:21:01  phil
 The code that handles exceptions now acquires the GIL before releasing any
 temporary instances.
