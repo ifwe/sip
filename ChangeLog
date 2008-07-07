@@ -1,3 +1,41 @@
+2008/07/06 17:20:40  phil
+Add the first child wrapper to the output of sip.dump().
+Fixed a reference count bug introduced when allowing a Python reimplementation
+to be any callable and not just a method.
+
+
+2008/06/15 22:21:01  phil
+The code that handles exceptions now acquires the GIL before releasing any
+temporary instances.
+
+
+2008/06/15 16:10:52  phil
+Fixed a bug where the strings of names of the methods of class templates
+weren't being generated.
+
+
+2008/06/15 12:37:05  phil
+Fixed problems with module numbering when using consolidated modules.
+
+
+2008/06/12 13:33:02  phil
+The number of arguments to __getitem__, __setitem__ and __delitem__ is now
+properly checked.
+
+
+2008/06/07 15:07:47  phil
+Fixed a GIL state bug with %RaiseCode.
+
+
+2008/06/03 15:12:50  phil
+Fixed a SIP crash when using %Exception.
+
+
+2008/06/03  9:16:59  phil
+Increased the size of the some temporary arrays so that there is no chance they
+will overflow.
+
+
 2008/05/30 19:20:19  phil
 Hopefully fixed a regression introduced when allowing ctor %MethodCode to
 indicate that the next signature should be tried.

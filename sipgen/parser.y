@@ -2614,7 +2614,6 @@ static moduleDef *allocModule()
     newmod->preinitcode = NULL;
     newmod->postinitcode = NULL;
     newmod->unitcode = NULL;
-    newmod->modulenr = -1;
     newmod->file = NULL;
     newmod->qualifiers = NULL;
     newmod->root.cd = NULL;
@@ -3511,6 +3510,9 @@ static void instantiateClassTemplate(sipSpec *pt, moduleDef *mod, classDef *scop
         *nmd = *omd;
 
         nmd->module = mod;
+
+        if (inMainModule())
+            setIsUsedName(nmd->pyname);
 
         nmd->next = NULL;
         *mdtail = nmd;
@@ -4417,9 +4419,9 @@ static memberDef *findFunction(sipSpec *pt, moduleDef *mod, classDef *cd,
         {"__irshift__", irshift_slot, FALSE, 1},
         {"__invert__", invert_slot, FALSE, 0},
         {"__call__", call_slot, FALSE, -1},
-        {"__getitem__", getitem_slot, FALSE, -1},
-        {"__setitem__", setitem_slot, TRUE, -1},
-        {"__delitem__", delitem_slot, TRUE, -1},
+        {"__getitem__", getitem_slot, FALSE, 1},
+        {"__setitem__", setitem_slot, TRUE, 2},
+        {"__delitem__", delitem_slot, TRUE, 1},
         {"__lt__", lt_slot, FALSE, 1},
         {"__le__", le_slot, FALSE, 1},
         {"__eq__", eq_slot, FALSE, 1},
@@ -4449,37 +4451,15 @@ static memberDef *findFunction(sipSpec *pt, moduleDef *mod, classDef *cd,
             if (sm->needs_hwcode && !hwcode)
                 yyerror("This Python slot requires %MethodCode");
 
-            if (sm->nrargs < 0)
-            {
-                int min_nr;
-
-                /* These require a minimum number. */
-                switch (sm->type)
+            if (sm->nrargs >= 0)
+                if (cd == NULL)
                 {
-                case getitem_slot:
-                case delitem_slot:
-                    min_nr = 1;
-                    break;
-
-                case setitem_slot:
-                    min_nr = 2;
-                    break;
-
-                default:
-                    min_nr = 0;
+                    /* Global operators need one extra argument. */
+                    if (sm -> nrargs + 1 != nrargs)
+                        yyerror("Incorrect number of arguments to global operator");
                 }
-
-                if (nrargs < min_nr)
-                    yyerror("Insufficient number of arguments to Python slot");
-            }
-            else if (cd == NULL)
-            {
-                /* Global operators need one extra argument. */
-                if (sm -> nrargs + 1 != nrargs)
-                    yyerror("Incorrect number of arguments to global operator");
-            }
-            else if (sm->nrargs != nrargs)
-                yyerror("Incorrect number of arguments to Python slot");
+                else if (sm->nrargs != nrargs)
+                    yyerror("Incorrect number of arguments to Python slot");
 
             st = sm->type;
 
