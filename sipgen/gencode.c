@@ -55,6 +55,7 @@ static int generating_c;                /* Set if generating C. */
 static int release_gil;                 /* Set if always releasing the GIL. */
 static const char *prcode_last = NULL;  /* The last prcode format string. */
 static int prcode_xml = FALSE;          /* Set if prcode is XML aware. */
+static int thread_check = 0;            /* Set if thread checking is enabled. */
 
 
 static void generateDocumentation(sipSpec *pt, const char *docFile);
@@ -139,6 +140,7 @@ static void generateBinarySlotCall(classDef *cd, overDef *od, const char *op,
         int deref, FILE *fp);
 static void generateNumberSlotCall(overDef *od, char *op, FILE *fp);
 static void generateVariableHandler(classDef *, varDef *, FILE *);
+static void generatePropertyHandler(classDef*, varDef *, FILE *);
 static int generateObjToCppConversion(argDef *, FILE *);
 static void generateVarClassConversion(varDef *, FILE *);
 static void generateVarMember(varDef *vd, FILE *fp);
