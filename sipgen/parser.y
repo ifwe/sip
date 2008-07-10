@@ -4031,6 +4031,8 @@ static void newVar(sipSpec *pt,moduleDef *mod,char *name,int isstatic,
     var -> accessfunc = acode;
     var -> getcode = gcode;
     var -> setcode = scode;
+    var -> getter = NULL;
+    var -> setter = NULL;
     var -> next = pt -> vars;
 
     if (isstatic || (escope != NULL && escope->iff->type == namespace_iface))
@@ -4345,6 +4347,10 @@ static const char *getPythonName(optFlags *optflgs, const char *cname)
 
     if ((of = findOptFlag(optflgs, "PyName", name_flag)) != NULL)
         pname = of -> fvalue.sval;
+    else if (optFind(currentSpec, "RenameWx") &&
+             strlen(cname) > 2 &&
+             cname[0] == 'w' && cname[1] == 'x')
+        pname = cname + 2;
     else
         pname = cname;
 
@@ -5127,6 +5133,15 @@ int optQ_OBJECT4(sipSpec *pt)
 
 
 /*
+ * Return TRUE if automatic property generation was enabled.
+ */
+int optAutoProperties(sipSpec *pt)
+{
+    return optFind(pt, "AutoProperties");
+}
+
+
+/*
  * Return TRUE if the AssignmentHelpers option was specified.
  */
 int optAssignmentHelpers(sipSpec *pt)
@@ -5134,6 +5149,13 @@ int optAssignmentHelpers(sipSpec *pt)
     return optFind(pt, "AssignmentHelpers");
 }
 
+/*
+ * Return TRUE if the ThreadChecking option was specified.
+ */
+int optThreadChecking(sipSpec *pt)
+{
+    return optFind(pt, "ThreadChecking");
+}
 
 /*
  * Return TRUE if a particular option was specified with %SIPOptions.

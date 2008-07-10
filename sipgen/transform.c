@@ -81,6 +81,7 @@ static void addComplementarySlots(sipSpec *pt, classDef *cd);
 static void addComplementarySlot(sipSpec *pt, classDef *cd, memberDef *md,
         slotType cslot, const char *cslot_name);
 static void resolveInstantiatedClassTemplate(sipSpec *pt, argDef *type);
+static void generateProperties(sipSpec *pt, moduleDef *mod, classDef *cd);
 
 
 /*
@@ -286,6 +287,12 @@ void transform(sipSpec *pt)
         for (cd = pt->classes; cd != NULL; cd = cd->next)
             if (generatingCodeForModule(pt, cd->iff->module))
                 registerMetaType(cd);
+                
+    /* Autogenerate properties */
+    if (optAutoProperties(pt))
+        for (cd = pt->classes; cd != NULL; cd = cd->next)
+            if (generatingCodeForModule(pt, cd->iff->module))
+                generateProperties(pt, cd->iff->module, cd);
 }
 
 
@@ -3052,4 +3059,213 @@ static int generatingCodeForModule(sipSpec *pt, moduleDef *mod)
         return (pt->module == mod->container);
 
     return (pt->module == mod);
+}
+
+
+
+/*
+ * Fail with a message on stderr.
+ */
+static void exitmsg(char* msg)
+{
+    fprintf(stderr, msg);
+    exit(-1);
+}
+
+static varDef* findProperty(sipSpec *pt, moduleDef *module, classDef *cd, overDef *over, nameDef* propertyName)
+{
+    varDef *var = NULL;
+    for(var = pt->vars; var != NULL; var = var->next)
+    {
+        if(var->ecd == cd &&
+           var->module == module &&
+           var->pyname == propertyName)
+        {
+           if (!isProperty(var))
+               exitmsg("found property-like overload with no property flag set!");
+           return var;
+        }
+    }
+    
+    return NULL;
+}
+
+/*
+ * Returns the number of arguments without default values in an array of
+ * argDefs.
+ */
+static int countNonDefaultArgs(argDef args[], int nrArgs)
+{
+    int count = 0;
+    int i;
+    
+    for (i = 0; i < nrArgs; ++i)
+        if (args[i].defval == NULL)
+            ++count;
+        else
+            break;
+    
+    return count;
+}
+
+/*
+ * Add a varDef representing a property for a given getter or setter method.
+ */
+static varDef* addOrFindProperty(sipSpec* pt, moduleDef* module, classDef* cd, overDef* over)
+{
+    int num_args;
+    nameDef* propertyName;
+    varDef* var;
+    scopedNameDef* varname;
+    scopedNameDef* scopedname;
+    
+    if (over->cppname == NULL || strlen(over->cppname) < 4)
+        exitmsg("error creating property");
+    else if (strncmp("Get", over->cppname, 3) && strncmp("Set", over->cppname, 3))
+        exitmsg("error creating property");
+
+    /* Propertes must start with Get or Set */
+    propertyName = cacheName(pt, over->cppname + 3);
+        
+    /* Find the property if it already exists. */
+    var = findProperty(pt, module, cd, over, propertyName);
+    if (var != NULL)
+        return var;
+    
+    /* We didn't find one, so make a new one. */
+    var = sipMalloc(sizeof(varDef));
+    setIsUsedName(propertyName);
+    var->pyname = propertyName;
+    
+    /* Create a scoped name for the property. */
+    varname = text2scopePart(propertyName->text);
+    scopedname = copyScopedName(classFQCName(cd));
+    appendScopedName(&scopedname, varname);
+    var->fqcname = scopedname;
+
+    /* TODO: use newVar from parser.c if possible here. */
+    /* also actually verify Get/Set pair takes and receives the same type of argument */
+    num_args = countNonDefaultArgs(over->cppsig->args, over->cppsig->nrArgs);
+    if (num_args == 1)
+        /* its a setter */
+        var->type = over->cppsig->args[0];
+    else if (num_args == 0)
+        /* its a getter */
+        var->type = over->cppsig->result;
+    else
+    {
+        fprintf("num_args: %d\n", num_args);
+        exitmsg("num_args was not 1 or 0");
+    }
+        
+    var->ecd = cd;
+    var->module = module;
+
+    var->varflags = 0;
+    var->accessfunc = 0;
+    var->getcode = 0;
+    var->setcode = 0;
+
+    var->getter = 0;
+    var->setter = 0;
+
+    /* Set properties on the new varDef. */
+    setIsProperty(var);
+    setNeedsHandler(var);
+    setHasVarHandlers(cd);
+    if (isStatic(over))
+        setIsStaticVar(var);
+                
+    /* Append the new variable to the module. */
+    var->next = pt->vars;
+    pt->vars = var;
+    return var;
+}
+
+static void addGetter(sipSpec* pt, moduleDef* module, classDef* cd, overDef* over)
+{
+    varDef* prop = addOrFindProperty(pt, module, cd, over);
+    if (prop->getter == NULL)
+        prop->getter = over;
+
+}
+
+static void addSetter(sipSpec* pt, moduleDef* module, classDef* cd, overDef* over)
+{
+    varDef* prop = addOrFindProperty(pt, module, cd, over);
+    if (prop->setter == NULL)
+        prop->setter = over;
+}
+
+static int isAccessor(overDef* over)
+{
+    return isPublic(over) &&
+        /* 0 == over->methodcode && */
+        0 == over->virthandler &&
+        over->cppname != NULL &&
+        strlen(over->cppname) > 3;
+}
+
+/*
+    TODO: make these actually check for collisions with existing methods
+*/
+static int isGetter(moduleDef* module, classDef* cd, overDef* over)
+{
+    /* starts with Get, looks like an accessor, and has no non default 
+       arguments */
+    return 0 == strncmp(over->cppname, "Get", 3) &&
+        isAccessor(over) &&
+        0 == countNonDefaultArgs(over->cppsig->args, over->cppsig->nrArgs);
+}
+
+static int isSetter(moduleDef* module, classDef* cd, overDef* over)
+{
+    /* starts with Set, looks like an accessor, and has one non default 
+       argument */
+    return 0 == strncmp(over->cppname, "Set", 3) && 
+        isAccessor(over) &&
+        1 == countNonDefaultArgs(over->cppsig->args, over->cppsig->nrArgs);
+}
+
+static void filterPropertiesWithoutGetters(sipSpec *pt)
+{
+    /* Clear out properties without getters. */
+    varDef* var = pt->vars;
+    varDef* next;
+    varDef* prev;
+    while (var != NULL)
+    {
+        next = var->next;
+        
+        if (isProperty(var) && var->getter == NULL)
+        {
+            if (pt->vars == var)
+                pt->vars = next;
+            else
+                prev->next = next;
+                
+            free(var);
+        }
+        else
+        {
+            prev = var;
+        }
+                
+        var = next;
+    }
+}
+
+static void generateProperties(sipSpec *pt, moduleDef *mod, classDef *cd)
+{    
+    /* Create necessary getters and setters */
+    overDef* over;
+    for (over = cd->overs; over != NULL; over = over->next)
+    {
+        if (isGetter(mod, cd, over))
+            addGetter(pt, mod, cd, over);
+        else if (isSetter(mod, cd, over))
+            addSetter(pt, mod, cd, over);
+    }
+    
+    filterPropertiesWithoutGetters(pt);
 }
