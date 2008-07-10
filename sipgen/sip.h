@@ -275,12 +275,14 @@
 
 #define VAR_IS_STATIC       0x01    /* It is a static variable. */
 #define VAR_NEEDS_HANDLER   0x02    /* It the variable needs a handler. */
+#define VAR_IS_PROPERTY     0x04    /* It is a Getter/Setter wrapper. */
 
 #define isStaticVar(v)      ((v)->varflags & VAR_IS_STATIC)
 #define setIsStaticVar(v)   ((v)->varflags |= VAR_IS_STATIC)
 #define needsHandler(v)     ((v)->varflags & VAR_NEEDS_HANDLER)
 #define setNeedsHandler(v)  ((v)->varflags |= VAR_NEEDS_HANDLER)
-
+#define isProperty(v)       ((v)->varflags & VAR_IS_PROPERTY)
+#define setIsProperty(v)    ((v)->varflags |= VAR_IS_PROPERTY)
 
 /* Handle argument flags. */
 
