@@ -2,12 +2,12 @@
  * The code generator module for SIP.
  *
  * Copyright (c) 2008 Riverbank Computing Limited <info@riverbankcomputing.com>
- * 
+ *
  * This file is part of SIP.
- * 
+ *
  * This copy of SIP is licensed for use under the terms of the SIP License
  * Agreement.  See the file LICENSE for more details.
- * 
+ *
  * SIP is supplied WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  */
@@ -238,6 +238,7 @@ void generateCode(sipSpec *pt, char *codeDir, char *buildfile, char *docFile,
 {
     exceptions = except;
     tracing = trace;
+    thread_check = optThreadChecking(pt);
     release_gil = releaseGIL;
     generating_c = pt->genc;
 
@@ -416,10 +417,10 @@ void generateExpression(valueDef *vd, FILE *fp)
             generateSimpleFunctionCall(vd->u.fcd,fp);
             break;
         }
- 
+
         if (vd->vbinop != '\0')
             prcode(fp," %c ",vd->vbinop);
- 
+
         vd = vd->next;
     }
 }
@@ -607,11 +608,13 @@ static void generateInternalAPIHeader(sipSpec *pt, moduleDef *mod,
 "#define sipConvertFromConstVoidPtr  sipAPI_%s->api_convert_from_const_void_ptr\n"
 "#define sipConvertFromVoidPtrAndSize    sipAPI_%s->api_convert_from_void_ptr_and_size\n"
 "#define sipConvertFromConstVoidPtrAndSize   sipAPI_%s->api_convert_from_const_void_ptr_and_size\n"
+"#define SIP_THREAD_CHECK            sipAPI_%s->api_thread_check(__FILE__, __LINE__)\n"
 "#define sipInvokeSlot               sipAPI_%s->api_invoke_slot\n"
 "#define sipParseType                sipAPI_%s->api_parse_type\n"
 "#define sipIsExactWrappedType       sipAPI_%s->api_is_exact_wrapped_type\n"
 "#define sipAssignInstance           sipAPI_%s->api_assign_instance\n"
 "#define sipAssignMappedType         sipAPI_%s->api_assign_mapped_type\n"
+        ,mname
         ,mname
         ,mname
         ,mname
@@ -5398,9 +5401,9 @@ static void generateShadowCode(sipSpec *pt, moduleDef *mod, classDef *cd,
     }
 
     /* Generate the virtual catchers. */
- 
+
     virtNr = 0;
- 
+
     for (vod = cd->vmembers; vod != NULL; vod = vod->next)
     {
         overDef *od = &vod->o;
@@ -5683,10 +5686,10 @@ static void generateVirtualCatcher(moduleDef *mod, classDef *cd, int virtNr,
             generateUnambiguousClass(cd,vod->scope,fp);
 
             prcode(fp,"::%O(",od);
- 
+
             for (a = 0; a < od->cppsig->nrArgs; ++a)
                 prcode(fp,"%sa%d",(a == 0 ? "" : ","),a);
- 
+
             prcode(fp,");\n"
                 );
 
@@ -5725,7 +5728,7 @@ static void generateVirtualCatcher(moduleDef *mod, classDef *cd, int virtNr,
 
         ++ad;
     }
- 
+
     prcode(fp,");\n"
         );
 
@@ -7336,7 +7339,7 @@ static void generateShadowClassDeclaration(sipSpec *pt,classDef *cd,FILE *fp)
 
         prcode(fp,
 "    ");
- 
+
         prOverloadDecl(fp, cd, od, FALSE);
         prcode(fp, ";\n");
     }
@@ -7379,7 +7382,7 @@ void prOverloadDecl(FILE *fp, classDef *context, overDef *od, int defval)
     normaliseArgs(od->cppsig);
 
     generateBaseType(context, &od->cppsig->result, fp);
- 
+
     prcode(fp, " %O(", od);
 
     for (a = 0; a < od->cppsig->nrArgs; ++a)
@@ -7397,7 +7400,7 @@ void prOverloadDecl(FILE *fp, classDef *context, overDef *od, int defval)
             generateExpression(ad->defval, fp);
         }
     }
- 
+
     prcode(fp, ")%s%X", (isConst(od) ? " const" : ""), od->exceptions);
 
     restoreArgs(od->cppsig);
@@ -8672,17 +8675,17 @@ static int countVirtuals(classDef *cd)
 {
     int nrvirts;
     virtOverDef *vod;
- 
+
     nrvirts = 0;
- 
+
     for (vod = cd->vmembers; vod != NULL; vod = vod->next)
         if (!isPrivate(&vod->o))
             ++nrvirts;
- 
+
     return nrvirts;
 }
 
- 
+
 /*
  * Generate the try block for a call.
  */
