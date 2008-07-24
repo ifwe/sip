@@ -1,3 +1,12 @@
+2008/07/22 23:37:09  phil
+C++ structs are now handled the same as classes as far as super-classes,
+annotations etc. are concerned.
+
+
+2008/07/22 19:29:14  phil
+Preserve any exception when calling __dtor__().
+
+
 2008/07/06 17:20:40  phil
 Add the first child wrapper to the output of sip.dump().
 Fixed a reference count bug introduced when allowing a Python reimplementation
