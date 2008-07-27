@@ -1,0 +1,6 @@
+.DS_Store
+*.o
+*.so
+*.pyc
+Makefile
+sipconfig.py
