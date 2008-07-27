@@ -1,3 +1,11 @@
+2008/07/26 23:24:29  phil
+If a slot of an object whose C++ instance is being (or has been) destroyed is
+invoked then the call to the slot is no longer skipped. It is left to the slot
+itself to determine the state of the C++ instance so that Python slots can
+execute as normal. Note that this is a slight change of behaviour as a Qt slot
+will now raise an exception rather than being ignored.
+
+
 2008/07/22 23:37:09  phil
 C++ structs are now handled the same as classes as far as super-classes,
 annotations etc. are concerned.
