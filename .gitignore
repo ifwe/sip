@@ -17,9 +17,11 @@ sip.so
 *.pyd
 *.pyd.manifest
 *.exp
+*.suo
 
 .DS_Store
 sipconfig.py
 
 .project
 .pydevproject
+
