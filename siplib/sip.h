@@ -1100,7 +1100,6 @@ typedef struct _sipQtSignal {
     sipEmitFunc st_emitfunc;
 } sipQtSignal;
 
-
 /*
  * The API exported by the SIP module, ie. pointers to all the data and
  * functions that can be used by generated code.

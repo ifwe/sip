@@ -608,7 +608,8 @@ static void generateInternalAPIHeader(sipSpec *pt, moduleDef *mod,
 "#define sipConvertFromConstVoidPtr  sipAPI_%s->api_convert_from_const_void_ptr\n"
 "#define sipConvertFromVoidPtrAndSize    sipAPI_%s->api_convert_from_void_ptr_and_size\n"
 "#define sipConvertFromConstVoidPtrAndSize   sipAPI_%s->api_convert_from_const_void_ptr_and_size\n"
-"#define SIP_THREAD_CHECK            sipAPI_%s->api_thread_check(__FILE__, __LINE__)\n"
+"#define SIP_THREAD_CHECK            wxIsMainThread()\n"
+"#define SIP_THREAD_ERROR            PyErr_Format(PyExc_RuntimeError, \"Wrong thread! %%s:%%d\", __FILE__, __LINE__);\n"
 "#define sipInvokeSlot               sipAPI_%s->api_invoke_slot\n"
 "#define sipParseType                sipAPI_%s->api_parse_type\n"
 "#define sipIsExactWrappedType       sipAPI_%s->api_is_exact_wrapped_type\n"
@@ -2189,6 +2190,7 @@ static void generateOrdinaryFunction(moduleDef *mod, classDef *cd,
         memberDef *md, FILE *fp)
 {
     overDef *od;
+    const char* meth_name;
     int need_intro;
 
     prcode(fp,
@@ -2240,6 +2242,17 @@ static void generateOrdinaryFunction(moduleDef *mod, classDef *cd,
         );
 
     need_intro = TRUE;
+
+    meth_name = md->pyname->text;
+    if (!noThreadCheck(md) && thread_check && 
+    		strcmp("SEHGuard", meth_name) && strcmp("CallAfter", meth_name) && strcmp("IsMainThread", meth_name) && 
+    		strcmp("SipNewThread", meth_name) && strcmp("SipEndThread", meth_name) && strcmp("GetApp", meth_name) &&
+    		strcmp("GetTopLevelWindows", meth_name))
+        prcode(fp,
+"    if (!SIP_THREAD_CHECK) {\n"
+"        SIP_THREAD_ERROR\n"
+"        return NULL;\n"
+"    }");
 
     while (od != NULL)
     {
@@ -4751,6 +4764,15 @@ static void generateSlot(moduleDef *mod, classDef *cd, enumDef *ed,
         );
 }
 
+int is_wxobject(classDef* cd)
+{
+	classList* superClass;	
+	for (superClass = cd->supers; superClass; superClass = superClass->next)
+		if (0 == strcmp("Object", superClass->cd->pyname))
+			return 1;
+	
+	return 0;
+}
 
 /*
  * Generate the member functions for a class.
@@ -4883,13 +4905,25 @@ static void generateClassFunctions(sipSpec *pt, moduleDef *mod, classDef *cd,
              * way to call it which we haven't worked out (because we don't
              * fully understand C++).
              */
-
+            
+            if (is_wxobject(cd))
+            {
+            
+            
+            prcode(fp,
+"    if (!wxIsMainThread()) {\n"
+"        wxCriticalSectionLocker locker(wxPendingDeleteCS);\n"
+"        wxPendingDelete.Append(reinterpret_cast<%U *>(sipCppV));\n"
+"    } else {\n"
+"\n", cd);
+            }
+            
             if (rgil)
                 prcode(fp,
 "    Py_BEGIN_ALLOW_THREADS\n"
 "\n"
                     );
-
+            
             if (hasShadow(cd))
             {
                 prcode(fp,
@@ -4907,13 +4941,16 @@ static void generateClassFunctions(sipSpec *pt, moduleDef *mod, classDef *cd,
                 prcode(fp,
 "    delete reinterpret_cast<%U *>(sipCppV);\n"
                     , cd);
-
+            
             if (rgil)
                 prcode(fp,
 "\n"
 "    Py_END_ALLOW_THREADS\n"
                     );
         }
+        
+        if (is_wxobject(cd) && (hasShadow(cd) || isPublicDtor(cd)) && cd->dealloccode == NULL)
+        	prcode(fp, "    }\n");
 
         prcode(fp,
 "}\n"
@@ -5331,7 +5368,11 @@ static void generateShadowCode(sipSpec *pt, moduleDef *mod, classDef *cd,
         }
 
         if (thread_check)
-            prcode(fp, "    if (!SIP_THREAD_CHECK) return;\n");
+            prcode(fp,
+"    if (!SIP_THREAD_CHECK) {\n"
+"        SIP_THREAD_ERROR\n"
+"        return;\n"
+"    }");
 
         prcode(fp,
 "    sipCommonCtor(%s,%d);\n"
@@ -5588,8 +5629,13 @@ static void generateVirtualCatcher(moduleDef *mod, classDef *cd, int virtNr,
 
     if (thread_check)
     {
-        prcode(fp, "    if (!SIP_THREAD_CHECK)\n");
+        prcode(fp, 
+"    if (!SIP_THREAD_CHECK) {\n"
+"       SIP_THREAD_ERROR\n");
         generateVirtHandlerErrorReturn(res,fp);
+        prcode(fp,
+"    }\n");
+        
     }
 
     restoreArgs(od->cppsig);
@@ -8599,7 +8645,11 @@ static void generateTypeInit(classDef *cd, FILE *fp)
             ,classFQCName(cd));
 
     if (thread_check)
-        prcode(fp, "    if (!SIP_THREAD_CHECK) return NULL;\n");
+        prcode(fp,
+"    if (!SIP_THREAD_CHECK) {\n"
+"        SIP_THREAD_ERROR\n"
+"        return NULL;\n"
+"    }");
 
     /*
      * Generate the code that parses the Python arguments and calls the
@@ -9008,7 +9058,11 @@ static void generateFunction(memberDef *md, overDef *overs, classDef *cd,
                 ,classFQCName(cd),pname);
 
         if (thread_check)
-            prcode(fp, "    if (!SIP_THREAD_CHECK) return NULL;\n");
+            prcode(fp,
+"    if (!SIP_THREAD_CHECK) {\n"
+"        SIP_THREAD_ERROR\n"
+"        return NULL;\n"
+"    }");
 
         if (need_args)
             prcode(fp,

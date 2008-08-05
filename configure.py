@@ -1,12 +1,12 @@
 # This script handles the SIP configuration and generates the Makefiles.
 #
 # Copyright (c) 2008 Riverbank Computing Limited <info@riverbankcomputing.com>
-# 
+#
 # This file is part of SIP.
-# 
+#
 # This copy of SIP is licensed for use under the terms of the SIP License
 # Agreement.  See the file LICENSE for more details.
-# 
+#
 # SIP is supplied WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
@@ -372,7 +372,7 @@ def main(argv):
         elif opt == "-p":
             if arg not in platform_specs:
                 usage()
-            
+
             opt_platform = arg
         elif opt == "-s":
             sdk = arg
