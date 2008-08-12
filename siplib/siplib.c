@@ -472,7 +472,6 @@ static int importComponents(void);
 static void *getComplexCppPtr(sipWrapper *w, sipWrapperType *type);
 static PyObject *make_voidptr(void *voidptr, SIP_SSIZE_T size, int rw);
 
-
 /*
  * The Python module initialisation function.
  */
@@ -502,7 +501,6 @@ PyMODINIT_FUNC initsip(void)
 
     int rc;
     PyObject *mod, *mod_dict, *obj;
-
 #ifdef WITH_THREAD
     PyEval_InitThreads();
 #endif
@@ -7541,6 +7539,8 @@ static void sipWrapper_dealloc(sipWrapper *self)
      * thread resulting in a crash.
      */
     PyObject_GC_UnTrack((PyObject *)self);
+    
+    sipWrapper_clear(self);
 
     if (getPtrTypeDef(self, &td) != NULL)
     {
@@ -7561,12 +7561,6 @@ static void sipWrapper_dealloc(sipWrapper *self)
             td->td_dealloc(self);
     }
 
-    /*
-     * Now that the C++ object no longer exists we can tidy up the Python
-     * object.  We used to do this first but that meant lambda slots were
-     * removed too soon (if they were connected to QObject.destroyed()).
-     */
-    sipWrapper_clear(self);
 #ifdef SIP_QT
     while (self->pySigList != NULL)
     {
