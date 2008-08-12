@@ -223,13 +223,10 @@ def set_platform_directories():
 
     if sys.platform == "win32":
         if sysconfig.python_build:
-            if os.path.splitext(sys.executable)[0].endswith('_d'):
-                plat_py_lib_dir = sysconfig.project_base + '\\pcbuild'
-            else:
-                try:
-                    plat_py_lib_dir = sysconfig.project_base
-                except AttributeError:
-                    plat_py_lib_dir = sysconfig.get_python_inc() + '\\..\\pcbuild'
+            try:
+                plat_py_lib_dir = sysconfig.project_base
+            except AttributeError:
+                plat_py_lib_dir = sysconfig.get_python_inc() + '\\..\\pcbuild'
         else:
             plat_py_lib_dir = sys.prefix + "\\libs"
         plat_bin_dir = sys.exec_prefix
