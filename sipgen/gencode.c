@@ -2252,7 +2252,7 @@ static void generateOrdinaryFunction(moduleDef *mod, classDef *cd,
 "    if (!SIP_THREAD_CHECK) {\n"
 "        SIP_THREAD_ERROR\n"
 "        return NULL;\n"
-"    }");
+"    }\n");
 
     while (od != NULL)
     {
@@ -4766,7 +4766,11 @@ static void generateSlot(moduleDef *mod, classDef *cd, enumDef *ed,
 
 int is_wxobject(classDef* cd)
 {
-	classList* superClass;	
+	classList* superClass;
+	
+	if (0 == strcmp("Object", cd->pyname))
+		return 1;
+	
 	for (superClass = cd->supers; superClass; superClass = superClass->next)
 		if (0 == strcmp("Object", superClass->cd->pyname))
 			return 1;
@@ -5372,7 +5376,7 @@ static void generateShadowCode(sipSpec *pt, moduleDef *mod, classDef *cd,
 "    if (!SIP_THREAD_CHECK) {\n"
 "        SIP_THREAD_ERROR\n"
 "        return;\n"
-"    }");
+"    }\n");
 
         prcode(fp,
 "    sipCommonCtor(%s,%d);\n"
@@ -8649,7 +8653,7 @@ static void generateTypeInit(classDef *cd, FILE *fp)
 "    if (!SIP_THREAD_CHECK) {\n"
 "        SIP_THREAD_ERROR\n"
 "        return NULL;\n"
-"    }");
+"    }\n");
 
     /*
      * Generate the code that parses the Python arguments and calls the
@@ -9062,7 +9066,7 @@ static void generateFunction(memberDef *md, overDef *overs, classDef *cd,
 "    if (!SIP_THREAD_CHECK) {\n"
 "        SIP_THREAD_ERROR\n"
 "        return NULL;\n"
-"    }");
+"    }\n");
 
         if (need_args)
             prcode(fp,
