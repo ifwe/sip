@@ -2247,7 +2247,7 @@ static void generateOrdinaryFunction(moduleDef *mod, classDef *cd,
     if (!noThreadCheck(md) && thread_check && 
     		strcmp("SEHGuard", meth_name) && strcmp("CallAfter", meth_name) && strcmp("IsMainThread", meth_name) && 
     		strcmp("SipNewThread", meth_name) && strcmp("SipEndThread", meth_name) && strcmp("GetApp", meth_name) &&
-    		strcmp("GetTopLevelWindows", meth_name))
+    		strcmp("GetTopLevelWindows", meth_name) && strcmp("OnFatalException", meth_name))
         prcode(fp,
 "    if (!SIP_THREAD_CHECK) {\n"
 "        SIP_THREAD_ERROR\n"
@@ -4772,7 +4772,7 @@ int is_wxobject(classDef* cd)
 		return 1;
 	
 	for (superClass = cd->supers; superClass; superClass = superClass->next)
-		if (0 == strcmp("Object", superClass->cd->pyname))
+		if (0 == strcmp("Object", superClass->cd->pyname) || is_wxobject(superClass->cd))
 			return 1;
 	
 	return 0;
@@ -4917,9 +4917,10 @@ static void generateClassFunctions(sipSpec *pt, moduleDef *mod, classDef *cd,
             prcode(fp,
 "    if (!wxIsMainThread()) {\n"
 "        wxCriticalSectionLocker locker(wxPendingDeleteCS);\n"
-"        wxPendingDelete.Append(reinterpret_cast<%U *>(sipCppV));\n"
+"        if (!wxPendingDelete.Member(reinterpret_cast<%U *>(sipCppV)))"
+"            wxPendingDelete.Append(reinterpret_cast<%U *>(sipCppV));\n"
 "    } else {\n"
-"\n", cd);
+"\n", cd, cd);
             }
             
             if (rgil)
