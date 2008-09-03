@@ -555,8 +555,11 @@ PyMODINIT_FUNC initsip(void)
     PyDict_SetItemString(mod_dict, "wrapper", (PyObject *)&sipWrapper_Type);
     PyDict_SetItemString(mod_dict, "voidptr", (PyObject *)&sipVoidPtr_Type);
 
-    sipExcDeadObject = PyErr_NewException("sip.DeadObjectException", NULL, NULL);
-    PyDict_SetItemString(mod_dict, "DeadObjectException", sipExcDeadObject);
+    if ((sipExcDeadObject = PyErr_NewException("sip.DeadObjectException", NULL, NULL)) != NULL)
+    {    
+        PyDict_SetItemString(mod_dict, "DeadObjectException", sipExcDeadObject);
+        Py_DECREF(sipExcDeadObject);
+    }
 
     /* Initialise the module if it hasn't already been done. */
     if (sipInterpreter == NULL)
