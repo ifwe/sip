@@ -4910,7 +4910,7 @@ static void generateClassFunctions(sipSpec *pt, moduleDef *mod, classDef *cd,
              * fully understand C++).
              */
             
-            if (is_wxobject(cd))
+            if (0 && is_wxobject(cd))
             {
             
             
@@ -4954,7 +4954,7 @@ static void generateClassFunctions(sipSpec *pt, moduleDef *mod, classDef *cd,
                     );
         }
         
-        if (is_wxobject(cd) && (hasShadow(cd) || isPublicDtor(cd)) && cd->dealloccode == NULL)
+        if (0 && is_wxobject(cd) && (hasShadow(cd) || isPublicDtor(cd)) && cd->dealloccode == NULL)
         	prcode(fp, "    }\n");
 
         prcode(fp,
