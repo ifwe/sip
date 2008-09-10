@@ -1356,7 +1356,8 @@ static void transformVariableList(sipSpec *pt)
     varDef *vd;
 
     for (vd = pt->vars; vd != NULL; vd = vd->next)
-        resolveVariableType(pt, vd);
+        if (vd->ecd == NULL || !isTemplateClass(vd->ecd))
+            resolveVariableType(pt, vd);
 }
 
 
@@ -3043,8 +3044,15 @@ static void assignEnumNrs(sipSpec *pt)
     enumDef *ed;
 
     for (ed = pt->enums; ed != NULL; ed = ed->next)
-        if (ed->fqcname != NULL)
-            ed->enumnr = ed->module->nrenums++;
+    {
+        if (ed->fqcname == NULL)
+            continue;
+
+        if (ed->ecd != NULL && isTemplateClass(ed->ecd))
+            continue;
+
+        ed->enumnr = ed->module->nrenums++;
+    }
 }
 
 
