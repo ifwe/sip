@@ -1,3 +1,13 @@
+2008/09/12 12:39:06  phil
+Fixed the handling of instance variables so that a copy is taken by the getter,
+rather than wrapping the variable itself.
+
+
+2008/09/08 10:45:20  phil
+Removed the special handing of some Qt classes related to metatype
+registration.
+
+
 2008/09/03  9:39:31  phil
 Changed the handling of the registration of Qt meta-types to for PyQt's
 improved QVariant support.
