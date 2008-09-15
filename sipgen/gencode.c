@@ -4383,7 +4383,7 @@ static int generateObjToCppConversion(argDef *ad,FILE *fp)
 
     case bool_type:
     case cbool_type:
-        rhs = "(bool)PyInt_AsLong(sipPy)";
+        rhs = "0 != PyInt_AsLong(sipPy)";
         break;
 
     case ushort_type:
@@ -4933,15 +4933,17 @@ static void generateClassFunctions(sipSpec *pt, moduleDef *mod, classDef *cd,
              * fully understand C++).
              */
             
-            if (0 && is_wxobject(cd))
+            if (is_wxobject(cd))
             {
             
             
             prcode(fp,
 "    if (!wxIsMainThread()) {\n"
+"        Py_BEGIN_ALLOW_THREADS\n"
 "        wxCriticalSectionLocker locker(wxPendingDeleteCS);\n"
 "        if (!wxPendingDelete.Member(reinterpret_cast<%U *>(sipCppV)))"
 "            wxPendingDelete.Append(reinterpret_cast<%U *>(sipCppV));\n"
+"        Py_END_ALLOW_THREADS\n"
 "    } else {\n"
 "\n", cd, cd);
             }
@@ -4977,7 +4979,7 @@ static void generateClassFunctions(sipSpec *pt, moduleDef *mod, classDef *cd,
                     );
         }
         
-        if (0 && is_wxobject(cd) && (hasShadow(cd) || isPublicDtor(cd)) && cd->dealloccode == NULL)
+        if (is_wxobject(cd) && (hasShadow(cd) || isPublicDtor(cd)) && cd->dealloccode == NULL)
         	prcode(fp, "    }\n");
 
         prcode(fp,
