@@ -4938,44 +4938,72 @@ static void generateClassFunctions(sipSpec *pt, moduleDef *mod, classDef *cd,
             
             
             prcode(fp,
-"    if (!wxIsMainThread()) {\n"
-"        Py_BEGIN_ALLOW_THREADS\n"
-"        wxCriticalSectionLocker locker(wxPendingDeleteCS);\n"
-"        if (!wxPendingDelete.Member(reinterpret_cast<%U *>(sipCppV)))"
-"            wxPendingDelete.Append(reinterpret_cast<%U *>(sipCppV));\n"
-"        Py_END_ALLOW_THREADS\n"
-"    } else {\n"
-"\n", cd, cd);
-            }
-            
+"    if (!wxIsMainThread()) {\n");
             if (rgil)
                 prcode(fp,
-"    Py_BEGIN_ALLOW_THREADS\n"
+"        Py_BEGIN_ALLOW_THREADS\n"
+"        {\n"
+"            wxCriticalSectionLocker locker(wxPendingDeleteCS);\n");
+
+            if (hasShadow(cd))
+            {
+                prcode(fp,
+"            if (state & SIP_DERIVED_CLASS) {\n"
+"                sip%C *objptr = reinterpret_cast<sip%C *>(sipCppV);\n"
+"                if (!wxPendingDelete.Member(objptr))\n"
+"                    wxPendingDelete.Append(objptr);\n", classFQCName(cd), classFQCName(cd));
+                 if (isPublicDtor(cd))
+                     prcode(fp,
+"            } else {\n"
+"                %U *objptr = reinterpret_cast<%U *>(sipCppV);\n"
+"                if (!wxPendingDelete.Member(objptr))\n"
+"                   wxPendingDelete.Append(objptr);\n"
+"            }\n", cd, cd);
+            }
+            else if (isPublicDtor(cd))
+            {
+                prcode(fp,
+"                %U *objptr = reinterpret_cast<%U *>(sipCppV);\n"
+"                if (!wxPendingDelete.Member(objptr))\n"
+"                   wxPendingDelete.Append(objptr);\n", cd, cd);
+            }
+            if (rgil)
+                prcode(fp,
+"        }\n"
+"        Py_END_ALLOW_THREADS\n");
+
+             prcode(fp,
+"    } else {\n");
+            }
+
+            i (rgil)
+                prcode(fp,
+"        Py_BEGIN_ALLOW_THREADS\n"
 "\n"
                     );
             
             if (hasShadow(cd))
             {
                 prcode(fp,
-"    if (state & SIP_DERIVED_CLASS)\n"
-"        delete reinterpret_cast<sip%C *>(sipCppV);\n"
+"        if (state & SIP_DERIVED_CLASS)\n"
+"            delete reinterpret_cast<sip%C *>(sipCppV);\n"
                     , classFQCName(cd));
 
                 if (isPublicDtor(cd))
                     prcode(fp,
-"    else\n"
-"        delete reinterpret_cast<%U *>(sipCppV);\n"
+"        else\n"
+"            delete reinterpret_cast<%U *>(sipCppV);\n"
                         , cd);
             }
             else if (isPublicDtor(cd))
                 prcode(fp,
-"    delete reinterpret_cast<%U *>(sipCppV);\n"
+"        delete reinterpret_cast<%U *>(sipCppV);\n"
                     , cd);
             
             if (rgil)
                 prcode(fp,
 "\n"
-"    Py_END_ALLOW_THREADS\n"
+"        Py_END_ALLOW_THREADS\n"
                     );
         }
         
