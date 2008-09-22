@@ -228,6 +228,7 @@ static int generateSubClassConvertors(sipSpec *pt, moduleDef *mod, FILE *fp);
 static void generateNameCache(sipSpec *pt, FILE *fp);
 static const char *resultOwner(overDef *od);
 
+static int optWxThreadHop() { return 1; }
 
 /*
  * Generate the code from a specification.
@@ -4789,13 +4790,15 @@ static void generateSlot(moduleDef *mod, classDef *cd, enumDef *ed,
 
 int is_wxobject(classDef* cd)
 {
+    static const char* baseclass_name = "Window";
+    
 	classList* superClass;
 	
-	if (0 == strcmp("Object", cd->pyname))
+	if (0 == strcmp(baseclass_name, cd->pyname))
 		return 1;
 	
 	for (superClass = cd->supers; superClass; superClass = superClass->next)
-		if (0 == strcmp("Object", superClass->cd->pyname) || is_wxobject(superClass->cd))
+		if (0 == strcmp(baseclass_name, superClass->cd->pyname) || is_wxobject(superClass->cd))
 			return 1;
 	
 	return 0;
@@ -4933,7 +4936,7 @@ static void generateClassFunctions(sipSpec *pt, moduleDef *mod, classDef *cd,
              * fully understand C++).
              */
             
-            if (is_wxobject(cd))
+            if (optWxThreadHop() && is_wxobject(cd))
             {
             
             
@@ -4942,31 +4945,14 @@ static void generateClassFunctions(sipSpec *pt, moduleDef *mod, classDef *cd,
             if (rgil)
                 prcode(fp,
 "        Py_BEGIN_ALLOW_THREADS\n"
-"        {\n"
-"            wxCriticalSectionLocker locker(wxPendingDeleteCS);\n");
+"        {\n");
 
-            if (hasShadow(cd))
-            {
+            if (optWxThreadHop() && is_wxobject(cd) && (hasShadow(cd) || isPublicDtor(cd)))
                 prcode(fp,
-"            if (state & SIP_DERIVED_CLASS) {\n"
-"                sip%C *objptr = reinterpret_cast<sip%C *>(sipCppV);\n"
-"                if (!wxPendingDelete.Member(objptr))\n"
-"                    wxPendingDelete.Append(objptr);\n", classFQCName(cd), classFQCName(cd));
-                 if (isPublicDtor(cd))
-                     prcode(fp,
-"            } else {\n"
-"                %U *objptr = reinterpret_cast<%U *>(sipCppV);\n"
-"                if (!wxPendingDelete.Member(objptr))\n"
-"                   wxPendingDelete.Append(objptr);\n"
-"            }\n", cd, cd);
-            }
-            else if (isPublicDtor(cd))
-            {
-                prcode(fp,
-"                %U *objptr = reinterpret_cast<%U *>(sipCppV);\n"
-"                if (!wxPendingDelete.Member(objptr))\n"
-"                   wxPendingDelete.Append(objptr);\n", cd, cd);
-            }
+"            wxCriticalSectionLocker locker(wxPendingDeleteCS);\n"
+"            if (!wxPendingDelete.Member(sipCppV))\n"
+"                wxPendingDelete.Append(sipCppV);\n"
+
             if (rgil)
                 prcode(fp,
 "        }\n"
@@ -4976,7 +4962,7 @@ static void generateClassFunctions(sipSpec *pt, moduleDef *mod, classDef *cd,
 "    } else {\n");
             }
 
-            i (rgil)
+            if (rgil)
                 prcode(fp,
 "        Py_BEGIN_ALLOW_THREADS\n"
 "\n"
@@ -4999,6 +4985,13 @@ static void generateClassFunctions(sipSpec *pt, moduleDef *mod, classDef *cd,
                 prcode(fp,
 "        delete reinterpret_cast<%U *>(sipCppV);\n"
                     , cd);
+
+            /* deleting the object now means we should definitely remove it
+               from the pending list (if it's in there) */
+            if (optWxThreadHop() && is_wxobject(cd) && (hasShadow(cd) || isPublicDtor(cd)))
+                prcode(fp,
+"        wxCriticalSectionLocker locker(wxPendingDeleteCS);\n"
+"        wxPendingDelete.DeleteObject(sipCppV);\n");
             
             if (rgil)
                 prcode(fp,
@@ -5007,7 +5000,7 @@ static void generateClassFunctions(sipSpec *pt, moduleDef *mod, classDef *cd,
                     );
         }
         
-        if (is_wxobject(cd) && (hasShadow(cd) || isPublicDtor(cd)) && cd->dealloccode == NULL)
+        if (optWxThreadHop() && is_wxobject(cd) && (hasShadow(cd) || isPublicDtor(cd)) && cd->dealloccode == NULL)
         	prcode(fp, "    }\n");
 
         prcode(fp,
