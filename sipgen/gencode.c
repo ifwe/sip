@@ -4950,8 +4950,8 @@ static void generateClassFunctions(sipSpec *pt, moduleDef *mod, classDef *cd,
             if (optWxThreadHop() && is_wxobject(cd) && (hasShadow(cd) || isPublicDtor(cd)))
                 prcode(fp,
 "            wxCriticalSectionLocker locker(wxPendingDeleteCS);\n"
-"            if (!wxPendingDelete.Member(sipCppV))\n"
-"                wxPendingDelete.Append(sipCppV);\n"
+"            if (!wxPendingDelete.Member(reinterpret_cast<wxObject*>(sipCppV)))\n"
+"                wxPendingDelete.Append(reinterpret_cast<wxObject*>(sipCppV));\n");
 
             if (rgil)
                 prcode(fp,
@@ -4967,6 +4967,10 @@ static void generateClassFunctions(sipSpec *pt, moduleDef *mod, classDef *cd,
 "        Py_BEGIN_ALLOW_THREADS\n"
 "\n"
                     );
+            if (optWxThreadHop() && is_wxobject(cd) && (hasShadow(cd) || isPublicDtor(cd)))
+                prcode(fp,
+"        { wxCriticalSectionLocker locker(wxPendingDeleteCS);\n");
+
             
             if (hasShadow(cd))
             {
@@ -4990,8 +4994,7 @@ static void generateClassFunctions(sipSpec *pt, moduleDef *mod, classDef *cd,
                from the pending list (if it's in there) */
             if (optWxThreadHop() && is_wxobject(cd) && (hasShadow(cd) || isPublicDtor(cd)))
                 prcode(fp,
-"        wxCriticalSectionLocker locker(wxPendingDeleteCS);\n"
-"        wxPendingDelete.DeleteObject(sipCppV);\n");
+"        wxPendingDelete.DeleteObject(reinterpret_cast<wxObject*>(sipCppV)); }\n");
             
             if (rgil)
                 prcode(fp,
