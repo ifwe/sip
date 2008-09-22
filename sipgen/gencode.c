@@ -140,7 +140,7 @@ static void generateBinarySlotCall(classDef *cd, overDef *od, const char *op,
 static void generateNumberSlotCall(overDef *od, char *op, FILE *fp);
 static void generateVariableHandler(classDef *, varDef *, FILE *);
 static int generateObjToCppConversion(argDef *, FILE *);
-static void generateVarClassConversion(varDef *, FILE *);
+static void generateVarClassConversion(varDef *, int, FILE *);
 static void generateVarMember(varDef *vd, FILE *fp);
 static int generateVoidPointers(sipSpec *pt, moduleDef *mod, classDef *cd,
         FILE *fp);
@@ -611,6 +611,11 @@ static void generateInternalAPIHeader(sipSpec *pt, moduleDef *mod,
 "#define sipAssignInstance           sipAPI_%s->api_assign_instance\n"
 "#define sipAssignMappedType         sipAPI_%s->api_assign_mapped_type\n"
 "#define sipRegisterMetaType         sipAPI_%s->api_register_meta_type\n"
+"#define sipWrappedTypeName(wt)      ((wt)->type->td_cname)\n"
+"#define sipDeprecatedCtor           sipAPI_%s->api_deprecated_ctor\n"
+"#define sipDeprecatedMethod         sipAPI_%s->api_deprecated_method\n"
+        ,mname
+        ,mname
         ,mname
         ,mname
         ,mname
@@ -1389,10 +1394,7 @@ static void generateCpp(sipSpec *pt, moduleDef *mod, const char *codeDir,
             prcode(fp,
 "    {\"%s.%P\", ", emname, ed->ecd, ed->pyname->text);
 
-            if (isRenamedEnum(ed) || (ed->ecd != NULL && isRenamedClass(ed->ecd)))
-                prcode(fp, "\"%S\", ", ed->fqcname);
-            else
-                prcode(fp, "NULL, ");
+            prcode(fp, "\"%S\", ", ed->fqcname);
 
             if (ed->ecd == NULL)
                 prcode(fp, "-1");
@@ -3906,7 +3908,7 @@ static void generateVariableHandler(classDef *context, varDef *vd, FILE *fp)
             break;
 
         case class_type:
-            generateVarClassConversion(vd,fp);
+            generateVarClassConversion(vd, needsNew, fp);
             break;
 
         case bool_type:
@@ -4184,12 +4186,12 @@ static void generateVarMember(varDef *vd, FILE *fp)
 /*
  * Generate an variable class conversion fragment.
  */
-static void generateVarClassConversion(varDef *vd,FILE *fp)
+static void generateVarClassConversion(varDef *vd, int is_new, FILE *fp)
 {
     classDef *cd = vd->type.u.cd;
 
     prcode(fp,
-"        sipPy = sipConvertFromInstance(");
+"        sipPy = sipConvertFrom%sInstance(", (is_new ? "New" : ""));
 
     if (isConstArg(&vd->type))
         prcode(fp,"const_cast<%b *>(sipVal)",&vd->type);
@@ -8003,14 +8005,9 @@ static void generateTypeDefinition(sipSpec *pt, classDef *cd, FILE *fp)
 "    \"%s.%P\",\n"
             , mname, cd->ecd, cd->pyname);
 
-    if (isRenamedClass(cd))
-        prcode(fp,
+    prcode(fp,
 "    \"%S\",\n"
-            , classFQCName(cd));
-    else
-        prcode(fp,
-"    0,\n"
-            );
+        , classFQCName(cd));
 
     prcode(fp,
 "    ");
@@ -8769,6 +8766,14 @@ static void generateConstructorCall(classDef *cd,ctorDef *ct,int error_flag,
     prcode(fp,
 "        {\n"
         );
+
+    if (isDeprecatedCtor(ct))
+        /* Note that any temporaries will leak if an exception is raised. */
+        prcode(fp,
+"            if (sipDeprecatedCtor(%N) < 0)\n"
+"                return NULL;\n"
+"\n"
+            , cd->iff->name);
 
     /* Call any pre-hook. */
     if (ct->prehook != NULL)
@@ -9713,6 +9718,24 @@ static void generateFunctionCall(classDef *cd,classDef *ocd,overDef *od,
 "            }\n"
 "\n"
             , cd->iff->name, od->common->pyname);
+
+    if (isDeprecated(od))
+    {
+        /* Note that any temporaries will leak if an exception is raised. */
+        if (cd != NULL)
+            prcode(fp,
+"            if (sipDeprecatedMethod(%N,%N) < 0)\n"
+                , cd->iff->name, od->common->pyname);
+        else
+            prcode(fp,
+"            if (sipDeprecatedMethod(NULL,%N) < 0)\n"
+                , od->common->pyname);
+
+        prcode(fp,
+"                return %s;\n"
+"\n"
+            , ((isVoidReturnSlot(od->common) || isIntReturnSlot(od->common) || isLongReturnSlot(od->common)) ? "-1" : "NULL"));
+    }
 
     /* Call any pre-hook. */
     if (od->prehook != NULL)

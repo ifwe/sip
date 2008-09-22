@@ -78,18 +78,18 @@
 #define CLASS_DTOR_RELEASE_GIL  0x00004000  /* The dtor releases the GIL. */
 #define CLASS_IS_PROTECTED  0x00008000  /* It is protected. */
 #define CLASS_IS_PROTECTED_SAV  0x00010000  /* It is protected (saved). */
-#define CLASS_IS_RENAMED    0x00020000  /* It has a different Python name. */
-#define CLASS_IS_INCOMPLETE 0x00040000  /* The specification is incomplete. */
-#define CLASS_CAN_CREATE    0x00080000  /* It has usable ctors. */
-#define CLASS_IS_EXTERNAL   0x00100000  /* It is external. */
-#define CLASS_IS_DELAYED_DTOR   0x00200000  /* The dtor is delayed. */
-#define CLASS_NO_DEFAULT_CTORS  0x00400000  /* Don't create default ctors. */
-#define CLASS_QOBJECT_SUB   0x00800000  /* It is derived from QObject. */
-#define CLASS_DTOR_HOLD_GIL 0x01000000  /* The dtor holds the GIL. */
-#define CLASS_QT_META_TYPE  0x02000000  /* Register as a Qt meta type. */
-#define CLASS_NO_QMETAOBJECT    0x04000000  /* It has no QMetaObject. */
-#define CLASS_CAN_ASSIGN    0x08000000  /* It has an assignment operator. */
-#define CLASS_IS_TEMPLATE   0x10000000  /* It is a template class. */
+#define CLASS_IS_INCOMPLETE 0x00020000  /* The specification is incomplete. */
+#define CLASS_CAN_CREATE    0x00040000  /* It has usable ctors. */
+#define CLASS_IS_EXTERNAL   0x00080000  /* It is external. */
+#define CLASS_IS_DELAYED_DTOR   0x00100000  /* The dtor is delayed. */
+#define CLASS_NO_DEFAULT_CTORS  0x00200000  /* Don't create default ctors. */
+#define CLASS_QOBJECT_SUB   0x00400000  /* It is derived from QObject. */
+#define CLASS_DTOR_HOLD_GIL 0x00800000  /* The dtor holds the GIL. */
+#define CLASS_QT_META_TYPE  0x01000000  /* Register as a Qt meta type. */
+#define CLASS_NO_QMETAOBJECT    0x02000000  /* It has no QMetaObject. */
+#define CLASS_CAN_ASSIGN    0x04000000  /* It has an assignment operator. */
+#define CLASS_IS_TEMPLATE   0x08000000  /* It is a template class. */
+#define CLASS_IS_DEPRECATED 0x10000000  /* It is deprecated. */
 
 #define hasSigSlots(cd)     ((cd)->classflags & CLASS_HAS_SIGSLOTS)
 #define setHasSigSlots(cd)  ((cd)->classflags |= CLASS_HAS_SIGSLOTS)
@@ -110,8 +110,6 @@
 #define resetWasProtectedClass(cd)  ((cd)->classflags &= ~CLASS_IS_PROTECTED_SAV)
 #define isReleaseGILDtor(c) ((cd)->classflags & CLASS_DTOR_RELEASE_GIL)
 #define setIsReleaseGILDtor(c)  ((cd)->classflags |= CLASS_DTOR_RELEASE_GIL)
-#define isRenamedClass(cd)  ((cd)->classflags & CLASS_IS_RENAMED)
-#define setIsRenamedClass(cd)   ((cd)->classflags |= CLASS_IS_RENAMED)
 #define isIncomplete(cd)    ((cd)->classflags & CLASS_IS_INCOMPLETE)
 #define setIsIncomplete(cd) ((cd)->classflags |= CLASS_IS_INCOMPLETE)
 #define canCreate(cd)       ((cd)->classflags & CLASS_CAN_CREATE)
@@ -136,6 +134,8 @@
 #define isTemplateClass(cd) ((cd)->classflags & CLASS_IS_TEMPLATE)
 #define setIsTemplateClass(cd)  ((cd)->classflags |= CLASS_IS_TEMPLATE)
 #define resetIsTemplateClass(cd)    ((cd)->classflags &= ~CLASS_IS_TEMPLATE)
+#define isDeprecatedClass(cd)   ((cd)->classflags & CLASS_IS_DEPRECATED)
+#define setIsDeprecatedClass(cd)    ((cd)->classflags |= CLASS_IS_DEPRECATED)
 
 #define isPublicDtor(cd)    ((cd)->classflags & SECT_IS_PUBLIC)
 #define setIsPublicDtor(cd) ((cd)->classflags |= SECT_IS_PUBLIC)
@@ -152,6 +152,7 @@
 #define CTOR_CAST           0x00000400  /* The ctor is a cast. */
 #define CTOR_HOLD_GIL       0x00000800  /* The ctor holds the GIL. */
 #define CTOR_XFERRED        0x00001000  /* Ownership is transferred. */
+#define CTOR_IS_DEPRECATED  0x00002000  /* The ctor is deprecated. */
 
 #define isPublicCtor(c)     ((c)->ctorflags & SECT_IS_PUBLIC)
 #define setIsPublicCtor(c)  ((c)->ctorflags |= SECT_IS_PUBLIC)
@@ -169,6 +170,8 @@
 #define setIsHoldGILCtor(c) ((c)->ctorflags |= CTOR_HOLD_GIL)
 #define isResultTransferredCtor(c)  ((c)->ctorflags & CTOR_XFERRED)
 #define setIsResultTransferredCtor(c)   ((c)->ctorflags |= CTOR_XFERRED)
+#define isDeprecatedCtor(c) ((c)->ctorflags & CTOR_IS_DEPRECATED)
+#define setIsDeprecatedCtor(c)  ((c)->ctorflags |= CTOR_IS_DEPRECATED)
 
 
 /* Handle member flags. */
@@ -185,7 +188,6 @@
 /* Handle enum flags.  These are combined with the section flags. */
 
 #define ENUM_WAS_PROT       0x00000100  /* It was defined as protected. */
-#define ENUM_IS_RENAMED     0x00000200  /* It has been renamed. */
 
 #define isProtectedEnum(e)  ((e)->enumflags & SECT_IS_PROT)
 #define setIsProtectedEnum(e)   ((e)->enumflags |= SECT_IS_PROT)
@@ -194,8 +196,6 @@
 #define wasProtectedEnum(e) ((e)->enumflags & ENUM_WAS_PROT)
 #define setWasProtectedEnum(e)  ((e)->enumflags |= ENUM_WAS_PROT)
 #define resetWasProtectedEnum(e)    ((e)->enumflags &= ~ENUM_WAS_PROT)
-#define isRenamedEnum(e)    ((e)->enumflags & ENUM_IS_RENAMED)
-#define setIsRenamedEnum(e) ((e)->enumflags |= ENUM_IS_RENAMED)
 
 
 /* Handle hierarchy flags. */
@@ -227,6 +227,7 @@
 #define OVER_THIS_XFERRED   0x00200000  /* Ownership of this is transferred. */
 #define OVER_IS_GLOBAL      0x00400000  /* It is a global operator. */
 #define OVER_IS_COMPLEMENTARY   0x00800000  /* It is a complementary operator. */
+#define OVER_IS_DEPRECATED  0x01000000  /* It is deprecated. */
 
 #define isPublic(o)         ((o)->overflags & SECT_IS_PUBLIC)
 #define setIsPublic(o)      ((o)->overflags |= SECT_IS_PUBLIC)
@@ -273,6 +274,8 @@
 #define setIsGlobal(o)      ((o)->overflags |= OVER_IS_GLOBAL)
 #define isComplementary(o)  ((o)->overflags & OVER_IS_COMPLEMENTARY)
 #define setIsComplementary(o)   ((o)->overflags |= OVER_IS_COMPLEMENTARY)
+#define isDeprecated(o)     ((o)->overflags & OVER_IS_DEPRECATED)
+#define setIsDeprecated(o)  ((o)->overflags |= OVER_IS_DEPRECATED)
 
 
 /* Handle variable flags. */

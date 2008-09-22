@@ -343,6 +343,7 @@ static void getHooks(optFlags *,char **,char **);
 static int getTransfer(optFlags *);
 static int getReleaseGIL(optFlags *);
 static int getHoldGIL(optFlags *);
+static int getDeprecated(optFlags *);
 static void templateSignature(signatureDef *sd, int result, classTmplDef *tcd, templateDef *td, classDef *ncd);
 static void templateType(argDef *ad, classTmplDef *tcd, templateDef *td, classDef *ncd);
 static int search_back(const char *end, const char *start, const char *target);
@@ -382,7 +383,7 @@ static overDef *instantiateTemplateOverloads(sipSpec *pt, overDef *tod,
 #endif
 
 #if ! defined (YYSTYPE) && ! defined (YYSTYPE_IS_DECLARED)
-#line 118 "parser.y"
+#line 119 "parser.y"
 typedef union YYSTYPE {
     char            qchar;
     char            *text;
@@ -404,7 +405,7 @@ typedef union YYSTYPE {
     classDef        *klass;
 } YYSTYPE;
 /* Line 186 of yacc.c.  */
-#line 408 "parser.c"
+#line 409 "parser.c"
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1
 # define YYSTYPE_IS_TRIVIAL 1
@@ -416,7 +417,7 @@ typedef union YYSTYPE {
 
 
 /* Line 214 of yacc.c.  */
-#line 420 "parser.c"
+#line 421 "parser.c"
 
 #if ! defined (yyoverflow) || YYERROR_VERBOSE
 
@@ -729,41 +730,41 @@ static const short int yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const unsigned short int yyrline[] =
 {
-       0,   308,   308,   309,   312,   312,   331,   332,   333,   334,
-     335,   336,   337,   338,   339,   340,   341,   342,   343,   344,
-     348,   352,   356,   357,   358,   359,   360,   361,   362,   363,
-     364,   365,   368,   369,   370,   371,   372,   373,   374,   375,
-     376,   377,   378,   379,   392,   395,   398,   403,   412,   447,
-     451,   525,   530,   530,   536,   536,   581,   595,   596,   599,
-     603,   612,   623,   623,   663,   664,   667,   667,   694,   695,
-     698,   703,   708,   708,   733,   734,   737,   742,   755,   758,
-     761,   764,   769,   770,   775,   781,   808,   821,   834,   867,
-     870,   875,   876,   892,   895,   898,   903,   908,   913,   916,
-     921,   924,   929,   932,   937,   942,   947,   952,   957,   960,
-     963,   968,   973,   978,   983,   988,   993,   998,  1003,  1008,
-    1014,  1020,  1026,  1035,  1041,  1046,  1052,  1055,  1056,  1067,
-    1067,  1078,  1081,  1086,  1089,  1094,  1095,  1098,  1099,  1102,
-    1103,  1104,  1131,  1132,  1135,  1136,  1139,  1142,  1147,  1148,
-    1166,  1169,  1172,  1175,  1178,  1181,  1186,  1189,  1192,  1195,
-    1198,  1203,  1221,  1222,  1230,  1235,  1245,  1255,  1259,  1263,
-    1267,  1271,  1275,  1279,  1285,  1290,  1296,  1314,  1318,  1341,
-    1341,  1361,  1361,  1388,  1393,  1393,  1408,  1409,  1412,  1413,
-    1416,  1454,  1457,  1462,  1463,  1466,  1467,  1468,  1469,  1470,
-    1471,  1472,  1473,  1474,  1478,  1482,  1493,  1504,  1515,  1526,
-    1537,  1548,  1559,  1560,  1561,  1562,  1573,  1584,  1591,  1598,
-    1605,  1614,  1617,  1622,  1671,  1671,  1672,  1675,  1701,  1704,
-    1711,  1714,  1722,  1725,  1730,  1747,  1772,  1848,  1849,  1850,
-    1851,  1852,  1853,  1854,  1855,  1856,  1857,  1858,  1859,  1860,
-    1861,  1862,  1863,  1864,  1865,  1866,  1867,  1868,  1869,  1870,
-    1871,  1872,  1873,  1874,  1875,  1876,  1879,  1882,  1887,  1890,
-    1898,  1901,  1907,  1911,  1923,  1927,  1933,  1937,  1941,  1947,
-    1950,  1955,  1958,  1963,  2011,  2016,  2022,  2049,  2058,  2067,
-    2076,  2087,  2095,  2110,  2125,  2131,  2137,  2137,  2138,  2141,
-    2142,  2145,  2145,  2146,  2149,  2182,  2188,  2196,  2256,  2259,
-    2267,  2270,  2275,  2279,  2289,  2302,  2305,  2308,  2311,  2314,
-    2317,  2320,  2323,  2326,  2329,  2332,  2335,  2338,  2341,  2344,
-    2347,  2350,  2353,  2356,  2359,  2362,  2365,  2368,  2371,  2374,
-    2379,  2385,  2401,  2404,  2412,  2418,  2425
+       0,   309,   309,   310,   313,   313,   332,   333,   334,   335,
+     336,   337,   338,   339,   340,   341,   342,   343,   344,   345,
+     349,   353,   357,   358,   359,   360,   361,   362,   363,   364,
+     365,   366,   369,   370,   371,   372,   373,   374,   375,   376,
+     377,   378,   379,   380,   393,   396,   399,   404,   413,   448,
+     452,   526,   531,   531,   537,   537,   582,   596,   597,   600,
+     604,   613,   624,   624,   664,   665,   668,   668,   695,   696,
+     699,   704,   709,   709,   734,   735,   738,   743,   756,   759,
+     762,   765,   770,   771,   776,   782,   809,   822,   835,   868,
+     871,   876,   877,   893,   896,   899,   904,   909,   914,   917,
+     922,   925,   930,   933,   938,   943,   948,   953,   958,   961,
+     964,   969,   974,   979,   984,   989,   994,   999,  1004,  1009,
+    1015,  1021,  1027,  1036,  1042,  1047,  1053,  1056,  1057,  1068,
+    1068,  1079,  1082,  1087,  1090,  1095,  1096,  1099,  1100,  1103,
+    1104,  1105,  1132,  1133,  1136,  1137,  1140,  1143,  1148,  1149,
+    1167,  1170,  1173,  1176,  1179,  1182,  1187,  1190,  1193,  1196,
+    1199,  1204,  1222,  1223,  1231,  1236,  1246,  1256,  1260,  1264,
+    1268,  1272,  1276,  1280,  1286,  1291,  1297,  1315,  1319,  1342,
+    1342,  1362,  1362,  1389,  1394,  1394,  1409,  1410,  1413,  1414,
+    1417,  1455,  1458,  1463,  1464,  1467,  1468,  1469,  1470,  1471,
+    1472,  1473,  1474,  1475,  1479,  1483,  1494,  1505,  1516,  1527,
+    1538,  1549,  1560,  1561,  1562,  1563,  1574,  1585,  1592,  1599,
+    1606,  1615,  1618,  1623,  1672,  1672,  1673,  1676,  1702,  1705,
+    1712,  1715,  1723,  1726,  1731,  1748,  1773,  1849,  1850,  1851,
+    1852,  1853,  1854,  1855,  1856,  1857,  1858,  1859,  1860,  1861,
+    1862,  1863,  1864,  1865,  1866,  1867,  1868,  1869,  1870,  1871,
+    1872,  1873,  1874,  1875,  1876,  1877,  1880,  1883,  1888,  1891,
+    1899,  1902,  1908,  1912,  1924,  1928,  1934,  1938,  1942,  1948,
+    1951,  1956,  1959,  1964,  2012,  2017,  2023,  2050,  2059,  2068,
+    2077,  2088,  2096,  2111,  2126,  2132,  2138,  2138,  2139,  2142,
+    2143,  2146,  2146,  2147,  2150,  2183,  2189,  2197,  2257,  2260,
+    2268,  2271,  2276,  2280,  2290,  2303,  2306,  2309,  2312,  2315,
+    2318,  2321,  2324,  2327,  2330,  2333,  2336,  2339,  2342,  2345,
+    2348,  2351,  2354,  2357,  2360,  2363,  2366,  2369,  2372,  2375,
+    2380,  2386,  2402,  2405,  2413,  2419,  2426
 };
 #endif
 
@@ -1984,7 +1985,7 @@ yyreduce:
   switch (yyn)
     {
         case 4:
-#line 312 "parser.y"
+#line 313 "parser.y"
     {
             /*
              * We don't do these in parserEOF() because the parser is reading
@@ -2005,7 +2006,7 @@ yyreduce:
     break;
 
   case 19:
-#line 344 "parser.y"
+#line 345 "parser.y"
     {
             if (notSkipping())
                 appendCodeBlock(&currentSpec->exphdrcode, yyvsp[0].codeb);
@@ -2013,7 +2014,7 @@ yyreduce:
     break;
 
   case 20:
-#line 348 "parser.y"
+#line 349 "parser.y"
     {
             if (notSkipping())
                 appendCodeBlock(&currentModule->hdrcode, yyvsp[0].codeb);
@@ -2021,7 +2022,7 @@ yyreduce:
     break;
 
   case 21:
-#line 352 "parser.y"
+#line 353 "parser.y"
     {
             if (notSkipping())
                 appendCodeBlock(&currentModule->cppcode, yyvsp[0].codeb);
@@ -2029,7 +2030,7 @@ yyreduce:
     break;
 
   case 43:
-#line 379 "parser.y"
+#line 380 "parser.y"
     {
             if (notSkipping())
             {
@@ -2044,21 +2045,21 @@ yyreduce:
     break;
 
   case 45:
-#line 395 "parser.y"
+#line 396 "parser.y"
     {
             appendString(&currentSpec->options, yyvsp[0].text);
         }
     break;
 
   case 46:
-#line 398 "parser.y"
+#line 399 "parser.y"
     {
             appendString(&currentSpec->options, yyvsp[0].text);
         }
     break;
 
   case 47:
-#line 403 "parser.y"
+#line 404 "parser.y"
     {
             if (notSkipping())
             {
@@ -2069,7 +2070,7 @@ yyreduce:
     break;
 
   case 48:
-#line 412 "parser.y"
+#line 413 "parser.y"
     {
             if (notSkipping())
             {
@@ -2106,7 +2107,7 @@ yyreduce:
     break;
 
   case 49:
-#line 447 "parser.y"
+#line 448 "parser.y"
     {
             yyval.exceptionbase.bibase = NULL;
             yyval.exceptionbase.base = NULL;
@@ -2114,7 +2115,7 @@ yyreduce:
     break;
 
   case 50:
-#line 451 "parser.y"
+#line 452 "parser.y"
     {
             exceptionDef *xd;
 
@@ -2190,14 +2191,14 @@ yyreduce:
     break;
 
   case 51:
-#line 525 "parser.y"
+#line 526 "parser.y"
     {
             yyval.codeb = yyvsp[0].codeb;
         }
     break;
 
   case 52:
-#line 530 "parser.y"
+#line 531 "parser.y"
     {
             if (notSkipping())
                 currentMappedType = newMappedType(currentSpec, &yyvsp[-1].memArg, &yyvsp[0].optflags);
@@ -2205,7 +2206,7 @@ yyreduce:
     break;
 
   case 54:
-#line 536 "parser.y"
+#line 537 "parser.y"
     {
             int a;
 
@@ -2252,7 +2253,7 @@ yyreduce:
     break;
 
   case 56:
-#line 581 "parser.y"
+#line 582 "parser.y"
     {
             if (notSkipping())
             {
@@ -2268,7 +2269,7 @@ yyreduce:
     break;
 
   case 59:
-#line 599 "parser.y"
+#line 600 "parser.y"
     {
             if (notSkipping())
                 appendCodeBlock(&currentMappedType->iff->hdrcode, yyvsp[0].codeb);
@@ -2276,7 +2277,7 @@ yyreduce:
     break;
 
   case 60:
-#line 603 "parser.y"
+#line 604 "parser.y"
     {
             if (notSkipping())
             {
@@ -2289,7 +2290,7 @@ yyreduce:
     break;
 
   case 61:
-#line 612 "parser.y"
+#line 613 "parser.y"
     {
             if (notSkipping())
             {
@@ -2302,7 +2303,7 @@ yyreduce:
     break;
 
   case 62:
-#line 623 "parser.y"
+#line 624 "parser.y"
     {
             if (currentSpec -> genc)
                 yyerror("namespace definition not allowed in a C module");
@@ -2322,7 +2323,7 @@ yyreduce:
     break;
 
   case 63:
-#line 638 "parser.y"
+#line 639 "parser.y"
     {
             if (notSkipping())
             {
@@ -2349,7 +2350,7 @@ yyreduce:
     break;
 
   case 66:
-#line 667 "parser.y"
+#line 668 "parser.y"
     {
             qualDef *qd;
 
@@ -2360,7 +2361,7 @@ yyreduce:
     break;
 
   case 67:
-#line 674 "parser.y"
+#line 675 "parser.y"
     {
             qualDef *qd;
             int nrneeded;
@@ -2382,28 +2383,28 @@ yyreduce:
     break;
 
   case 70:
-#line 698 "parser.y"
+#line 699 "parser.y"
     {
             newQualifier(currentModule,-1,-1,yyvsp[0].text,platform_qualifier);
         }
     break;
 
   case 71:
-#line 703 "parser.y"
+#line 704 "parser.y"
     {
             newQualifier(currentModule,-1,-1,yyvsp[0].text,feature_qualifier);
         }
     break;
 
   case 72:
-#line 708 "parser.y"
+#line 709 "parser.y"
     {
             currentTimelineOrder = 0;
         }
     break;
 
   case 73:
-#line 711 "parser.y"
+#line 712 "parser.y"
     {
             qualDef *qd;
             int nrneeded;
@@ -2427,14 +2428,14 @@ yyreduce:
     break;
 
   case 76:
-#line 737 "parser.y"
+#line 738 "parser.y"
     {
             newQualifier(currentModule,currentModule -> nrtimelines,currentTimelineOrder++,yyvsp[0].text,time_qualifier);
         }
     break;
 
   case 77:
-#line 742 "parser.y"
+#line 743 "parser.y"
     {
             if (skipStackPtr >= MAX_NESTED_IF)
                 yyerror("Internal error: increase the value of MAX_NESTED_IF");
@@ -2449,42 +2450,42 @@ yyreduce:
     break;
 
   case 78:
-#line 755 "parser.y"
+#line 756 "parser.y"
     {
             yyval.boolean = platOrFeature(yyvsp[0].text,FALSE);
         }
     break;
 
   case 79:
-#line 758 "parser.y"
+#line 759 "parser.y"
     {
             yyval.boolean = platOrFeature(yyvsp[0].text,TRUE);
         }
     break;
 
   case 80:
-#line 761 "parser.y"
+#line 762 "parser.y"
     {
             yyval.boolean = (platOrFeature(yyvsp[0].text,FALSE) || yyvsp[-2].boolean);
         }
     break;
 
   case 81:
-#line 764 "parser.y"
+#line 765 "parser.y"
     {
             yyval.boolean = (platOrFeature(yyvsp[0].text,TRUE) || yyvsp[-3].boolean);
         }
     break;
 
   case 83:
-#line 770 "parser.y"
+#line 771 "parser.y"
     {
             yyval.boolean = timePeriod(yyvsp[-2].text,yyvsp[0].text);
         }
     break;
 
   case 84:
-#line 775 "parser.y"
+#line 776 "parser.y"
     {
             if (skipStackPtr-- <= 0)
                 yyerror("Too many %End directives");
@@ -2492,7 +2493,7 @@ yyreduce:
     break;
 
   case 85:
-#line 781 "parser.y"
+#line 782 "parser.y"
     {
             optFlag *of;
 
@@ -2521,7 +2522,7 @@ yyreduce:
     break;
 
   case 86:
-#line 808 "parser.y"
+#line 809 "parser.y"
     {
             /* Make sure this is the first mention of a module. */
             if (currentSpec->module != currentModule)
@@ -2536,7 +2537,7 @@ yyreduce:
     break;
 
   case 87:
-#line 821 "parser.y"
+#line 822 "parser.y"
     {
             /* Make sure this is the first mention of a module. */
             if (currentSpec->module != currentModule)
@@ -2551,7 +2552,7 @@ yyreduce:
     break;
 
   case 88:
-#line 834 "parser.y"
+#line 835 "parser.y"
     {
             /* Check the module hasn't already been defined. */
 
@@ -2586,21 +2587,21 @@ yyreduce:
     break;
 
   case 89:
-#line 867 "parser.y"
+#line 868 "parser.y"
     {
             yyval.boolean = FALSE;
         }
     break;
 
   case 90:
-#line 870 "parser.y"
+#line 871 "parser.y"
     {
             yyval.boolean = TRUE;
         }
     break;
 
   case 92:
-#line 876 "parser.y"
+#line 877 "parser.y"
     {
             /*
              * The grammar design is a bit broken and this is the
@@ -2618,175 +2619,175 @@ yyreduce:
     break;
 
   case 93:
-#line 892 "parser.y"
+#line 893 "parser.y"
     {
             yyval.number = -1;
         }
     break;
 
   case 95:
-#line 898 "parser.y"
+#line 899 "parser.y"
     {
             parseFile(NULL, yyvsp[0].text, NULL, FALSE);
         }
     break;
 
   case 96:
-#line 903 "parser.y"
+#line 904 "parser.y"
     {
             parseFile(NULL, yyvsp[0].text, NULL, TRUE);
         }
     break;
 
   case 97:
-#line 908 "parser.y"
+#line 909 "parser.y"
     {
             newImport(yyvsp[0].text);
         }
     break;
 
   case 98:
-#line 913 "parser.y"
+#line 914 "parser.y"
     {
             yyval.codeb = NULL;
         }
     break;
 
   case 99:
-#line 916 "parser.y"
+#line 917 "parser.y"
     {
             yyval.codeb = yyvsp[0].codeb;
         }
     break;
 
   case 100:
-#line 921 "parser.y"
+#line 922 "parser.y"
     {
             yyval.codeb = NULL;
         }
     break;
 
   case 101:
-#line 924 "parser.y"
+#line 925 "parser.y"
     {
             yyval.codeb = yyvsp[0].codeb;
         }
     break;
 
   case 102:
-#line 929 "parser.y"
+#line 930 "parser.y"
     {
             yyval.codeb = NULL;
         }
     break;
 
   case 103:
-#line 932 "parser.y"
+#line 933 "parser.y"
     {
             yyval.codeb = yyvsp[0].codeb;
         }
     break;
 
   case 104:
-#line 937 "parser.y"
+#line 938 "parser.y"
     {
             appendCodeBlock(&currentModule->copying, yyvsp[0].codeb);
         }
     break;
 
   case 105:
-#line 942 "parser.y"
+#line 943 "parser.y"
     {
             yyval.codeb = yyvsp[0].codeb;
         }
     break;
 
   case 106:
-#line 947 "parser.y"
+#line 948 "parser.y"
     {
             yyval.codeb = yyvsp[0].codeb;
         }
     break;
 
   case 107:
-#line 952 "parser.y"
+#line 953 "parser.y"
     {
             yyval.codeb = yyvsp[0].codeb;
         }
     break;
 
   case 108:
-#line 957 "parser.y"
+#line 958 "parser.y"
     {
             yyval.codeb = NULL;
         }
     break;
 
   case 110:
-#line 963 "parser.y"
+#line 964 "parser.y"
     {
             yyval.codeb = yyvsp[0].codeb;
         }
     break;
 
   case 111:
-#line 968 "parser.y"
+#line 969 "parser.y"
     {
             yyval.codeb = yyvsp[0].codeb;
         }
     break;
 
   case 112:
-#line 973 "parser.y"
+#line 974 "parser.y"
     {
             yyval.codeb = yyvsp[0].codeb;
         }
     break;
 
   case 113:
-#line 978 "parser.y"
+#line 979 "parser.y"
     {
             yyval.codeb = yyvsp[0].codeb;
         }
     break;
 
   case 114:
-#line 983 "parser.y"
+#line 984 "parser.y"
     {
             yyval.codeb = yyvsp[0].codeb;
         }
     break;
 
   case 115:
-#line 988 "parser.y"
+#line 989 "parser.y"
     {
             yyval.codeb = yyvsp[0].codeb;
         }
     break;
 
   case 116:
-#line 993 "parser.y"
+#line 994 "parser.y"
     {
             yyval.codeb = yyvsp[0].codeb;
         }
     break;
 
   case 117:
-#line 998 "parser.y"
+#line 999 "parser.y"
     {
             yyval.codeb = yyvsp[0].codeb;
         }
     break;
 
   case 118:
-#line 1003 "parser.y"
+#line 1004 "parser.y"
     {
             yyval.codeb = yyvsp[0].codeb;
         }
     break;
 
   case 119:
-#line 1008 "parser.y"
+#line 1009 "parser.y"
     {
             if (notSkipping())
                 appendCodeBlock(&currentModule->preinitcode, yyvsp[0].codeb);
@@ -2794,7 +2795,7 @@ yyreduce:
     break;
 
   case 120:
-#line 1014 "parser.y"
+#line 1015 "parser.y"
     {
             if (notSkipping())
                 appendCodeBlock(&currentModule->postinitcode, yyvsp[0].codeb);
@@ -2802,7 +2803,7 @@ yyreduce:
     break;
 
   case 121:
-#line 1020 "parser.y"
+#line 1021 "parser.y"
     {
             if (notSkipping())
                 appendCodeBlock(&currentModule->unitcode, yyvsp[0].codeb);
@@ -2810,7 +2811,7 @@ yyreduce:
     break;
 
   case 122:
-#line 1026 "parser.y"
+#line 1027 "parser.y"
     {
             /*
              * This is a no-op and is retained for compatibility
@@ -2821,7 +2822,7 @@ yyreduce:
     break;
 
   case 123:
-#line 1035 "parser.y"
+#line 1036 "parser.y"
     {
             if (inMainModule())
                 appendCodeBlock(&currentSpec -> docs,yyvsp[0].codeb);
@@ -2829,14 +2830,14 @@ yyreduce:
     break;
 
   case 124:
-#line 1041 "parser.y"
+#line 1042 "parser.y"
     {
             appendCodeBlock(&currentSpec -> docs,yyvsp[0].codeb);
         }
     break;
 
   case 125:
-#line 1046 "parser.y"
+#line 1047 "parser.y"
     {
             if (inMainModule())
                 yywarning("%Makefile is ignored, please use the -b flag instead");
@@ -2844,7 +2845,7 @@ yyreduce:
     break;
 
   case 128:
-#line 1056 "parser.y"
+#line 1057 "parser.y"
     {
             yyval.codeb = yyvsp[-1].codeb;
 
@@ -2857,7 +2858,7 @@ yyreduce:
     break;
 
   case 129:
-#line 1067 "parser.y"
+#line 1068 "parser.y"
     {
             if (notSkipping())
             {
@@ -2870,35 +2871,35 @@ yyreduce:
     break;
 
   case 131:
-#line 1078 "parser.y"
+#line 1079 "parser.y"
     {
             yyval.text = NULL;
         }
     break;
 
   case 132:
-#line 1081 "parser.y"
+#line 1082 "parser.y"
     {
             yyval.text = yyvsp[0].text;
         }
     break;
 
   case 133:
-#line 1086 "parser.y"
+#line 1087 "parser.y"
     {
             yyval.text = NULL;
         }
     break;
 
   case 134:
-#line 1089 "parser.y"
+#line 1090 "parser.y"
     {
             yyval.text = yyvsp[0].text;
         }
     break;
 
   case 141:
-#line 1104 "parser.y"
+#line 1105 "parser.y"
     {
             if (notSkipping())
             {
@@ -2927,21 +2928,21 @@ yyreduce:
     break;
 
   case 146:
-#line 1139 "parser.y"
+#line 1140 "parser.y"
     {
             yyval.valp = NULL;
         }
     break;
 
   case 147:
-#line 1142 "parser.y"
+#line 1143 "parser.y"
     {
             yyval.valp = yyvsp[0].valp;
         }
     break;
 
   case 149:
-#line 1148 "parser.y"
+#line 1149 "parser.y"
     {
             valueDef *vd;
  
@@ -2961,84 +2962,84 @@ yyreduce:
     break;
 
   case 150:
-#line 1166 "parser.y"
+#line 1167 "parser.y"
     {
             yyval.qchar = '-';
         }
     break;
 
   case 151:
-#line 1169 "parser.y"
+#line 1170 "parser.y"
     {
             yyval.qchar = '+';
         }
     break;
 
   case 152:
-#line 1172 "parser.y"
+#line 1173 "parser.y"
     {
             yyval.qchar = '*';
         }
     break;
 
   case 153:
-#line 1175 "parser.y"
+#line 1176 "parser.y"
     {
             yyval.qchar = '/';
         }
     break;
 
   case 154:
-#line 1178 "parser.y"
+#line 1179 "parser.y"
     {
             yyval.qchar = '&';
         }
     break;
 
   case 155:
-#line 1181 "parser.y"
+#line 1182 "parser.y"
     {
             yyval.qchar = '|';
         }
     break;
 
   case 156:
-#line 1186 "parser.y"
+#line 1187 "parser.y"
     {
             yyval.qchar = '\0';
         }
     break;
 
   case 157:
-#line 1189 "parser.y"
+#line 1190 "parser.y"
     {
             yyval.qchar = '!';
         }
     break;
 
   case 158:
-#line 1192 "parser.y"
+#line 1193 "parser.y"
     {
             yyval.qchar = '~';
         }
     break;
 
   case 159:
-#line 1195 "parser.y"
+#line 1196 "parser.y"
     {
             yyval.qchar = '-';
         }
     break;
 
   case 160:
-#line 1198 "parser.y"
+#line 1199 "parser.y"
     {
             yyval.qchar = '+';
         }
     break;
 
   case 161:
-#line 1203 "parser.y"
+#line 1204 "parser.y"
     {
             if (yyvsp[-1].qchar != '\0' && yyvsp[0].value.vtype == string_value)
                 yyerror("Invalid unary operator for string");
@@ -3058,7 +3059,7 @@ yyreduce:
     break;
 
   case 163:
-#line 1222 "parser.y"
+#line 1223 "parser.y"
     {
             if (currentSpec -> genc)
                 yyerror("Scoped names are not allowed in a C module");
@@ -3068,14 +3069,14 @@ yyreduce:
     break;
 
   case 164:
-#line 1230 "parser.y"
+#line 1231 "parser.y"
     {
             yyval.scpvalp = text2scopePart(yyvsp[0].text);
         }
     break;
 
   case 165:
-#line 1235 "parser.y"
+#line 1236 "parser.y"
     {
             /*
              * We let the C++ compiler decide if the value is a
@@ -3089,7 +3090,7 @@ yyreduce:
     break;
 
   case 166:
-#line 1245 "parser.y"
+#line 1246 "parser.y"
     {
             fcallDef *fcd;
 
@@ -3103,7 +3104,7 @@ yyreduce:
     break;
 
   case 167:
-#line 1255 "parser.y"
+#line 1256 "parser.y"
     {
             yyval.value.vtype = real_value;
             yyval.value.u.vreal = yyvsp[0].real;
@@ -3111,7 +3112,7 @@ yyreduce:
     break;
 
   case 168:
-#line 1259 "parser.y"
+#line 1260 "parser.y"
     {
             yyval.value.vtype = numeric_value;
             yyval.value.u.vnum = yyvsp[0].number;
@@ -3119,7 +3120,7 @@ yyreduce:
     break;
 
   case 169:
-#line 1263 "parser.y"
+#line 1264 "parser.y"
     {
             yyval.value.vtype = numeric_value;
             yyval.value.u.vnum = 1;
@@ -3127,7 +3128,7 @@ yyreduce:
     break;
 
   case 170:
-#line 1267 "parser.y"
+#line 1268 "parser.y"
     {
             yyval.value.vtype = numeric_value;
             yyval.value.u.vnum = 0;
@@ -3135,7 +3136,7 @@ yyreduce:
     break;
 
   case 171:
-#line 1271 "parser.y"
+#line 1272 "parser.y"
     {
             yyval.value.vtype = numeric_value;
             yyval.value.u.vnum = 0;
@@ -3143,7 +3144,7 @@ yyreduce:
     break;
 
   case 172:
-#line 1275 "parser.y"
+#line 1276 "parser.y"
     {
             yyval.value.vtype = string_value;
             yyval.value.u.vstr = yyvsp[0].text;
@@ -3151,7 +3152,7 @@ yyreduce:
     break;
 
   case 173:
-#line 1279 "parser.y"
+#line 1280 "parser.y"
     {
             yyval.value.vtype = qchar_value;
             yyval.value.u.vqchar = yyvsp[0].qchar;
@@ -3159,7 +3160,7 @@ yyreduce:
     break;
 
   case 174:
-#line 1285 "parser.y"
+#line 1286 "parser.y"
     {
             /* No values. */
 
@@ -3168,7 +3169,7 @@ yyreduce:
     break;
 
   case 175:
-#line 1290 "parser.y"
+#line 1291 "parser.y"
     {
             /* The single or first expression. */
 
@@ -3178,7 +3179,7 @@ yyreduce:
     break;
 
   case 176:
-#line 1296 "parser.y"
+#line 1297 "parser.y"
     {
             /* Check that it wasn't ...(,expression...). */
 
@@ -3198,7 +3199,7 @@ yyreduce:
     break;
 
   case 177:
-#line 1314 "parser.y"
+#line 1315 "parser.y"
     {
             if (notSkipping())
                 newTypedef(currentSpec,currentModule,yyvsp[-1].text,&yyvsp[-2].memArg);
@@ -3206,7 +3207,7 @@ yyreduce:
     break;
 
   case 178:
-#line 1318 "parser.y"
+#line 1319 "parser.y"
     {
             if (notSkipping())
             {
@@ -3231,7 +3232,7 @@ yyreduce:
     break;
 
   case 179:
-#line 1341 "parser.y"
+#line 1342 "parser.y"
     {
             if (currentSpec -> genc && yyvsp[0].scpvalp->next != NULL)
                 yyerror("Namespaces not allowed in a C module");
@@ -3245,7 +3246,7 @@ yyreduce:
     break;
 
   case 180:
-#line 1350 "parser.y"
+#line 1351 "parser.y"
     {
             if (notSkipping())
             {
@@ -3258,12 +3259,12 @@ yyreduce:
     break;
 
   case 181:
-#line 1361 "parser.y"
+#line 1362 "parser.y"
     {currentIsTemplate = TRUE;}
     break;
 
   case 182:
-#line 1361 "parser.y"
+#line 1362 "parser.y"
     {
             if (currentSpec->genc)
                 yyerror("Class templates not allowed in a C module");
@@ -3292,14 +3293,14 @@ yyreduce:
     break;
 
   case 183:
-#line 1388 "parser.y"
+#line 1389 "parser.y"
     {
             yyval.signature = yyvsp[-1].signature;
         }
     break;
 
   case 184:
-#line 1393 "parser.y"
+#line 1394 "parser.y"
     {
             if (currentSpec -> genc)
                 yyerror("Class definition not allowed in a C module");
@@ -3313,7 +3314,7 @@ yyreduce:
     break;
 
   case 185:
-#line 1402 "parser.y"
+#line 1403 "parser.y"
     {
             if (notSkipping())
                 yyval.klass = completeClass(yyvsp[-5].scpvalp, &yyvsp[-2].optflags, yyvsp[-1].boolean);
@@ -3321,7 +3322,7 @@ yyreduce:
     break;
 
   case 190:
-#line 1416 "parser.y"
+#line 1417 "parser.y"
     {
             if (notSkipping())
             {
@@ -3361,21 +3362,21 @@ yyreduce:
     break;
 
   case 191:
-#line 1454 "parser.y"
+#line 1455 "parser.y"
     {
             yyval.boolean = FALSE;
         }
     break;
 
   case 192:
-#line 1457 "parser.y"
+#line 1458 "parser.y"
     {
             yyval.boolean = TRUE;
         }
     break;
 
   case 203:
-#line 1474 "parser.y"
+#line 1475 "parser.y"
     {
             if (notSkipping())
                 appendCodeBlock(&currentScope()->cppcode, yyvsp[0].codeb);
@@ -3383,7 +3384,7 @@ yyreduce:
     break;
 
   case 204:
-#line 1478 "parser.y"
+#line 1479 "parser.y"
     {
             if (notSkipping())
                 appendCodeBlock(&currentScope()->iff->hdrcode, yyvsp[0].codeb);
@@ -3391,7 +3392,7 @@ yyreduce:
     break;
 
   case 205:
-#line 1482 "parser.y"
+#line 1483 "parser.y"
     {
             if (notSkipping())
             {
@@ -3406,7 +3407,7 @@ yyreduce:
     break;
 
   case 206:
-#line 1493 "parser.y"
+#line 1494 "parser.y"
     {
             if (notSkipping())
             {
@@ -3421,7 +3422,7 @@ yyreduce:
     break;
 
   case 207:
-#line 1504 "parser.y"
+#line 1505 "parser.y"
     {
             if (notSkipping())
             {
@@ -3436,7 +3437,7 @@ yyreduce:
     break;
 
   case 208:
-#line 1515 "parser.y"
+#line 1516 "parser.y"
     {
             if (notSkipping())
             {
@@ -3451,7 +3452,7 @@ yyreduce:
     break;
 
   case 209:
-#line 1526 "parser.y"
+#line 1527 "parser.y"
     {
             if (notSkipping())
             {
@@ -3466,7 +3467,7 @@ yyreduce:
     break;
 
   case 210:
-#line 1537 "parser.y"
+#line 1538 "parser.y"
     {
             if (notSkipping())
             {
@@ -3481,7 +3482,7 @@ yyreduce:
     break;
 
   case 211:
-#line 1548 "parser.y"
+#line 1549 "parser.y"
     {
             if (notSkipping())
             {
@@ -3496,7 +3497,7 @@ yyreduce:
     break;
 
   case 215:
-#line 1562 "parser.y"
+#line 1563 "parser.y"
     {
             if (notSkipping())
             {
@@ -3511,7 +3512,7 @@ yyreduce:
     break;
 
   case 216:
-#line 1573 "parser.y"
+#line 1574 "parser.y"
     {
             if (notSkipping())
             {
@@ -3526,7 +3527,7 @@ yyreduce:
     break;
 
   case 217:
-#line 1584 "parser.y"
+#line 1585 "parser.y"
     {
             if (currentSpec -> genc)
                 yyerror("public section not allowed in a C module");
@@ -3537,7 +3538,7 @@ yyreduce:
     break;
 
   case 218:
-#line 1591 "parser.y"
+#line 1592 "parser.y"
     {
             if (currentSpec -> genc)
                 yyerror("protected section not allowed in a C module");
@@ -3548,7 +3549,7 @@ yyreduce:
     break;
 
   case 219:
-#line 1598 "parser.y"
+#line 1599 "parser.y"
     {
             if (currentSpec -> genc)
                 yyerror("private section not allowed in a C module");
@@ -3559,7 +3560,7 @@ yyreduce:
     break;
 
   case 220:
-#line 1605 "parser.y"
+#line 1606 "parser.y"
     {
             if (currentSpec -> genc)
                 yyerror("signals section not allowed in a C module");
@@ -3570,21 +3571,21 @@ yyreduce:
     break;
 
   case 221:
-#line 1614 "parser.y"
+#line 1615 "parser.y"
     {
             yyval.number = 0;
         }
     break;
 
   case 222:
-#line 1617 "parser.y"
+#line 1618 "parser.y"
     {
             yyval.number = SECT_IS_SLOT;
         }
     break;
 
   case 223:
-#line 1622 "parser.y"
+#line 1623 "parser.y"
     {
             /* Note that we allow non-virtual dtors in C modules. */
 
@@ -3635,12 +3636,12 @@ yyreduce:
     break;
 
   case 224:
-#line 1671 "parser.y"
+#line 1672 "parser.y"
     {currentCtorIsExplicit = TRUE;}
     break;
 
   case 227:
-#line 1675 "parser.y"
+#line 1676 "parser.y"
     {
             /* Note that we allow ctors in C modules. */
 
@@ -3668,14 +3669,14 @@ yyreduce:
     break;
 
   case 228:
-#line 1701 "parser.y"
+#line 1702 "parser.y"
     {
             yyval.optsignature = NULL;
         }
     break;
 
   case 229:
-#line 1704 "parser.y"
+#line 1705 "parser.y"
     {
             yyval.optsignature = sipMalloc(sizeof (signatureDef));
 
@@ -3684,14 +3685,14 @@ yyreduce:
     break;
 
   case 230:
-#line 1711 "parser.y"
+#line 1712 "parser.y"
     {
             yyval.optsignature = NULL;
         }
     break;
 
   case 231:
-#line 1714 "parser.y"
+#line 1715 "parser.y"
     {
             yyval.optsignature = sipMalloc(sizeof (signatureDef));
 
@@ -3701,21 +3702,21 @@ yyreduce:
     break;
 
   case 232:
-#line 1722 "parser.y"
+#line 1723 "parser.y"
     {
             yyval.number = FALSE;
         }
     break;
 
   case 233:
-#line 1725 "parser.y"
+#line 1726 "parser.y"
     {
             yyval.number = TRUE;
         }
     break;
 
   case 234:
-#line 1730 "parser.y"
+#line 1731 "parser.y"
     {
             if (notSkipping())
             {
@@ -3736,7 +3737,7 @@ yyreduce:
     break;
 
   case 235:
-#line 1747 "parser.y"
+#line 1748 "parser.y"
     {
             if (notSkipping())
             {
@@ -3765,7 +3766,7 @@ yyreduce:
     break;
 
   case 236:
-#line 1772 "parser.y"
+#line 1773 "parser.y"
     {
             if (notSkipping())
             {
@@ -3843,173 +3844,173 @@ yyreduce:
     break;
 
   case 237:
-#line 1848 "parser.y"
+#line 1849 "parser.y"
     {yyval.text = "__add__";}
     break;
 
   case 238:
-#line 1849 "parser.y"
+#line 1850 "parser.y"
     {yyval.text = "__sub__";}
     break;
 
   case 239:
-#line 1850 "parser.y"
+#line 1851 "parser.y"
     {yyval.text = "__mul__";}
     break;
 
   case 240:
-#line 1851 "parser.y"
+#line 1852 "parser.y"
     {yyval.text = "__div__";}
     break;
 
   case 241:
-#line 1852 "parser.y"
+#line 1853 "parser.y"
     {yyval.text = "__mod__";}
     break;
 
   case 242:
-#line 1853 "parser.y"
+#line 1854 "parser.y"
     {yyval.text = "__and__";}
     break;
 
   case 243:
-#line 1854 "parser.y"
+#line 1855 "parser.y"
     {yyval.text = "__or__";}
     break;
 
   case 244:
-#line 1855 "parser.y"
+#line 1856 "parser.y"
     {yyval.text = "__xor__";}
     break;
 
   case 245:
-#line 1856 "parser.y"
+#line 1857 "parser.y"
     {yyval.text = "__lshift__";}
     break;
 
   case 246:
-#line 1857 "parser.y"
+#line 1858 "parser.y"
     {yyval.text = "__rshift__";}
     break;
 
   case 247:
-#line 1858 "parser.y"
+#line 1859 "parser.y"
     {yyval.text = "__iadd__";}
     break;
 
   case 248:
-#line 1859 "parser.y"
+#line 1860 "parser.y"
     {yyval.text = "__isub__";}
     break;
 
   case 249:
-#line 1860 "parser.y"
+#line 1861 "parser.y"
     {yyval.text = "__imul__";}
     break;
 
   case 250:
-#line 1861 "parser.y"
+#line 1862 "parser.y"
     {yyval.text = "__idiv__";}
     break;
 
   case 251:
-#line 1862 "parser.y"
+#line 1863 "parser.y"
     {yyval.text = "__imod__";}
     break;
 
   case 252:
-#line 1863 "parser.y"
+#line 1864 "parser.y"
     {yyval.text = "__iand__";}
     break;
 
   case 253:
-#line 1864 "parser.y"
+#line 1865 "parser.y"
     {yyval.text = "__ior__";}
     break;
 
   case 254:
-#line 1865 "parser.y"
+#line 1866 "parser.y"
     {yyval.text = "__ixor__";}
     break;
 
   case 255:
-#line 1866 "parser.y"
+#line 1867 "parser.y"
     {yyval.text = "__ilshift__";}
     break;
 
   case 256:
-#line 1867 "parser.y"
+#line 1868 "parser.y"
     {yyval.text = "__irshift__";}
     break;
 
   case 257:
-#line 1868 "parser.y"
+#line 1869 "parser.y"
     {yyval.text = "__invert__";}
     break;
 
   case 258:
-#line 1869 "parser.y"
+#line 1870 "parser.y"
     {yyval.text = "__call__";}
     break;
 
   case 259:
-#line 1870 "parser.y"
+#line 1871 "parser.y"
     {yyval.text = "__getitem__";}
     break;
 
   case 260:
-#line 1871 "parser.y"
+#line 1872 "parser.y"
     {yyval.text = "__lt__";}
     break;
 
   case 261:
-#line 1872 "parser.y"
+#line 1873 "parser.y"
     {yyval.text = "__le__";}
     break;
 
   case 262:
-#line 1873 "parser.y"
+#line 1874 "parser.y"
     {yyval.text = "__eq__";}
     break;
 
   case 263:
-#line 1874 "parser.y"
+#line 1875 "parser.y"
     {yyval.text = "__ne__";}
     break;
 
   case 264:
-#line 1875 "parser.y"
+#line 1876 "parser.y"
     {yyval.text = "__gt__";}
     break;
 
   case 265:
-#line 1876 "parser.y"
+#line 1877 "parser.y"
     {yyval.text = "__ge__";}
     break;
 
   case 266:
-#line 1879 "parser.y"
+#line 1880 "parser.y"
     {
             yyval.number = FALSE;
         }
     break;
 
   case 267:
-#line 1882 "parser.y"
+#line 1883 "parser.y"
     {
             yyval.number = TRUE;
         }
     break;
 
   case 268:
-#line 1887 "parser.y"
+#line 1888 "parser.y"
     {
             yyval.number = 0;
         }
     break;
 
   case 269:
-#line 1890 "parser.y"
+#line 1891 "parser.y"
     {
             if (yyvsp[0].number != 0)
                 yyerror("Abstract virtual function '= 0' expected");
@@ -4019,21 +4020,21 @@ yyreduce:
     break;
 
   case 270:
-#line 1898 "parser.y"
+#line 1899 "parser.y"
     {
             yyval.optflags.nrFlags = 0;
         }
     break;
 
   case 271:
-#line 1901 "parser.y"
+#line 1902 "parser.y"
     {
             yyval.optflags = yyvsp[-1].optflags;
         }
     break;
 
   case 272:
-#line 1907 "parser.y"
+#line 1908 "parser.y"
     {
             yyval.optflags.flags[0] = yyvsp[0].flag;
             yyval.optflags.nrFlags = 1;
@@ -4041,7 +4042,7 @@ yyreduce:
     break;
 
   case 273:
-#line 1911 "parser.y"
+#line 1912 "parser.y"
     {
             /* Check there is room. */
 
@@ -4055,7 +4056,7 @@ yyreduce:
     break;
 
   case 274:
-#line 1923 "parser.y"
+#line 1924 "parser.y"
     {
             yyval.flag.ftype = bool_flag;
             yyval.flag.fname = yyvsp[0].text;
@@ -4063,7 +4064,7 @@ yyreduce:
     break;
 
   case 275:
-#line 1927 "parser.y"
+#line 1928 "parser.y"
     {
             yyval.flag = yyvsp[0].flag;
             yyval.flag.fname = yyvsp[-2].text;
@@ -4071,7 +4072,7 @@ yyreduce:
     break;
 
   case 276:
-#line 1933 "parser.y"
+#line 1934 "parser.y"
     {
             yyval.flag.ftype = name_flag;
             yyval.flag.fvalue.sval = yyvsp[0].text;
@@ -4079,7 +4080,7 @@ yyreduce:
     break;
 
   case 277:
-#line 1937 "parser.y"
+#line 1938 "parser.y"
     {
             yyval.flag.ftype = string_flag;
             yyval.flag.fvalue.sval = yyvsp[0].text;
@@ -4087,7 +4088,7 @@ yyreduce:
     break;
 
   case 278:
-#line 1941 "parser.y"
+#line 1942 "parser.y"
     {
             yyval.flag.ftype = integer_flag;
             yyval.flag.fvalue.ival = yyvsp[0].number;
@@ -4095,35 +4096,35 @@ yyreduce:
     break;
 
   case 279:
-#line 1947 "parser.y"
+#line 1948 "parser.y"
     {
             yyval.codeb = NULL;
         }
     break;
 
   case 280:
-#line 1950 "parser.y"
+#line 1951 "parser.y"
     {
             yyval.codeb = yyvsp[0].codeb;
         }
     break;
 
   case 281:
-#line 1955 "parser.y"
+#line 1956 "parser.y"
     {
             yyval.codeb = NULL;
         }
     break;
 
   case 282:
-#line 1958 "parser.y"
+#line 1959 "parser.y"
     {
             yyval.codeb = yyvsp[0].codeb;
         }
     break;
 
   case 283:
-#line 1963 "parser.y"
+#line 1964 "parser.y"
     {
             int a, nrrxcon, nrrxdis, nrslotcon, nrslotdis, nrarray, nrarraysize;
 
@@ -4173,7 +4174,7 @@ yyreduce:
     break;
 
   case 284:
-#line 2011 "parser.y"
+#line 2012 "parser.y"
     {
             /* No arguments. */
 
@@ -4182,7 +4183,7 @@ yyreduce:
     break;
 
   case 285:
-#line 2016 "parser.y"
+#line 2017 "parser.y"
     {
             /* The single or first argument. */
 
@@ -4192,7 +4193,7 @@ yyreduce:
     break;
 
   case 286:
-#line 2022 "parser.y"
+#line 2023 "parser.y"
     {
             /* Check that it wasn't ...(,arg...). */
             if (yyvsp[-2].signature.nrArgs == 0)
@@ -4221,7 +4222,7 @@ yyreduce:
     break;
 
   case 287:
-#line 2049 "parser.y"
+#line 2050 "parser.y"
     {
             yyval.memArg.atype = signal_type;
             yyval.memArg.argflags = ARG_IS_CONST;
@@ -4234,7 +4235,7 @@ yyreduce:
     break;
 
   case 288:
-#line 2058 "parser.y"
+#line 2059 "parser.y"
     {
             yyval.memArg.atype = slot_type;
             yyval.memArg.argflags = ARG_IS_CONST;
@@ -4247,7 +4248,7 @@ yyreduce:
     break;
 
   case 289:
-#line 2067 "parser.y"
+#line 2068 "parser.y"
     {
             yyval.memArg.atype = anyslot_type;
             yyval.memArg.argflags = ARG_IS_CONST;
@@ -4260,7 +4261,7 @@ yyreduce:
     break;
 
   case 290:
-#line 2076 "parser.y"
+#line 2077 "parser.y"
     {
             yyval.memArg.atype = rxcon_type;
             yyval.memArg.argflags = 0;
@@ -4275,7 +4276,7 @@ yyreduce:
     break;
 
   case 291:
-#line 2087 "parser.y"
+#line 2088 "parser.y"
     {
             yyval.memArg.atype = rxdis_type;
             yyval.memArg.argflags = 0;
@@ -4287,7 +4288,7 @@ yyreduce:
     break;
 
   case 292:
-#line 2095 "parser.y"
+#line 2096 "parser.y"
     {
             yyval.memArg.atype = slotcon_type;
             yyval.memArg.argflags = ARG_IS_CONST;
@@ -4306,7 +4307,7 @@ yyreduce:
     break;
 
   case 293:
-#line 2110 "parser.y"
+#line 2111 "parser.y"
     {
             yyval.memArg.atype = slotdis_type;
             yyval.memArg.argflags = ARG_IS_CONST;
@@ -4325,7 +4326,7 @@ yyreduce:
     break;
 
   case 294:
-#line 2125 "parser.y"
+#line 2126 "parser.y"
     {
             yyval.memArg.atype = qobject_type;
             yyval.memArg.argflags = 0;
@@ -4335,7 +4336,7 @@ yyreduce:
     break;
 
   case 295:
-#line 2131 "parser.y"
+#line 2132 "parser.y"
     {
             yyval.memArg = yyvsp[-1].memArg;
             yyval.memArg.defval = yyvsp[0].valp;
@@ -4343,17 +4344,17 @@ yyreduce:
     break;
 
   case 296:
-#line 2137 "parser.y"
+#line 2138 "parser.y"
     {currentIsStatic = TRUE;}
     break;
 
   case 301:
-#line 2145 "parser.y"
+#line 2146 "parser.y"
     {currentOverIsVirt = TRUE;}
     break;
 
   case 304:
-#line 2149 "parser.y"
+#line 2150 "parser.y"
     {
             if (notSkipping())
             {
@@ -4388,7 +4389,7 @@ yyreduce:
     break;
 
   case 305:
-#line 2182 "parser.y"
+#line 2183 "parser.y"
     {
             yyval.memArg = yyvsp[-2].memArg;
             yyval.memArg.nrderefs = yyvsp[-1].number;
@@ -4398,7 +4399,7 @@ yyreduce:
     break;
 
   case 306:
-#line 2188 "parser.y"
+#line 2189 "parser.y"
     {
             yyval.memArg = yyvsp[-2].memArg;
             yyval.memArg.nrderefs = yyvsp[-1].number;
@@ -4408,7 +4409,7 @@ yyreduce:
     break;
 
   case 307:
-#line 2196 "parser.y"
+#line 2197 "parser.y"
     {
             yyval.memArg = yyvsp[-2].memArg;
             yyval.memArg.name = yyvsp[-1].text;
@@ -4470,14 +4471,14 @@ yyreduce:
     break;
 
   case 308:
-#line 2256 "parser.y"
+#line 2257 "parser.y"
     {
             yyval.number = 0;
         }
     break;
 
   case 309:
-#line 2259 "parser.y"
+#line 2260 "parser.y"
     {
             if (currentSpec -> genc)
                 yyerror("References not allowed in a C module");
@@ -4487,21 +4488,21 @@ yyreduce:
     break;
 
   case 310:
-#line 2267 "parser.y"
+#line 2268 "parser.y"
     {
             yyval.number = 0;
         }
     break;
 
   case 311:
-#line 2270 "parser.y"
+#line 2271 "parser.y"
     {
             yyval.number = yyvsp[-1].number + 1;
         }
     break;
 
   case 312:
-#line 2275 "parser.y"
+#line 2276 "parser.y"
     {
             yyval.memArg.atype = defined_type;
             yyval.memArg.u.snd = yyvsp[0].scpvalp;
@@ -4509,7 +4510,7 @@ yyreduce:
     break;
 
   case 313:
-#line 2279 "parser.y"
+#line 2280 "parser.y"
     {
             templateDef *td;
 
@@ -4523,7 +4524,7 @@ yyreduce:
     break;
 
   case 314:
-#line 2289 "parser.y"
+#line 2290 "parser.y"
     {
             /* In a C module all structures must be defined. */
             if (currentSpec -> genc)
@@ -4540,182 +4541,182 @@ yyreduce:
     break;
 
   case 315:
-#line 2302 "parser.y"
+#line 2303 "parser.y"
     {
             yyval.memArg.atype = ushort_type;
         }
     break;
 
   case 316:
-#line 2305 "parser.y"
+#line 2306 "parser.y"
     {
             yyval.memArg.atype = short_type;
         }
     break;
 
   case 317:
-#line 2308 "parser.y"
+#line 2309 "parser.y"
     {
             yyval.memArg.atype = uint_type;
         }
     break;
 
   case 318:
-#line 2311 "parser.y"
+#line 2312 "parser.y"
     {
             yyval.memArg.atype = uint_type;
         }
     break;
 
   case 319:
-#line 2314 "parser.y"
+#line 2315 "parser.y"
     {
             yyval.memArg.atype = int_type;
         }
     break;
 
   case 320:
-#line 2317 "parser.y"
+#line 2318 "parser.y"
     {
             yyval.memArg.atype = long_type;
         }
     break;
 
   case 321:
-#line 2320 "parser.y"
+#line 2321 "parser.y"
     {
             yyval.memArg.atype = ulong_type;
         }
     break;
 
   case 322:
-#line 2323 "parser.y"
+#line 2324 "parser.y"
     {
             yyval.memArg.atype = longlong_type;
         }
     break;
 
   case 323:
-#line 2326 "parser.y"
+#line 2327 "parser.y"
     {
             yyval.memArg.atype = ulonglong_type;
         }
     break;
 
   case 324:
-#line 2329 "parser.y"
+#line 2330 "parser.y"
     {
             yyval.memArg.atype = float_type;
         }
     break;
 
   case 325:
-#line 2332 "parser.y"
+#line 2333 "parser.y"
     {
             yyval.memArg.atype = double_type;
         }
     break;
 
   case 326:
-#line 2335 "parser.y"
+#line 2336 "parser.y"
     {
             yyval.memArg.atype = bool_type;
         }
     break;
 
   case 327:
-#line 2338 "parser.y"
+#line 2339 "parser.y"
     {
             yyval.memArg.atype = sstring_type;
         }
     break;
 
   case 328:
-#line 2341 "parser.y"
+#line 2342 "parser.y"
     {
             yyval.memArg.atype = ustring_type;
         }
     break;
 
   case 329:
-#line 2344 "parser.y"
+#line 2345 "parser.y"
     {
             yyval.memArg.atype = string_type;
         }
     break;
 
   case 330:
-#line 2347 "parser.y"
+#line 2348 "parser.y"
     {
             yyval.memArg.atype = wstring_type;
         }
     break;
 
   case 331:
-#line 2350 "parser.y"
+#line 2351 "parser.y"
     {
             yyval.memArg.atype = void_type;
         }
     break;
 
   case 332:
-#line 2353 "parser.y"
+#line 2354 "parser.y"
     {
             yyval.memArg.atype = pyobject_type;
         }
     break;
 
   case 333:
-#line 2356 "parser.y"
+#line 2357 "parser.y"
     {
             yyval.memArg.atype = pytuple_type;
         }
     break;
 
   case 334:
-#line 2359 "parser.y"
+#line 2360 "parser.y"
     {
             yyval.memArg.atype = pylist_type;
         }
     break;
 
   case 335:
-#line 2362 "parser.y"
+#line 2363 "parser.y"
     {
             yyval.memArg.atype = pydict_type;
         }
     break;
 
   case 336:
-#line 2365 "parser.y"
+#line 2366 "parser.y"
     {
             yyval.memArg.atype = pycallable_type;
         }
     break;
 
   case 337:
-#line 2368 "parser.y"
+#line 2369 "parser.y"
     {
             yyval.memArg.atype = pyslice_type;
         }
     break;
 
   case 338:
-#line 2371 "parser.y"
+#line 2372 "parser.y"
     {
             yyval.memArg.atype = pytype_type;
         }
     break;
 
   case 339:
-#line 2374 "parser.y"
+#line 2375 "parser.y"
     {
             yyval.memArg.atype = ellipsis_type;
         }
     break;
 
   case 340:
-#line 2379 "parser.y"
+#line 2380 "parser.y"
     {
             /* The single or first type. */
 
@@ -4725,7 +4726,7 @@ yyreduce:
     break;
 
   case 341:
-#line 2385 "parser.y"
+#line 2386 "parser.y"
     {
             /* Check there is nothing after an ellipsis. */
             if (yyvsp[-2].signature.args[yyvsp[-2].signature.nrArgs - 1].atype == ellipsis_type)
@@ -4743,14 +4744,14 @@ yyreduce:
     break;
 
   case 342:
-#line 2401 "parser.y"
+#line 2402 "parser.y"
     {
             yyval.throwlist = NULL;
         }
     break;
 
   case 343:
-#line 2404 "parser.y"
+#line 2405 "parser.y"
     {
             if (currentSpec->genc)
                 yyerror("Exceptions not allowed in a C module");
@@ -4760,7 +4761,7 @@ yyreduce:
     break;
 
   case 344:
-#line 2412 "parser.y"
+#line 2413 "parser.y"
     {
             /* Empty list so use a blank. */
 
@@ -4770,7 +4771,7 @@ yyreduce:
     break;
 
   case 345:
-#line 2418 "parser.y"
+#line 2419 "parser.y"
     {
             /* The only or first exception. */
 
@@ -4781,7 +4782,7 @@ yyreduce:
     break;
 
   case 346:
-#line 2425 "parser.y"
+#line 2426 "parser.y"
     {
             /* Check that it wasn't ...(,arg...). */
 
@@ -4802,7 +4803,7 @@ yyreduce:
     }
 
 /* Line 1010 of yacc.c.  */
-#line 4806 "parser.c"
+#line 4807 "parser.c"
 
   yyvsp -= yylen;
   yyssp -= yylen;
@@ -5027,7 +5028,7 @@ yyreturn:
 }
 
 
-#line 2441 "parser.y"
+#line 2442 "parser.y"
 
 
 
@@ -5562,9 +5563,6 @@ static void finishClass(sipSpec *pt, moduleDef *mod, classDef *cd, optFlags *of)
     checkAttributes(pt, mod, cd->ecd, pyname, FALSE);
     cd->pyname = pyname;
 
-    if (cd->pyname != classBaseName(cd))
-        setIsRenamedClass(cd);
-
     if ((flg = findOptFlag(of, "TypeFlags", integer_flag)) != NULL)
         cd->userflags = flg->fvalue.ival;
 
@@ -5629,6 +5627,9 @@ static void finishClass(sipSpec *pt, moduleDef *mod, classDef *cd, optFlags *of)
             if (cd->defctor == NULL)
                 cd->defctor = last;
         }
+
+        if (getDeprecated(of))
+            setIsDeprecatedClass(cd);
 
         if (findOptFlag(of,"Abstract",bool_flag) != NULL)
         {
@@ -5835,9 +5836,6 @@ static enumDef *newEnum(sipSpec *pt,moduleDef *mod,char *name,optFlags *of,
     ed -> slots = NULL;
     ed -> overs = NULL;
     ed -> next = pt -> enums;
-
-    if (name != NULL && strcmp(ed->pyname->text, name) != 0)
-        setIsRenamedEnum(ed);
 
     pt -> enums = ed;
 
@@ -6838,6 +6836,9 @@ static void newCtor(char *name,int sectFlags,signatureDef *args,
     if (getTransfer(optflgs))
         setIsResultTransferredCtor(ct);
 
+    if (getDeprecated(optflgs))
+        setIsDeprecatedCtor(ct);
+
     if (findOptFlag(optflgs,"NoDerived",bool_flag) != NULL)
     {
         if (cppsig != NULL)
@@ -7079,6 +7080,9 @@ static void newFunction(sipSpec *pt,moduleDef *mod,int sflags,int isstatic,
         setIsReleaseGIL(od);
     else if (getHoldGIL(optflgs))
         setIsHoldGIL(od);
+
+    if (getDeprecated(optflgs))
+        setIsDeprecated(od);
 
     od -> next = NULL;
 
@@ -7850,6 +7854,15 @@ static int getReleaseGIL(optFlags *optflgs)
 static int getHoldGIL(optFlags *optflgs)
 {
     return (findOptFlag(optflgs, "HoldGIL", bool_flag) != NULL);
+}
+
+
+/*
+ * Get the /Deprecated/ option flag.
+ */
+static int getDeprecated(optFlags *optflgs)
+{
+    return (findOptFlag(optflgs, "Deprecated", bool_flag) != NULL);
 }
 
 

@@ -51,7 +51,7 @@ extern "C" {
  * Define the SIP version number.
  */
 #define SIP_VERSION         0x040708
-#define SIP_VERSION_STR     "4.7.8-snapshot-20080912"
+#define SIP_VERSION_STR     "4.7.8-snapshot-20080920"
 
 
 /*
@@ -64,8 +64,11 @@ extern "C" {
  *
  * History:
  *
- * 3.8  Added sip_api_register_meta_type().
+ * 3.8  Added sip_api_register_meta_type(), sip_api_deprecated_ctor() and
+ *      sip_api_deprecated_method().
  *      Added qt_register_meta_type() to the Qt support API.
+ *      The C/C++ names of enums and types are now always defined in the
+ *      relevant structures and don't default to the Python name.
  *
  * 3.7  Added sip_api_convert_from_const_void_ptr(),
  *      sip_api_convert_from_void_ptr_and_size() and
@@ -295,10 +298,13 @@ typedef struct _sipEnumMemberDef {
  * The information describing a named enum.
  */
 typedef struct _sipEnumDef {
-    /* The Python name of the enum. */
+    /*
+     * The Python name of the enum.  This includes the name of the containing
+     * module which should be removed when SIP_API_MAJOR_NR is moved to 4.
+     */
     const char *e_name;
 
-    /* The C/C++ name of the enum, NULL if the same as the Python name. */
+    /* The C/C++ name of the enum. */
     const char *e_cname;
 
     /* The scoping type. */
@@ -524,10 +530,13 @@ typedef struct _sipTypeDef {
     /* Type flags, see the sipType*() macros. */
     int td_flags;
 
-    /* The Python name of the type. */
+    /*
+     * The Python name of the type.  This includes the name of the containing
+     * module which should be removed when SIP_API_MAJOR_NR is moved to 4.
+     */
     const char *td_name;
 
-    /* The C/C++ name of the type, NULL if the same as the Python name. */
+    /* The C/C++ name of the type. */
     const char *td_cname;
 
     /* The scoping type. */
@@ -1285,6 +1294,8 @@ typedef struct _sipAPIDef {
      * The following are not part of the public API.
      */
     void (*api_register_meta_type)(int type, struct _sipWrapperType *py_type);
+    int (*api_deprecated_ctor)(const char *classname);
+    int (*api_deprecated_method)(const char *classname, const char *method);
 } sipAPIDef;
 
 

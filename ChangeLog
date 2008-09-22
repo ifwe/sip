@@ -1,3 +1,18 @@
+2008/09/20 14:16:53  phil
+Added the /Deprecated/ class and function annotation (based on a patch from
+Lorenzo Berni).
+
+
+2008/09/16 18:44:43  phil
+The C/C++ names of enums and types are now always defined in the relevant
+structures rather than defaulting to the Python names.
+Added sipWrappedTypeName() to the private Qt support API.
+
+
+2008/09/16 16:56:06  phil
+The wrapping of instance variables now uses sipConvertFromNew() if possible.
+
+
 2008/09/12 12:39:06  phil
 Fixed the handling of instance variables so that a copy is taken by the getter,
 rather than wrapping the variable itself.

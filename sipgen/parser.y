@@ -90,6 +90,7 @@ static void getHooks(optFlags *,char **,char **);
 static int getTransfer(optFlags *);
 static int getReleaseGIL(optFlags *);
 static int getHoldGIL(optFlags *);
+static int getDeprecated(optFlags *);
 static void templateSignature(signatureDef *sd, int result, classTmplDef *tcd, templateDef *td, classDef *ncd);
 static void templateType(argDef *ad, classTmplDef *tcd, templateDef *td, classDef *ncd);
 static int search_back(const char *end, const char *start, const char *target);
@@ -2972,9 +2973,6 @@ static void finishClass(sipSpec *pt, moduleDef *mod, classDef *cd, optFlags *of)
     checkAttributes(pt, mod, cd->ecd, pyname, FALSE);
     cd->pyname = pyname;
 
-    if (cd->pyname != classBaseName(cd))
-        setIsRenamedClass(cd);
-
     if ((flg = findOptFlag(of, "TypeFlags", integer_flag)) != NULL)
         cd->userflags = flg->fvalue.ival;
 
@@ -3039,6 +3037,9 @@ static void finishClass(sipSpec *pt, moduleDef *mod, classDef *cd, optFlags *of)
             if (cd->defctor == NULL)
                 cd->defctor = last;
         }
+
+        if (getDeprecated(of))
+            setIsDeprecatedClass(cd);
 
         if (findOptFlag(of,"Abstract",bool_flag) != NULL)
         {
@@ -3245,9 +3246,6 @@ static enumDef *newEnum(sipSpec *pt,moduleDef *mod,char *name,optFlags *of,
     ed -> slots = NULL;
     ed -> overs = NULL;
     ed -> next = pt -> enums;
-
-    if (name != NULL && strcmp(ed->pyname->text, name) != 0)
-        setIsRenamedEnum(ed);
 
     pt -> enums = ed;
 
@@ -4248,6 +4246,9 @@ static void newCtor(char *name,int sectFlags,signatureDef *args,
     if (getTransfer(optflgs))
         setIsResultTransferredCtor(ct);
 
+    if (getDeprecated(optflgs))
+        setIsDeprecatedCtor(ct);
+
     if (findOptFlag(optflgs,"NoDerived",bool_flag) != NULL)
     {
         if (cppsig != NULL)
@@ -4489,6 +4490,9 @@ static void newFunction(sipSpec *pt,moduleDef *mod,int sflags,int isstatic,
         setIsReleaseGIL(od);
     else if (getHoldGIL(optflgs))
         setIsHoldGIL(od);
+
+    if (getDeprecated(optflgs))
+        setIsDeprecated(od);
 
     od -> next = NULL;
 
@@ -5260,6 +5264,15 @@ static int getReleaseGIL(optFlags *optflgs)
 static int getHoldGIL(optFlags *optflgs)
 {
     return (findOptFlag(optflgs, "HoldGIL", bool_flag) != NULL);
+}
+
+
+/*
+ * Get the /Deprecated/ option flag.
+ */
+static int getDeprecated(optFlags *optflgs)
+{
+    return (findOptFlag(optflgs, "Deprecated", bool_flag) != NULL);
 }
 
 
