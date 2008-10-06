@@ -283,10 +283,12 @@ void transform(sipSpec *pt)
     }
 
     /* Mark classes that should be registered as Qt meta types. */
+#if SIP_QT
     if (optRegisterTypes(pt))
         for (cd = pt->classes; cd != NULL; cd = cd->next)
             if (generatingCodeForModule(pt, cd->iff->module))
                 registerMetaType(cd);
+#endif
                 
     /* Autogenerate properties */
     if (optAutoProperties(pt))
@@ -3104,6 +3106,33 @@ static int countNonDefaultArgs(argDef args[], int nrArgs)
 }
 
 /*
+ * Adds a variable definition to the module.
+ */
+static void insertVariable(sipSpec *pt, varDef *vd)
+{
+    varDef* curr = pt->vars;
+    varDef* prev = NULL;
+    int cmp;
+
+    /* sorted linked list insert */
+    while (curr) {
+        if (strcmp(curr->pyname->text, vd->pyname->text) >= 0)
+            break;
+
+        prev = curr;
+        curr = curr->next;
+    }
+    
+    if (!prev) {
+        vd->next = pt->vars;
+        pt->vars = vd;
+    } else {
+        prev->next = vd;
+        vd->next = curr;
+    }
+}
+
+/*
  * Add a varDef representing a property for a given getter or setter method.
  */
 static varDef* addOrFindProperty(sipSpec* pt, moduleDef* module, classDef* cd, overDef* over)
@@ -3172,8 +3201,7 @@ static varDef* addOrFindProperty(sipSpec* pt, moduleDef* module, classDef* cd, o
         setIsStaticVar(var);
                 
     /* Append the new variable to the module. */
-    var->next = pt->vars;
-    pt->vars = var;
+    insertVariable(pt, var);
     return var;
 }
 

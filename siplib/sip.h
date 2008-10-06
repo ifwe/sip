@@ -205,8 +205,10 @@ typedef struct _sipWrapperType {
 typedef struct _sipWrapper {
     PyObject_HEAD
 
+#ifdef SIP_USER_OBJECT
     /* For the user to use. */
     PyObject *user;
+#endif
 
     union {
         /* C/C++ object pointer. */
@@ -555,6 +557,9 @@ typedef struct _sipTypeDef {
     /* The table of lazy enum members. */
     sipEnumMemberDef *td_enummembers;
 
+    /* The number of variables. */
+    int td_nrvariables;
+
     /* The variable table. */
     PyMethodDef *td_variables;
 
@@ -614,6 +619,7 @@ typedef struct _sipTypeDef {
     /* The optional PyQt defined information. */
     const void *td_qt;
 #endif
+
 } sipTypeDef;
 
 

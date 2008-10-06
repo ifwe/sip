@@ -2256,10 +2256,10 @@ static void generateOrdinaryFunction(moduleDef *mod, classDef *cd,
     need_intro = TRUE;
 
     meth_name = md->pyname->text;
-    if (!noThreadCheck(md) && thread_check && 
-    		strcmp("SEHGuard", meth_name) && strcmp("CallAfter", meth_name) && strcmp("IsMainThread", meth_name) && 
-    		strcmp("SipNewThread", meth_name) && strcmp("SipEndThread", meth_name) && strcmp("GetApp", meth_name) &&
-    		strcmp("GetTopLevelWindows", meth_name) && strcmp("OnFatalException", meth_name))
+    if (!noThreadCheck(md) && thread_check &&
+            strcmp("SEHGuard", meth_name) && strcmp("CallAfter", meth_name) && strcmp("IsMainThread", meth_name) &&
+            strcmp("SipNewThread", meth_name) && strcmp("SipEndThread", meth_name) && strcmp("GetApp", meth_name) &&
+            strcmp("GetTopLevelWindows", meth_name) && strcmp("OnFatalException", meth_name))
         prcode(fp,
 "    if (!SIP_THREAD_CHECK) {\n"
 "        SIP_THREAD_ERROR\n"
@@ -3415,6 +3415,7 @@ static void generateMappedTypeCpp(mappedTypeDef *mtd, sipSpec *pt, FILE *fp)
 static void generateClassCpp(classDef *cd, sipSpec *pt, FILE *fp)
 {
     varDef *vd;
+    int nr_variables;
     moduleDef *mod = cd->iff->module;
 
     /* Generate any local class code. */
@@ -3425,8 +3426,10 @@ static void generateClassCpp(classDef *cd, sipSpec *pt, FILE *fp)
 
     generateAccessFunctions(pt, mod, cd, fp);
 
+    nr_variables = getNumVariables(pt->vars, cd);
+
     /* Generate the variable and property handlers. */
-    if (hasVarHandlers(cd))
+    if (nr_variables && hasVarHandlers(cd))
     {
         for (vd = pt->vars; vd != NULL; vd = vd->next)
             if (vd->ecd == cd && needsHandler(vd))
@@ -3448,7 +3451,6 @@ static void generateClassCpp(classDef *cd, sipSpec *pt, FILE *fp)
                     ,vd->pyname,vd->fqcname,(isStaticVar(vd) ? "METH_STATIC" : "0"));
 
         prcode(fp,
-"    {0, 0, 0, 0}\n"
 "};\n"
             );
     }
@@ -3606,7 +3608,6 @@ static sortedMethTab *createMethodTable(classDef *cd, int *nrp)
 
     return mtab;
 }
-
 
 /*
  * The qsort helper to compare two sortedMethTab structures based on the Python
@@ -4791,17 +4792,17 @@ static void generateSlot(moduleDef *mod, classDef *cd, enumDef *ed,
 int is_wxobject(classDef* cd)
 {
     static const char* baseclass_name = "Window";
-    
-	classList* superClass;
-	
-	if (0 == strcmp(baseclass_name, cd->pyname))
-		return 1;
-	
-	for (superClass = cd->supers; superClass; superClass = superClass->next)
-		if (0 == strcmp(baseclass_name, superClass->cd->pyname) || is_wxobject(superClass->cd))
-			return 1;
-	
-	return 0;
+
+    classList* superClass;
+
+    if (0 == strcmp(baseclass_name, cd->pyname))
+        return 1;
+
+    for (superClass = cd->supers; superClass; superClass = superClass->next)
+        if (0 == strcmp(baseclass_name, superClass->cd->pyname) || is_wxobject(superClass->cd))
+            return 1;
+
+    return 0;
 }
 
 /*
@@ -4935,11 +4936,11 @@ static void generateClassFunctions(sipSpec *pt, moduleDef *mod, classDef *cd,
              * way to call it which we haven't worked out (because we don't
              * fully understand C++).
              */
-            
+
             if (optWxThreadHop() && is_wxobject(cd))
             {
-            
-            
+
+
             prcode(fp,
 "    if (!wxIsMainThread()) {\n");
             if (rgil)
@@ -4971,7 +4972,7 @@ static void generateClassFunctions(sipSpec *pt, moduleDef *mod, classDef *cd,
                 prcode(fp,
 "        { wxCriticalSectionLocker locker(wxPendingDeleteCS);\n");
 
-            
+
             if (hasShadow(cd))
             {
                 prcode(fp,
@@ -4995,16 +4996,16 @@ static void generateClassFunctions(sipSpec *pt, moduleDef *mod, classDef *cd,
             if (optWxThreadHop() && is_wxobject(cd) && (hasShadow(cd) || isPublicDtor(cd)))
                 prcode(fp,
 "        wxPendingDelete.DeleteObject(reinterpret_cast<wxObject*>(sipCppV)); }\n");
-            
+
             if (rgil)
                 prcode(fp,
 "\n"
 "        Py_END_ALLOW_THREADS\n"
                     );
         }
-        
+
         if (optWxThreadHop() && is_wxobject(cd) && (hasShadow(cd) || isPublicDtor(cd)) && cd->dealloccode == NULL)
-        	prcode(fp, "    }\n");
+            prcode(fp, "    }\n");
 
         prcode(fp,
 "}\n"
@@ -5683,13 +5684,13 @@ static void generateVirtualCatcher(moduleDef *mod, classDef *cd, int virtNr,
 
     if (thread_check)
     {
-        prcode(fp, 
+        prcode(fp,
 "    if (!SIP_THREAD_CHECK) {\n"
 "       SIP_THREAD_ERROR\n");
         generateVirtHandlerErrorReturn(res,fp);
         prcode(fp,
 "    }\n");
-        
+
     }
 
     restoreArgs(od->cppsig);
@@ -8008,6 +8009,21 @@ static void generateSimpleFunctionCall(fcallDef *fcd,FILE *fp)
     prcode(fp,")");
 }
 
+/*
+ * Returns the number of exposed variables in a class.
+ */
+static int getNumVariables(varDef *vd, classDef *cd)
+{
+    int varcount = 0;
+
+    while (vd) {
+        if (vd->ecd == cd && needsHandler(vd))
+            ++varcount;
+        vd = vd->next;
+    }
+
+    return varcount;
+}
 
 /*
  * Generate the type structure that contains all the information needed by the
@@ -8016,7 +8032,7 @@ static void generateSimpleFunctionCall(fcallDef *fcd,FILE *fp)
 static void generateTypeDefinition(sipSpec *pt, classDef *cd, FILE *fp)
 {
     const char *mname, *sep;
-    int is_slots, nr_methods, nr_enums;
+    int is_slots, nr_methods, nr_enums, nr_variables;
     int is_inst_class, is_inst_voidp, is_inst_char, is_inst_string;
     int is_inst_int, is_inst_long, is_inst_ulong, is_inst_longlong;
     int is_inst_ulonglong, is_inst_double, is_inst_enum;
@@ -8085,6 +8101,7 @@ static void generateTypeDefinition(sipSpec *pt, classDef *cd, FILE *fp)
     /* Generate the attributes tables. */
     nr_methods = generateMethodTable(cd,fp);
     nr_enums = generateEnumMemberTable(pt, mod, cd, fp);
+    nr_variables = getNumVariables(pt->vars, cd);
 
     /* Generate each instance table. */
     is_inst_class = generateClasses(pt, mod, cd, fp);
@@ -8202,13 +8219,13 @@ static void generateTypeDefinition(sipSpec *pt, classDef *cd, FILE *fp)
 "    %d, enummembers_%C,\n"
             , nr_enums, classFQCName(cd));
 
-    if (hasVarHandlers(cd))
+    if (nr_variables && hasVarHandlers(cd))
         prcode(fp,
-"    variables_%C,\n"
-            , classFQCName(cd));
+"    %d, variables_%C,\n"
+            ,nr_variables, classFQCName(cd));
     else
         prcode(fp,
-"    0,\n"
+"    0, 0,\n"
             );
 
     if (canCreate(cd))

@@ -25,3 +25,5 @@ sipconfig.py
 .project
 .pydevproject
 
+# temporary benchmark directory
+benchmark/

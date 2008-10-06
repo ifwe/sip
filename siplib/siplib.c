@@ -4475,18 +4475,10 @@ static void findLazyAttr(sipWrapperType *wt, char *name, PyMethodDef **pmdp,
             return;
         }
 
-        /* Try the variables.  Note, these aren't sorted. */
-        if (nsx->td_variables != NULL)
-        {
-            PyMethodDef *md;
-
-            for (md = nsx->td_variables; md->ml_name != NULL; ++md)
-                if (strcmp(name, md->ml_name) == 0)
-                {
-                    *vmdp = md;
-                    return;
-                }
-        }
+        /* Try the variables. */
+        if (nsx->td_nrvariables > 0 &&
+            (*vmdp = (PyMethodDef *)bsearch(name, nsx->td_variables, nsx->td_nrvariables, sizeof (PyMethodDef), compareMethodName)) != NULL)
+            return;
 
         nsx = nsx->td_nsextender;
     }
@@ -4521,7 +4513,6 @@ static int compareEnumMemberName(const void *key,const void *el)
 {
     return strcmp((const char *)key,((const sipEnumMemberDef *)el)->em_name);
 }
-
 
 /*
  * Report a function with invalid argument types.

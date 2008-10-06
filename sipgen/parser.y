@@ -2635,6 +2635,31 @@ static void parseFile(FILE *fp, char *name, moduleDef *prevmod, int optional)
         currentContext = pc;
 }
 
+/*
+ * Adds a variable definition to the module.
+ */
+static void insertVariable(sipSpec *pt, varDef *vd)
+{
+    varDef* curr = pt->vars;
+    varDef* prev = NULL;
+
+    /* sorted linked list insert */
+    while (curr) {
+        if (strcmp(curr->pyname->text, vd->pyname->text) >= 0)
+            break;
+
+        prev = curr;
+        curr = curr->next;
+    }
+    
+    if (!prev) {
+        vd->next = pt->vars;
+        pt->vars = vd;
+    } else {
+        prev->next = vd;
+        vd->next = curr;
+    }
+}
 
 /*
  * Find an interface file, or create a new one.
@@ -3762,8 +3787,7 @@ static void instantiateTemplateVars(sipSpec *pt, classTmplDef *tcd,
             vd->getcode = templateCode(pt, used, vd->getcode, type_names, type_values);
             vd->setcode = templateCode(pt, used, vd->setcode, type_names, type_values);
 
-            vd->next = pt->vars;
-            pt->vars = vd;
+            insertVariable(pt, vd);
         }
 }
 
@@ -4198,12 +4222,11 @@ static void newVar(sipSpec *pt,moduleDef *mod,char *name,int isstatic,
     var -> setcode = scode;
     var -> getter = NULL;
     var -> setter = NULL;
-    var -> next = pt -> vars;
 
     if (isstatic || (escope != NULL && escope->iff->type == namespace_iface))
         setIsStaticVar(var);
 
-    pt -> vars = var;
+    insertVariable(pt, var);
 }
 
 
