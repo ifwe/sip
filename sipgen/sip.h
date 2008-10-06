@@ -1057,6 +1057,7 @@ int optQ_OBJECT4(sipSpec *pt);
 int optAssignmentHelpers(sipSpec *pt);
 void yywarning(char *);
 nameDef *cacheName(sipSpec *pt, const char *name);
+void insertVariable(sipSpec *pt, varDef *vd);
 
 
 /* These are only here because bison publically references them. */

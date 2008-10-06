@@ -5548,7 +5548,7 @@ static void parseFile(FILE *fp, char *name, moduleDef *prevmod, int optional)
 /*
  * Adds a variable definition to the module.
  */
-static void insertVariable(sipSpec *pt, varDef *vd)
+void insertVariable(sipSpec *pt, varDef *vd)
 {
     varDef* curr = pt->vars;
     varDef* prev = NULL;

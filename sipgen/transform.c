@@ -3106,33 +3106,6 @@ static int countNonDefaultArgs(argDef args[], int nrArgs)
 }
 
 /*
- * Adds a variable definition to the module.
- */
-static void insertVariable(sipSpec *pt, varDef *vd)
-{
-    varDef* curr = pt->vars;
-    varDef* prev = NULL;
-    int cmp;
-
-    /* sorted linked list insert */
-    while (curr) {
-        if (strcmp(curr->pyname->text, vd->pyname->text) >= 0)
-            break;
-
-        prev = curr;
-        curr = curr->next;
-    }
-    
-    if (!prev) {
-        vd->next = pt->vars;
-        pt->vars = vd;
-    } else {
-        prev->next = vd;
-        vd->next = curr;
-    }
-}
-
-/*
  * Add a varDef representing a property for a given getter or setter method.
  */
 static varDef* addOrFindProperty(sipSpec* pt, moduleDef* module, classDef* cd, overDef* over)
