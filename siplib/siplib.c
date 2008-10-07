@@ -7015,7 +7015,7 @@ static PyObject *sipWrapperType_getattro(PyObject *obj,PyObject *name)
              */
             pmd = td->td_variables;
 
-            for (i = 0; i < td->td_nrmethods; ++i)
+            for (i = 0; i < td->td_nrvariables; ++i)
             {
                 if ((pmd->ml_flags & METH_STATIC) != 0)
                 {
