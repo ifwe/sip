@@ -7013,33 +7013,34 @@ static PyObject *sipWrapperType_getattro(PyObject *obj,PyObject *name)
              * Do the static variables.  Note that the use of METH_STATIC is
              * historic - METH_CLASS would be more accurate.
              */
-            if ((pmd = td->td_variables) != NULL)
-                while (pmd->ml_name != NULL)
+            pmd = td->td_variables;
+
+            for (i = 0; i < td->td_nrmethods; ++i)
+            {
+                if ((pmd->ml_flags & METH_STATIC) != 0)
                 {
-                    if ((pmd->ml_flags & METH_STATIC) != 0)
+                    int rc;
+                    PyObject *val;
+
+                    if ((val = (*pmd->ml_meth)(obj, NULL)) == NULL)
                     {
-                        int rc;
-                        PyObject *val;
-
-                        if ((val = (*pmd->ml_meth)(obj, NULL)) == NULL)
-                        {
-                            Py_DECREF(dict);
-                            return NULL;
-                        }
-
-                        rc = PyDict_SetItemString(dict, pmd->ml_name, val);
-
-                        Py_DECREF(val);
-
-                        if (rc < 0)
-                        {
-                            Py_DECREF(dict);
-                            return NULL;
-                        }
+                        Py_DECREF(dict);
+                        return NULL;
                     }
 
-                    ++pmd;
+                    rc = PyDict_SetItemString(dict, pmd->ml_name, val);
+
+                    Py_DECREF(val);
+
+                    if (rc < 0)
+                    {
+                        Py_DECREF(dict);
+                        return NULL;
+                    }
                 }
+
+                ++pmd;
+            }
 
             td = td->td_nsextender;
         }
@@ -7746,40 +7747,41 @@ static int getNonStaticVariables(sipWrapperType *wt, sipWrapper *w,
         PyObject **ndict)
 {
     PyMethodDef *pmd;
+    int i;
 
-    if ((pmd = wt->type->td_variables) != NULL)
-        while (pmd->ml_name != NULL)
+    pmd = wt->type->td_variables;
+    for (i = 0; i < wt->type->td_nrvariables; ++i)
+    {
+        if ((pmd->ml_flags & METH_STATIC) == 0)
         {
-            if ((pmd->ml_flags & METH_STATIC) == 0)
+            int rc;
+            PyObject *val, *dict;
+
+            /*
+             * Create a copy of the original dictionary if it hasn't
+             * already been done.
+             */
+            if ((dict = *ndict) == NULL)
             {
-                int rc;
-                PyObject *val, *dict;
-
-                /*
-                 * Create a copy of the original dictionary if it hasn't
-                 * already been done.
-                 */
-                if ((dict = *ndict) == NULL)
-                {
-                    if ((dict = PyDict_Copy(w->dict)) == NULL)
-                        return -1;
-
-                    *ndict = dict;
-                }
-
-                if ((val = (*pmd->ml_meth)((PyObject *)w,NULL)) == NULL)
+                if ((dict = PyDict_Copy(w->dict)) == NULL)
                     return -1;
 
-                rc = PyDict_SetItemString(dict,pmd->ml_name,val);
-
-                Py_DECREF(val);
-
-                if (rc < 0)
-                    return -1;
+                *ndict = dict;
             }
 
-            ++pmd;
+            if ((val = (*pmd->ml_meth)((PyObject *)w,NULL)) == NULL)
+                return -1;
+
+            rc = PyDict_SetItemString(dict,pmd->ml_name,val);
+
+            Py_DECREF(val);
+
+            if (rc < 0)
+                return -1;
         }
+
+        ++pmd;
+    }
 
     return 0;
 }
