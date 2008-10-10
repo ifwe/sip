@@ -125,7 +125,7 @@ static void generateProtectedDeclarations(classDef *, FILE *);
 static void generateProtectedDefinitions(classDef *, FILE *);
 static void generateProtectedCallArgs(overDef *od, FILE *fp);
 static void generateConstructorCall(classDef *, ctorDef *, int, FILE *);
-static void generateHandleResult(overDef *, int, int, char *, FILE *);
+static void generateHandleResult(classDef *, overDef *, int, int, char *, FILE *);
 static void generateOrdinaryFunction(moduleDef *mod, classDef *cd,
         memberDef *md, FILE *fp);
 static void generateSimpleFunctionCall(fcallDef *, FILE *);
@@ -9238,11 +9238,67 @@ static void generateFunctionBody(overDef *od, classDef *cd, classDef *ocd,
     od->pysig = saved;
 }
 
+int typeNameCmp(argDef* ad, const char* s)
+{
+    FILE* fp = fopen(".siptemp.tmp", "w");
+    const char buf[255];
+
+    if (fp == NULL)
+        fatal("could not open temporary file");
+
+    prTypeName(fp, ad, FALSE);
+    fclose(fp);
+
+    fp = fopen(".siptemp.tmp", "r");
+    fgets(buf, 255, fp);
+    fclose(fp);
+
+    return strcmp(s, buf);
+}
+
+static int fastPath(overDef* od)
+{
+    argDef* res;
+    int nrvals;
+
+    nrvals = countNrVals(od);
+
+    /*
+    if (0 == strcmp(od->cppname, "GetCrashCommand"))
+        return 0;
+    */
+
+    if (nrvals == 1 && od->pysig.nrArgs == 0)
+    {
+        res = &od->pysig.result;
+        if (res && res->atype == mapped_type)
+            return 1;
+    }
+
+    return 0;
+}
+
+int countNrVals(overDef* od)
+{
+    int a;
+    int nrvals = 0;
+
+    argDef* res = &od->pysig.result;
+    if (res->atype == void_type && res->nrderefs == 0)
+        res = NULL;
+
+    if (res != NULL)
+        ++nrvals;
+
+    for (a = 0; a < od->pysig.nrArgs; ++a)
+        if (isOutArg(&od->pysig.args[a]))
+            ++nrvals;
+}
 
 /*
  * Generate the code to handle the result of a call to a member function.
  */
-static void generateHandleResult(overDef *od, int isNew, int result_size,
+static void generateHandleResult(classDef *od_cd, overDef *od, int isNew, int result_size,
         char *prefix, FILE *fp)
 {
     char *vname, vnamebuf[50];
@@ -9286,6 +9342,34 @@ static void generateHandleResult(overDef *od, int isNew, int result_size,
             ,prefix);
 
         return;
+    }
+    
+    /* handle some hard coded fast paths */
+    if (res && nrvals == 1 && res->atype == mapped_type && od->methodcode == NULL && od->pysig.nrArgs == 0)
+    {
+        if (typeNameCmp(res, "wxString") == 0)
+        {
+            prcode(fp,
+"            wxString s(");
+
+            if (od_cd)
+                if (isStatic(od))
+                    if (isProtected(od))
+                        prcode(fp,"sip%C::sipProtect_%s()",classFQCName(od_cd),od->cppname);
+                    else
+                        prcode(fp,"%S::%s()",classFQCName(od_cd),od->cppname);
+                else
+                    prcode(fp, "sipCpp->%s()", od->cppname);
+            else
+                prcode(fp, "%s()", od->cppname);
+
+            prcode(fp, ");\n");
+
+            prcode(fp,
+"            return PyUnicode_FromWideChar((wchar_t*)s.c_str(), s.length());\n");
+
+            return;
+        }
     }
 
     /* Handle results that are classes or mapped types separately. */
@@ -9740,7 +9824,7 @@ static void generateFunctionCall(classDef *cd,classDef *ocd,overDef *od,
                  int deref, FILE *fp)
 {
     int needsNew, error_flag = FALSE, newline, is_result, result_size, a,
-            deltemps;
+            deltemps, fastpath = FALSE;
     argDef *res = &od->pysig.result, orig_res;
 
     prcode(fp,
@@ -9778,7 +9862,8 @@ static void generateFunctionCall(classDef *cd,classDef *ocd,overDef *od,
     /* See if sipRes is needed. */
     is_result = (!isInplaceNumberSlot(od->common) &&
              !isInplaceSequenceSlot(od->common) &&
-             (res->atype != void_type || res->nrderefs != 0));
+             (res->atype != void_type || res->nrderefs != 0) &&
+             !fastPath(od));
 
     newline = FALSE;
 
@@ -9928,6 +10013,9 @@ static void generateFunctionCall(classDef *cd,classDef *ocd,overDef *od,
 
         prcode(fp,
 "            ");
+
+        if (fastPath(od))
+            goto fastpath;
 
         if (od->common->slot != cmp_slot && is_result)
         {
@@ -10118,6 +10206,7 @@ static void generateFunctionCall(classDef *cd,classDef *ocd,overDef *od,
         prcode(fp,";\n"
             );
 
+fastpath:
         generateCatch(od->exceptions, &od->pysig, fp);
 
         if (rgil)
@@ -10194,7 +10283,7 @@ static void generateFunctionCall(classDef *cd,classDef *ocd,overDef *od,
             );
     else
     {
-        generateHandleResult(od, needsNew, result_size,
+        generateHandleResult(cd, od, needsNew, result_size,
                 (deltemps ? "return" : "sipResult ="), fp);
 
         /* Delete the temporaries now if we haven't already done so. */
