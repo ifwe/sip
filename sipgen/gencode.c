@@ -9263,15 +9263,11 @@ static int fastPath(overDef* od)
 
     nrvals = countNrVals(od);
 
-    /*
-    if (0 == strcmp(od->cppname, "GetCrashCommand"))
-        return 0;
-    */
-
     if (nrvals == 1 && od->pysig.nrArgs == 0)
     {
         res = &od->pysig.result;
-        if (res && res->atype == mapped_type)
+        if (res && res->atype == mapped_type &&
+            typeNameCmp(res, "wxString") == 0)
             return 1;
     }
 
@@ -9343,7 +9339,7 @@ static void generateHandleResult(classDef *od_cd, overDef *od, int isNew, int re
 
         return;
     }
-    
+
     /* handle some hard coded fast paths */
     if (res && nrvals == 1 && res->atype == mapped_type && od->methodcode == NULL && od->pysig.nrArgs == 0)
     {
