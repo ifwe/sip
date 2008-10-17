@@ -770,6 +770,14 @@ static void generateInternalAPIHeader(sipSpec *pt, moduleDef *mod,
             , mname
             , mname);
 
+    if (strcmp(mname, "_wxcore"))
+    {
+        prcode(fp,
+"typedef void (*wxpy_pending_delete_func)(sipTypeDef *type, void *sipCppV, int state);\n"
+"extern wxpy_pending_delete_func wxpy_add_pending_delete;\n"
+"extern wxpy_pending_delete_func wxpy_remove_pending_delete;\n");
+    }
+
     /*
      * Note that we don't forward declare the virtual handlers.  This is
      * because we would need to #include everything needed for their argument
@@ -1843,6 +1851,14 @@ static void generateCpp(sipSpec *pt, moduleDef *mod, const char *codeDir,
             , mname
             , mname);
 
+    if (strcmp(mname, "_wxcore"))
+    {
+        prcode(fp,
+"\n"
+"wxpy_pending_delete_func wxpy_add_pending_delete;\n"
+"wxpy_pending_delete_func wxpy_remove_pending_delete;\n");
+    }
+
     /* Generate the Python module initialisation function. */
 
     if (mod->container == pt->module)
@@ -1971,6 +1987,12 @@ static void generateCpp(sipSpec *pt, moduleDef *mod, const char *codeDir,
             , mname
             , mname
             , mname);
+
+    if (strcmp(mname, "_wxcore"))
+        prcode(fp,
+"\n"
+"    wxpy_add_pending_delete = (wxpy_pending_delete_func)sipImportSymbol(\"wxpy_add_pending_delete\");\n"
+"    wxpy_remove_pending_delete = (wxpy_pending_delete_func)sipImportSymbol(\"wxpy_remove_pending_delete\");\n");
 
     prcode(fp,
 "}\n"
@@ -4808,6 +4830,13 @@ int is_wxobject(classDef* cd)
     return 0;
 }
 
+static void pending_delete(int add, const char* module_name, classDef *cd, const char* pyobj, const char* state, FILE* fp)
+{
+    const char* op = add ? "add" : "remove";
+    prcode(fp, "wxpy_%s_pending_delete(&sipType_%s_%C, %s, %s);\n", 
+        op, module_name, classFQCName(cd), pyobj, state);
+}
+
 /*
  * Generate the member functions for a class.
  */
@@ -4904,7 +4933,7 @@ static void generateClassFunctions(sipSpec *pt, moduleDef *mod, classDef *cd,
 "\n"
 "/* Call the instance's destructor. */\n"
             );
-
+        
         if (!generating_c)
             prcode(fp,
 "extern \"C\" {static void release_%C(void *, int);}\n"
@@ -4921,7 +4950,6 @@ static void generateClassFunctions(sipSpec *pt, moduleDef *mod, classDef *cd,
             {
                 prcode(fp,
 "    ");
-
                 generateClassFromVoid(cd, "sipCpp", "sipCppV", fp);
 
                 prcode(fp, ";\n"
@@ -4939,31 +4967,15 @@ static void generateClassFunctions(sipSpec *pt, moduleDef *mod, classDef *cd,
              * way to call it which we haven't worked out (because we don't
              * fully understand C++).
              */
-
             if (optWxThreadHop() && is_wxobject(cd))
             {
 
-
-            prcode(fp,
+                prcode(fp,
 "    if (!wxIsMainThread()) {\n");
-            if (rgil)
+                pending_delete(1, cd->iff->module->name, cd, "sipCppV", hasShadow(cd) ? "state" : "0", fp);
                 prcode(fp,
-"        Py_BEGIN_ALLOW_THREADS\n"
-"        {\n");
-
-            if (optWxThreadHop() && is_wxobject(cd) && (hasShadow(cd) || isPublicDtor(cd)))
-                prcode(fp,
-"            wxCriticalSectionLocker locker(wxPendingDeleteCS);\n"
-"            if (!wxPendingDelete.Member(reinterpret_cast<wxObject*>(sipCppV)))\n"
-"                wxPendingDelete.Append(reinterpret_cast<wxObject*>(sipCppV));\n");
-
-            if (rgil)
-                prcode(fp,
-"        }\n"
-"        Py_END_ALLOW_THREADS\n");
-
-             prcode(fp,
 "    } else {\n");
+                pending_delete(0, cd->iff->module->name, cd, "sipCppV", hasShadow(cd) ? "state" : "0", fp);
             }
 
             if (rgil)
@@ -4971,10 +4983,6 @@ static void generateClassFunctions(sipSpec *pt, moduleDef *mod, classDef *cd,
 "        Py_BEGIN_ALLOW_THREADS\n"
 "\n"
                     );
-            if (optWxThreadHop() && is_wxobject(cd) && (hasShadow(cd) || isPublicDtor(cd)))
-                prcode(fp,
-"        { wxCriticalSectionLocker locker(wxPendingDeleteCS);\n");
-
 
             if (hasShadow(cd))
             {
@@ -4993,12 +5001,6 @@ static void generateClassFunctions(sipSpec *pt, moduleDef *mod, classDef *cd,
                 prcode(fp,
 "        delete reinterpret_cast<%U *>(sipCppV);\n"
                     , cd);
-
-            /* deleting the object now means we should definitely remove it
-               from the pending list (if it's in there) */
-            if (optWxThreadHop() && is_wxobject(cd) && (hasShadow(cd) || isPublicDtor(cd)))
-                prcode(fp,
-"        wxPendingDelete.DeleteObject(reinterpret_cast<wxObject*>(sipCppV)); }\n");
 
             if (rgil)
                 prcode(fp,
