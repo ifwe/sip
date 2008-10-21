@@ -51,7 +51,7 @@ extern "C" {
  * Define the SIP version number.
  */
 #define SIP_VERSION         0x040708
-#define SIP_VERSION_STR     "4.7.8-snapshot-20080920"
+#define SIP_VERSION_STR     "4.7.8-snapshot-20081015"
 
 
 /*
@@ -64,11 +64,11 @@ extern "C" {
  *
  * History:
  *
- * 3.8  Added sip_api_register_meta_type(), sip_api_deprecated_ctor() and
- *      sip_api_deprecated_method().
+ * 3.8  Added sip_api_register_meta_type() and sip_api_deprecated().
  *      Added qt_register_meta_type() to the Qt support API.
  *      The C/C++ names of enums and types are now always defined in the
  *      relevant structures and don't default to the Python name.
+ *      Added the 'XE' format characters to sip_api_parse_args().
  *
  * 3.7  Added sip_api_convert_from_const_void_ptr(),
  *      sip_api_convert_from_void_ptr_and_size() and
@@ -1294,8 +1294,7 @@ typedef struct _sipAPIDef {
      * The following are not part of the public API.
      */
     void (*api_register_meta_type)(int type, struct _sipWrapperType *py_type);
-    int (*api_deprecated_ctor)(const char *classname);
-    int (*api_deprecated_method)(const char *classname, const char *method);
+    int (*api_deprecated)(const char *classname, const char *method);
 } sipAPIDef;
 
 

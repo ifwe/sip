@@ -7,7 +7,7 @@
 -----------------
 
 :Contact:   info@riverbankcomputing.com
-:Version:   4.7.8-snapshot-20080920
+:Version:   4.7.8-snapshot-20081015
 :Copyright: Copyright (c) 2008 Riverbank Computing Limited
 
 .. contents::
@@ -17,7 +17,7 @@
 Introduction
 ============
 
-This is the reference guide for SIP 4.7.8-snapshot-20080920.  SIP is a tool for
+This is the reference guide for SIP 4.7.8-snapshot-20081015.  SIP is a tool for
 automatically generating `Python <http://www.python.org>`__ bindings for C and
 C++ libraries.  SIP was originally developed in 1998 for
 `PyQt <http://www.riverbankcomputing.com/software/pyqt/>`__ - the Python
@@ -175,6 +175,16 @@ SIP itself does not require Qt to be installed.
 
 Potential Incompatibilities with Earlier Versions
 =================================================
+
+SIP v4.7.8
+----------
+
+This version allows a Python int object to be passed whenever an enum is
+expected.  This can mean that two signatures that were different with prior
+versions are now the same as far as Python is concerned.  The `Constrained`_
+annotation can now be applied to an enum argument to revert to the earlier
+behaviour.
+
 
 SIP v4.7.3
 ----------
@@ -1093,7 +1103,8 @@ file.
 
     *struct* ::= ``struct`` *name* ``{`` {*class-line*} ``};``
 
-    *typedef* ::= ``typedef`` [*typed-name* | *function-pointer*] ``;``
+    *typedef* ::= ``typedef`` [*typed-name* | *function-pointer*]
+            *typedef-annotations* ``;``
 
     *variable*::= *typed-name* [*variable-annotations*] ``;`` [`%AccessCode`_]
             [`%GetCode`_] [`%SetCode`_]
@@ -1174,6 +1185,8 @@ file.
     *enum-annotations* ::= see `Enum Annotations`_
 
     *function-annotations* ::= see `Function Annotations`_
+
+    *typedef-annotations* ::= see `Typedef Annotations`_
 
     *variable-annotations* ::= see `Variable Annotations`_
 
@@ -3233,8 +3246,8 @@ specification files.
 
 Annotations can either be argument annotations, class annotations, mapped type
 annotations, enum annotations, exception annotations, function annotations,
-license annotations, or variable annotations depending on the context in which
-they can be used.
+license annotations, typedef annotations or variable annotations depending on
+the context in which they can be used.
 
 Annotations are placed between forward slashes (``/``).  Multiple annotations
 are comma separated within the slashes.
@@ -3310,9 +3323,10 @@ when wrapping C or C++ functions with similar signatures.  For example::
     void foo(int);
 
 This boolean annotation specifies that the corresponding argument (which
-should be either ``bool``, ``int``, ``float``, ``double`` or a wrapped class)
-must match the type without any automatic conversions.  In the context of a
-wrapped class the invocation of any `%ConvertToTypeCode`_ is suppressed.
+should be either ``bool``, ``int``, ``float``, ``double``, ``enum`` or a
+wrapped class) must match the type without any automatic conversions.  In the
+context of a wrapped class the invocation of any `%ConvertToTypeCode`_ is
+suppressed.
 
 The following example gets around the above problem::
 
@@ -3776,6 +3790,25 @@ This string annotation specifies the license's type.  No restrictions are
 placed on the contents of the string.
 
 See the `%License`_ directive.
+
+
+Typedef Annotations
+-------------------
+
+NoTypeName
+**********
+
+This boolean annotation specifies that the definition of the type rather than
+the name of the type being defined should be used in the generated code.
+
+Normally a typedef would be defined as follows::
+
+    typedef bool MyBool;
+
+This would result in ``MyBool`` being used in the generated code.
+
+Specifying the annotation means that ``bool`` will be used in the generated
+code instead.
 
 
 Variable Annotations

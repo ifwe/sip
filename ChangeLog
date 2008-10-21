@@ -1,3 +1,47 @@
+2008/10/15 21:28:34  phil
+Fixed problems with the type name handling when the type is a pointer.
+
+
+2008/10/14 10:51:52  phil
+A simple int object can now be passed whenever an enum is expected.  The
+/Constrained/ annotation can be used to suppress this behaviour.  (This has
+been done in anticipation of QVariant being removed from PyQt.  When an enum
+is wrapped in a QVariant it can only be retrieved as an int, so this will
+avoid the need for unexpected casting by an application.)
+
+
+2008/10/12 17:38:07  phil
+...and MacOS.
+
+
+2008/10/12 17:37:21  phil
+The build system now adds #!/bin/sh for scripts on UNIX.
+
+
+2008/10/11 13:59:59  phil
+Made sure that the types used by virtual handlers don't use type names as they
+are shared.
+
+
+2008/10/07 23:49:27  phil
+Typedef type names are now used where possible in generated code instead of the
+type definitions.  This means that the string representation of types (eg. in
+mapped type names) now reflect what the programmer sees, not what the compiler
+sees.
+Typedefs are no looked up and expanded as soon as possible which helps to
+disambiguate template signatures.
+Added the /NoTypeName/ typedef annotation.
+
+
+2008/10/01 12:23:15  phil
+Fixed the calls to PyErr_WarnEx() for Python v2.4 and earlier.
+
+
+2008/09/20 16:54:05  phil
+Consolidated the internal API for raising deprecation warnings.
+Added a deprecation warning for sip.transfer().
+
+
 2008/09/20 14:16:53  phil
 Added the /Deprecated/ class and function annotation (based on a patch from
 Lorenzo Berni).

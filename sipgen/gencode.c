@@ -106,11 +106,12 @@ static void deleteTemps(signatureDef *sd, FILE *fp);
 static void gc_ellipsis(signatureDef *sd, FILE *fp);
 static void generateCallArgs(classDef *, signatureDef *, signatureDef *,
         FILE *);
-static void generateCalledArgs(classDef *, signatureDef *, funcArgType, FILE *);
+static void generateCalledArgs(classDef *, signatureDef *, funcArgType, int,
+        FILE *);
 static void generateVariable(classDef *, argDef *, int, FILE *);
 static void generateNamedValueType(classDef *, argDef *, char *, FILE *);
 static void generateBaseType(classDef *, argDef *, FILE *);
-static void generateNamedBaseType(classDef *, argDef *, char *, FILE *);
+static void generateNamedBaseType(classDef *, argDef *, char *, int, FILE *);
 static void generateTupleBuilder(signatureDef *, FILE *);
 static void generateEmitters(classDef *cd, FILE *fp);
 static void generateEmitter(classDef *, visibleList *, FILE *);
@@ -612,9 +613,7 @@ static void generateInternalAPIHeader(sipSpec *pt, moduleDef *mod,
 "#define sipAssignMappedType         sipAPI_%s->api_assign_mapped_type\n"
 "#define sipRegisterMetaType         sipAPI_%s->api_register_meta_type\n"
 "#define sipWrappedTypeName(wt)      ((wt)->type->td_cname)\n"
-"#define sipDeprecatedCtor           sipAPI_%s->api_deprecated_ctor\n"
-"#define sipDeprecatedMethod         sipAPI_%s->api_deprecated_method\n"
-        ,mname
+"#define sipDeprecated               sipAPI_%s->api_deprecated\n"
         ,mname
         ,mname
         ,mname
@@ -1293,10 +1292,7 @@ static void generateCpp(sipSpec *pt, moduleDef *mod, const char *codeDir,
         mappedTypeDef *mtd;
         argDef type;
 
-        type.argflags = 0;
-        type.name = NULL;
-        type.nrderefs = 0;
-        type.defval = NULL;
+        memset(&type, 0, sizeof (argDef));
 
         prcode(fp,
 "\n"
@@ -3658,6 +3654,8 @@ static void generateConvertToDefinitions(mappedTypeDef *mtd,classDef *cd,
     ifaceFileDef *iff;
     argDef type;
 
+    memset(&type, 0, sizeof (argDef));
+
     if (cd != NULL)
     {
         convtocode = cd->convtocode;
@@ -3676,11 +3674,6 @@ static void generateConvertToDefinitions(mappedTypeDef *mtd,classDef *cd,
         type.atype = mapped_type;
         type.u.mtd = mtd;
     }
-
-    type.argflags = 0;
-    type.name = NULL;
-    type.nrderefs = 0;
-    type.defval = NULL;
 
     /* Generate the type convertors. */
 
@@ -5274,7 +5267,7 @@ static void generateShadowCode(sipSpec *pt, moduleDef *mod, classDef *cd,
 "\n"
 "sip%C::sip%C(",classFQCName(cd),classFQCName(cd));
 
-        generateCalledArgs(cd, ct->cppsig, Definition, fp);
+        generateCalledArgs(cd, ct->cppsig, Definition, TRUE, fp);
 
         prcode(fp,")%X: %S(",ct->exceptions,classFQCName(cd));
 
@@ -5294,7 +5287,7 @@ static void generateShadowCode(sipSpec *pt, moduleDef *mod, classDef *cd,
         {
             prcode(fp,
 "    sipTrace(SIP_TRACE_CTORS,\"sip%C::sip%C(",classFQCName(cd),classFQCName(cd));
-            generateCalledArgs(cd, ct->cppsig, Declaration, fp);
+            generateCalledArgs(cd, ct->cppsig, Declaration, TRUE, fp);
             prcode(fp,")%X (this=0x%%08x)\\n\",this);\n"
 "\n"
                 ,ct->exceptions);
@@ -5535,7 +5528,7 @@ static void generateVirtualCatcher(moduleDef *mod, classDef *cd, int virtNr,
     generateBaseType(cd, &od->cppsig->result, fp);
 
     prcode(fp," sip%C::%O(",classFQCName(cd),od);
-    generateCalledArgs(cd, od->cppsig, Definition, fp);
+    generateCalledArgs(cd, od->cppsig, Definition, TRUE, fp);
     prcode(fp,")%s%X\n"
 "{\n"
         ,(isConst(od) ? " const" : ""),od->exceptions);
@@ -5547,7 +5540,7 @@ static void generateVirtualCatcher(moduleDef *mod, classDef *cd, int virtNr,
 
         generateBaseType(cd, &od->cppsig->result, fp);
         prcode(fp," sip%C::%O(",classFQCName(cd),od);
-        generateCalledArgs(cd, od->cppsig, Declaration, fp);
+        generateCalledArgs(cd, od->cppsig, Declaration, TRUE, fp);
         prcode(fp,")%s%X (this=0x%%08x)\\n\",this);\n"
 "\n"
             ,(isConst(od) ? " const" : ""),od->exceptions);
@@ -5580,7 +5573,7 @@ static void generateVirtualCatcher(moduleDef *mod, classDef *cd, int virtNr,
     if (vhd->cppsig->nrArgs > 0)
     {
         prcode(fp,",");
-        generateCalledArgs(cd, vhd->cppsig, Declaration, fp);
+        generateCalledArgs(cd, vhd->cppsig, Declaration, FALSE, fp);
     }
 
     prcode(fp,");\n"
@@ -6043,7 +6036,7 @@ static void generateProtectedDeclarations(classDef *cd,FILE *fp)
             else
                 prcode(fp, " sipProtect_%s(", od->cppname);
 
-            generateCalledArgs(cd, od->cppsig, Declaration, fp);
+            generateCalledArgs(cd, od->cppsig, Declaration, TRUE, fp);
             prcode(fp,")%s;\n"
                 ,(isConst(od) ? " const" : ""));
         }
@@ -6090,7 +6083,7 @@ static void generateProtectedDefinitions(classDef *cd,FILE *fp)
             else
                 prcode(fp, " sip%C::sipProtect_%s(", classFQCName(cd), mname);
 
-            generateCalledArgs(cd, od->cppsig, Definition, fp);
+            generateCalledArgs(cd, od->cppsig, Definition, TRUE, fp);
             prcode(fp,")%s\n"
 "{\n"
                 ,(isConst(od) ? " const" : ""));
@@ -6226,7 +6219,7 @@ static void generateVirtualHandler(virtHandlerDef *vhd, FILE *fp)
     {
         prcode(fp,",");
 
-        generateCalledArgs(NULL, vhd->cppsig, Definition, fp);
+        generateCalledArgs(NULL, vhd->cppsig, Definition, FALSE, fp);
     }
 
     *vhd->cppsig = saved;
@@ -6984,12 +6977,10 @@ static void generateImportedMappedTypeAPI(mappedTypeDef *mtd, moduleDef *mod,
     const char *imname = mtd->iff->module->name;
     argDef type;
 
+    memset(&type, 0, sizeof (argDef));
+
     type.atype = mapped_type;
     type.u.mtd = mtd;
-    type.argflags = 0;
-    type.name = NULL;
-    type.nrderefs = 0;
-    type.defval = NULL;
 
     prcode(fp,
 "\n"
@@ -7193,7 +7184,7 @@ static void generateShadowClassDeclaration(sipSpec *pt,classDef *cd,FILE *fp)
         prcode(fp,
 "    sip%C(",classFQCName(cd));
 
-        generateCalledArgs(cd, ct->cppsig, Declaration, fp);
+        generateCalledArgs(cd, ct->cppsig, Declaration, TRUE, fp);
 
         prcode(fp,")%X;\n"
             ,ct->exceptions);
@@ -7372,7 +7363,7 @@ void prOverloadDecl(FILE *fp, classDef *context, overDef *od, int defval)
  * Generate typed arguments for a declaration or a definition.
  */
 static void generateCalledArgs(classDef *context, signatureDef *sd,
-        funcArgType ftype, FILE *fp)
+        funcArgType ftype, int use_typename, FILE *fp)
 {
     char name[50];
     int a;
@@ -7389,7 +7380,7 @@ static void generateCalledArgs(classDef *context, signatureDef *sd,
         else
             name[0] = '\0';
 
-        generateNamedBaseType(context, ad, name, fp);
+        generateNamedBaseType(context, ad, name, use_typename, fp);
     }
 }
 
@@ -7495,7 +7486,7 @@ static void generateNamedValueType(classDef *context, argDef *ad, char *name,
     }
 
     resetIsReference(&mod);
-    generateNamedBaseType(context, &mod, name, fp);
+    generateNamedBaseType(context, &mod, name, TRUE, fp);
 }
 
 
@@ -7504,7 +7495,7 @@ static void generateNamedValueType(classDef *context, argDef *ad, char *name,
  */
 static void generateBaseType(classDef *context, argDef *ad, FILE *fp)
 {
-    generateNamedBaseType(context, ad, "", fp);
+    generateNamedBaseType(context, ad, "", TRUE, fp);
 }
 
 
@@ -7512,205 +7503,222 @@ static void generateBaseType(classDef *context, argDef *ad, FILE *fp)
  * Generate a C++ type and name.
  */
 static void generateNamedBaseType(classDef *context, argDef *ad, char *name,
-        FILE *fp)
+        int use_typename, FILE *fp)
 {
+    typedefDef *td = ad->original_type;
     int nr_derefs = ad->nrderefs;
+    int is_reference = isReference(ad);
 
-    /*
-     * A function type is handled differently because of the position of
-     * the name.
-     */
-    if (ad->atype == function_type)
+    if (use_typename && td != NULL && !noTypeName(td))
     {
-        int i;
-        signatureDef *sig = ad->u.sa;
+        if (isConstArg(ad) && !isConstArg(&td->type))
+            prcode(fp, "const ");
 
-        generateBaseType(context, &sig->result, fp);
+        nr_derefs -= td->type.nrderefs;
 
-        prcode(fp," (");
+        if (isReference(&td->type))
+            is_reference = FALSE;
 
-        for (i = 0; i < nr_derefs; ++i)
-            prcode(fp,"*");
-
-        prcode(fp,"%s)(",name);
-        generateCalledArgs(context, sig, Declaration, fp);
-        prcode(fp,")");
-
-        return;
+        prcode(fp, "%S", td->fqname);
     }
-
-    if (isConstArg(ad))
-        prcode(fp,"const ");
-
-    switch (ad->atype)
+    else
     {
-    case sstring_type:
-        prcode(fp,"signed char");
-        break;
-
-    case ustring_type:
-        prcode(fp,"unsigned char");
-        break;
-
-    case wstring_type:
-        prcode(fp,"wchar_t");
-        break;
-
-    case signal_type:
-    case slot_type:
-    case anyslot_type:
-    case slotcon_type:
-    case slotdis_type:
-        nr_derefs = 1;
-
-        /* Drop through. */
-
-    case string_type:
-        prcode(fp,"char");
-        break;
-
-    case ushort_type:
-        prcode(fp,"unsigned short");
-        break;
-
-    case short_type:
-        prcode(fp,"short");
-        break;
-
-    case uint_type:
-        prcode(fp,"unsigned");
-        break;
-
-    case int_type:
-    case cint_type:
-        prcode(fp,"int");
-        break;
-
-    case ssize_type:
-        prcode(fp, "SIP_SSIZE_T");
-        break;
-
-    case ulong_type:
-        prcode(fp,"unsigned long");
-        break;
-
-    case long_type:
-        prcode(fp,"long");
-        break;
-
-    case ulonglong_type:
-        prcode(fp,"unsigned PY_LONG_LONG");
-        break;
-
-    case longlong_type:
-        prcode(fp,"PY_LONG_LONG");
-        break;
-
-    case struct_type:
-        prcode(fp,"struct %S",ad->u.sname);
-        break;
-
-    case fake_void_type:
-    case void_type:
-        prcode(fp,"void");
-        break;
-
-    case bool_type:
-    case cbool_type:
-        prcode(fp,"bool");
-        break;
-
-    case float_type:
-    case cfloat_type:
-        prcode(fp,"float");
-        break;
-
-    case double_type:
-    case cdouble_type:
-        prcode(fp,"double");
-        break;
-
-    case defined_type:
         /*
-         * The only defined types still remaining are arguments to templates.
+         * A function type is handled differently because of the position of
+         * the name.
          */
-
-        prcode(fp,"%S",ad->u.snd);
-        break;
-
-    case rxcon_type:
-    case rxdis_type:
-        nr_derefs = 1;
-        prcode(fp,"QObject");
-        break;
-
-    case mapped_type:
-        generateBaseType(context, &ad->u.mtd->type, fp);
-        break;
-
-    case class_type:
-        prcode(fp, "%V", context, ad->u.cd);
-        break;
-
-    case template_type:
+        if (ad->atype == function_type)
         {
-            static const char tail[] = ">";
-            int a;
-            templateDef *td = ad->u.td;
+            int i;
+            signatureDef *sig = ad->u.sa;
 
-            prcode(fp, "%S%s", td->fqname, (prcode_xml ? "&lt;" : "<"));
+            generateBaseType(context, &sig->result, fp);
 
-            for (a = 0; a < td->types.nrArgs; ++a)
-            {
-                if (a > 0)
-                    prcode(fp,",");
+            prcode(fp," (");
 
-                generateBaseType(context, &td->types.args[a], fp);
-            }
+            for (i = 0; i < nr_derefs; ++i)
+                prcode(fp, "*");
 
-            if (prcode_last == tail)
-                prcode(fp, " ");
+            prcode(fp, "%s)(",name);
+            generateCalledArgs(context, sig, Declaration, use_typename, fp);
+            prcode(fp, ")");
 
-            prcode(fp, (prcode_xml ? "&gt;" : tail));
-            break;
+            return;
         }
 
-    case enum_type:
-        prcode(fp,"%E",ad->u.ed);
-        break;
+        if (isConstArg(ad))
+            prcode(fp, "const ");
 
-    case pyobject_type:
-    case pytuple_type:
-    case pylist_type:
-    case pydict_type:
-    case pycallable_type:
-    case pyslice_type:
-    case pytype_type:
-    case qobject_type:
-    case ellipsis_type:
-        prcode(fp, "PyObject *");
-        break;
+        switch (ad->atype)
+        {
+        case sstring_type:
+            prcode(fp, "signed char");
+            break;
+
+        case ustring_type:
+            prcode(fp, "unsigned char");
+            break;
+
+        case wstring_type:
+            prcode(fp, "wchar_t");
+            break;
+
+        case signal_type:
+        case slot_type:
+        case anyslot_type:
+        case slotcon_type:
+        case slotdis_type:
+            nr_derefs = 1;
+
+            /* Drop through. */
+
+        case string_type:
+            prcode(fp, "char");
+            break;
+
+        case ushort_type:
+            prcode(fp, "unsigned short");
+            break;
+
+        case short_type:
+            prcode(fp, "short");
+            break;
+
+        case uint_type:
+            prcode(fp, "unsigned");
+            break;
+
+        case int_type:
+        case cint_type:
+            prcode(fp, "int");
+            break;
+
+        case ssize_type:
+            prcode(fp, "SIP_SSIZE_T");
+            break;
+
+        case ulong_type:
+            prcode(fp, "unsigned long");
+            break;
+
+        case long_type:
+            prcode(fp, "long");
+            break;
+
+        case ulonglong_type:
+            prcode(fp, "unsigned PY_LONG_LONG");
+            break;
+
+        case longlong_type:
+            prcode(fp, "PY_LONG_LONG");
+            break;
+
+        case struct_type:
+            prcode(fp, "struct %S", ad->u.sname);
+            break;
+
+        case fake_void_type:
+        case void_type:
+            prcode(fp, "void");
+            break;
+
+        case bool_type:
+        case cbool_type:
+            prcode(fp, "bool");
+            break;
+
+        case float_type:
+        case cfloat_type:
+            prcode(fp, "float");
+            break;
+
+        case double_type:
+        case cdouble_type:
+            prcode(fp, "double");
+            break;
+
+        case defined_type:
+            /*
+             * The only defined types still remaining are arguments to
+             * templates.
+             */
+            prcode(fp, "%S", ad->u.snd);
+            break;
+
+        case rxcon_type:
+        case rxdis_type:
+            nr_derefs = 1;
+            prcode(fp, "QObject");
+            break;
+
+        case mapped_type:
+            generateBaseType(context, &ad->u.mtd->type, fp);
+            break;
+
+        case class_type:
+            prcode(fp, "%V", context, ad->u.cd);
+            break;
+
+        case template_type:
+            {
+                static const char tail[] = ">";
+                int a;
+                templateDef *td = ad->u.td;
+
+                prcode(fp, "%S%s", td->fqname, (prcode_xml ? "&lt;" : "<"));
+
+                for (a = 0; a < td->types.nrArgs; ++a)
+                {
+                    if (a > 0)
+                        prcode(fp, ",");
+
+                    generateBaseType(context, &td->types.args[a], fp);
+                }
+
+                if (prcode_last == tail)
+                    prcode(fp, " ");
+
+                prcode(fp, (prcode_xml ? "&gt;" : tail));
+                break;
+            }
+
+        case enum_type:
+            prcode(fp, "%E", ad->u.ed);
+            break;
+
+        case pyobject_type:
+        case pytuple_type:
+        case pylist_type:
+        case pydict_type:
+        case pycallable_type:
+        case pyslice_type:
+        case pytype_type:
+        case qobject_type:
+        case ellipsis_type:
+            prcode(fp, "PyObject *");
+            break;
+        }
     }
 
     if (nr_derefs > 0)
     {
         int i;
 
-        prcode(fp," ");
+        prcode(fp, " ");
 
         for (i = 0; i < nr_derefs; ++i)
-            prcode(fp,"*");
+            prcode(fp, "*");
     }
 
-    if (isReference(ad))
+    if (is_reference)
         prcode(fp, (prcode_xml ? "&amp;" : "&"));
 
     if (*name != '\0')
     {
         if (nr_derefs == 0)
-            prcode(fp," ");
+            prcode(fp, " ");
 
-        prcode(fp,name);
+        prcode(fp, name);
     }
 }
 
@@ -8770,7 +8778,7 @@ static void generateConstructorCall(classDef *cd,ctorDef *ct,int error_flag,
     if (isDeprecatedCtor(ct))
         /* Note that any temporaries will leak if an exception is raised. */
         prcode(fp,
-"            if (sipDeprecatedCtor(%N) < 0)\n"
+"            if (sipDeprecated(%N,NULL) < 0)\n"
 "                return NULL;\n"
 "\n"
             , cd->iff->name);
@@ -9035,6 +9043,7 @@ static void generateFunctionBody(overDef *od, classDef *cd, classDef *ocd,
             od->pysig.args[0].argflags = ARG_IS_REF|ARG_IN;
             od->pysig.args[0].nrderefs = 0;
             od->pysig.args[0].defval = NULL;
+            od->pysig.args[0].original_type = NULL;
             od->pysig.args[0].u.cd = ocd;
         }
 
@@ -9724,11 +9733,11 @@ static void generateFunctionCall(classDef *cd,classDef *ocd,overDef *od,
         /* Note that any temporaries will leak if an exception is raised. */
         if (cd != NULL)
             prcode(fp,
-"            if (sipDeprecatedMethod(%N,%N) < 0)\n"
+"            if (sipDeprecated(%N,%N) < 0)\n"
                 , cd->iff->name, od->common->pyname);
         else
             prcode(fp,
-"            if (sipDeprecatedMethod(NULL,%N) < 0)\n"
+"            if (sipDeprecated(NULL,%N) < 0)\n"
                 , od->common->pyname);
 
         prcode(fp,
@@ -10332,7 +10341,12 @@ static int generateArgParser(signatureDef *sd, classDef *cd, ctorDef *ct,
             break;
 
         case enum_type:
-            fmt = (ad->u.ed->fqcname != NULL) ? "E" : "e";
+            if (ad->u.ed->fqcname == NULL)
+                fmt = "e";
+            else if (isConstrained(ad))
+                fmt = "XE";
+            else
+                fmt = "E";
             break;
 
         case bool_type:
@@ -10524,7 +10538,7 @@ static int generateArgParser(signatureDef *sd, classDef *cd, ctorDef *ct,
                 {
                     prcode(fp,",\"(");
 
-                    generateCalledArgs(cd, sd->args[slotconarg].u.sa, Declaration, fp);
+                    generateCalledArgs(cd, sd->args[slotconarg].u.sa, Declaration, TRUE, fp);
 
                     prcode(fp,")\"");
                 }
@@ -10538,7 +10552,7 @@ static int generateArgParser(signatureDef *sd, classDef *cd, ctorDef *ct,
             {
                 prcode(fp,",\"(");
 
-                generateCalledArgs(cd, sd->args[slotdisarg].u.sa, Declaration, fp);
+                generateCalledArgs(cd, sd->args[slotdisarg].u.sa, Declaration, TRUE, fp);
 
                 prcode(fp,")\",&a%d,&a%d",a,slotdisarg);
 
