@@ -56,7 +56,7 @@ static exceptionDef *findException(sipSpec *pt, scopedNameDef *fqname, int new);
 static mappedTypeDef *newMappedType(sipSpec *,argDef *, optFlags *);
 static enumDef *newEnum(sipSpec *,moduleDef *,char *,optFlags *,int);
 static void instantiateClassTemplate(sipSpec *pt, moduleDef *mod, classDef *scope, scopedNameDef *fqname, classTmplDef *tcd, templateDef *td);
-static void newTypedef(sipSpec *,moduleDef *,char *,argDef *);
+static void newTypedef(sipSpec *, moduleDef *, char *, argDef *, optFlags *);
 static void newVar(sipSpec *, moduleDef *, char *, int, argDef *, optFlags *,
         codeBlock *, codeBlock *, codeBlock *);
 static void newCtor(char *, int, signatureDef *, optFlags *, codeBlock *,
@@ -90,6 +90,7 @@ static void getHooks(optFlags *,char **,char **);
 static int getTransfer(optFlags *);
 static int getReleaseGIL(optFlags *);
 static int getHoldGIL(optFlags *);
+static int getDeprecated(optFlags *);
 static void templateSignature(signatureDef *sd, int result, classTmplDef *tcd, templateDef *td, classDef *ncd);
 static void templateType(argDef *ad, classTmplDef *tcd, templateDef *td, classDef *ncd);
 static int search_back(const char *end, const char *start, const char *target);
@@ -113,6 +114,7 @@ static overDef *instantiateTemplateOverloads(sipSpec *pt, overDef *tod,
         memberDef *tmethods, memberDef *methods, classTmplDef *tcd,
         templateDef *td, classDef *cd, ifaceFileList **used,
         scopedNameDef *type_names, scopedNameDef *type_values);
+static void resolveAnyTypedef(sipSpec *pt, argDef *ad);
 %}
 
 %union {
@@ -541,8 +543,12 @@ mappedtypetmpl: template TK_MAPPEDTYPE basetype {
 
             /* Check the template arguments are basic types or simple names. */
             for (a = 0; a < $1.nrArgs; ++a)
-                if ($1.args[a].atype == defined_type && $1.args[a].u.snd->next != NULL)
+            {
+                argDef *ad = &$1.args[a];
+
+                if (ad->atype == defined_type && ad->u.snd->next != NULL)
                     yyerror("%MappedType template arguments must be simple names");
+            }
 
             if ($3.atype != template_type)
                 yyerror("%MappedType template must map a template type");
@@ -1234,9 +1240,8 @@ scopepart:  TK_NAME {
 
 simplevalue:    scopedname {
             /*
-             * We let the C++ compiler decide if the value is a
-             * valid one - no point in building a full C++ parser
-             * here.
+             * We let the C++ compiler decide if the value is a valid one - no
+             * point in building a full C++ parser here.
              */
 
             $$.vtype = scoped_value;
@@ -1311,29 +1316,29 @@ exprlist:   {
         }
     ;
 
-typedef:    TK_TYPEDEF cpptype TK_NAME ';' {
+typedef:    TK_TYPEDEF cpptype TK_NAME optflags ';' {
             if (notSkipping())
-                newTypedef(currentSpec,currentModule,$3,&$2);
+                newTypedef(currentSpec, currentModule, $3, &$2, &$4);
         }
-    |   TK_TYPEDEF cpptype '(' deref TK_NAME ')' '(' cpptypelist ')' ';' {
+    |   TK_TYPEDEF cpptype '(' deref TK_NAME ')' '(' cpptypelist ')' optflags ';' {
             if (notSkipping())
             {
-                argDef ftype;
                 signatureDef *sig;
+                argDef ftype;
+
+                memset(&ftype, 0, sizeof (argDef));
 
                 /* Create the full signature on the heap. */
                 sig = sipMalloc(sizeof (signatureDef));
                 *sig = $8;
-                sig -> result = $2;
+                sig->result = $2;
 
                 /* Create the full type. */
                 ftype.atype = function_type;
-                ftype.argflags = 0;
                 ftype.nrderefs = $4;
-                ftype.defval = NULL;
                 ftype.u.sa = sig;
 
-                newTypedef(currentSpec,currentModule,$5,&ftype);
+                newTypedef(currentSpec, currentModule, $5, &ftype, &$10);
             }
         }
     ;
@@ -1430,6 +1435,7 @@ superclass: scopedname {
                     ad.atype = no_type;
                     ad.argflags = 0;
                     ad.nrderefs = 0;
+                    ad.original_type = NULL;
 
                     searchTypedefs(currentSpec, snd, &ad);
 
@@ -2181,14 +2187,14 @@ variable:   cpptype TK_NAME optflags ';' optaccesscode optgetcode optsetcode {
 
 cpptype:    TK_CONST basetype deref optref {
             $$ = $2;
-            $$.nrderefs = $3;
-            $$.argflags = ARG_IS_CONST | $4;
+            $$.nrderefs += $3;
+            $$.argflags |= ARG_IS_CONST | $4;
             $$.name = NULL;
         }
     |   basetype deref optref {
             $$ = $1;
-            $$.nrderefs = $2;
-            $$.argflags = $3;
+            $$.nrderefs += $2;
+            $$.argflags |= $3;
             $$.name = NULL;
         }
     ;
@@ -2273,20 +2279,35 @@ deref:      {
     ;
 
 basetype:   scopedname {
+            $$.nrderefs = 0;
+            $$.argflags = 0;
+            $$.original_type = NULL;
+
             $$.atype = defined_type;
             $$.u.snd = $1;
+
+            /* Try and resolve typedefs as early as possible. */
+            resolveAnyTypedef(currentSpec, &$$);
         }
     |   scopedname '<' cpptypelist '>' {
             templateDef *td;
 
             td = sipMalloc(sizeof(templateDef));
-            td -> fqname = $1;
-            td -> types = $3;
+            td->fqname = $1;
+            td->types = $3;
+
+            $$.nrderefs = 0;
+            $$.argflags = 0;
+            $$.original_type = NULL;
 
             $$.atype = template_type;
             $$.u.td = td;
         }
     |   TK_STRUCT scopedname {
+            $$.nrderefs = 0;
+            $$.argflags = 0;
+            $$.original_type = NULL;
+
             /* In a C module all structures must be defined. */
             if (currentSpec -> genc)
             {
@@ -2300,78 +2321,178 @@ basetype:   scopedname {
             }
         }
     |   TK_UNSIGNED TK_SHORT {
+            $$.nrderefs = 0;
+            $$.argflags = 0;
+            $$.original_type = NULL;
+
             $$.atype = ushort_type;
         }
     |   TK_SHORT {
+            $$.nrderefs = 0;
+            $$.argflags = 0;
+            $$.original_type = NULL;
+
             $$.atype = short_type;
         }
     |   TK_UNSIGNED {
+            $$.nrderefs = 0;
+            $$.argflags = 0;
+            $$.original_type = NULL;
+
             $$.atype = uint_type;
         }
     |   TK_UNSIGNED TK_INT {
+            $$.nrderefs = 0;
+            $$.argflags = 0;
+            $$.original_type = NULL;
+
             $$.atype = uint_type;
         }
     |   TK_INT {
+            $$.nrderefs = 0;
+            $$.argflags = 0;
+            $$.original_type = NULL;
+
             $$.atype = int_type;
         }
     |   TK_LONG {
+            $$.nrderefs = 0;
+            $$.argflags = 0;
+            $$.original_type = NULL;
+
             $$.atype = long_type;
         }
     |   TK_UNSIGNED TK_LONG {
+            $$.nrderefs = 0;
+            $$.argflags = 0;
+            $$.original_type = NULL;
+
             $$.atype = ulong_type;
         }
     |   TK_LONG TK_LONG {
+            $$.nrderefs = 0;
+            $$.argflags = 0;
+            $$.original_type = NULL;
+
             $$.atype = longlong_type;
         }
     |   TK_UNSIGNED TK_LONG TK_LONG {
+            $$.nrderefs = 0;
+            $$.argflags = 0;
+            $$.original_type = NULL;
+
             $$.atype = ulonglong_type;
         }
     |   TK_FLOAT {
+            $$.nrderefs = 0;
+            $$.argflags = 0;
+            $$.original_type = NULL;
+
             $$.atype = float_type;
         }
     |   TK_DOUBLE {
+            $$.nrderefs = 0;
+            $$.argflags = 0;
+            $$.original_type = NULL;
+
             $$.atype = double_type;
         }
     |   TK_BOOL {
+            $$.nrderefs = 0;
+            $$.argflags = 0;
+            $$.original_type = NULL;
+
             $$.atype = bool_type;
         }
     |   TK_SIGNED TK_CHAR {
+            $$.nrderefs = 0;
+            $$.argflags = 0;
+            $$.original_type = NULL;
+
             $$.atype = sstring_type;
         }
     |   TK_UNSIGNED TK_CHAR {
+            $$.nrderefs = 0;
+            $$.argflags = 0;
+            $$.original_type = NULL;
+
             $$.atype = ustring_type;
         }
     |   TK_CHAR {
+            $$.nrderefs = 0;
+            $$.argflags = 0;
+            $$.original_type = NULL;
+
             $$.atype = string_type;
         }
     |   TK_WCHAR_T {
+            $$.nrderefs = 0;
+            $$.argflags = 0;
+            $$.original_type = NULL;
+
             $$.atype = wstring_type;
         }
     |   TK_VOID {
+            $$.nrderefs = 0;
+            $$.argflags = 0;
+            $$.original_type = NULL;
+
             $$.atype = void_type;
         }
     |   TK_PYOBJECT {
+            $$.nrderefs = 0;
+            $$.argflags = 0;
+            $$.original_type = NULL;
+
             $$.atype = pyobject_type;
         }
     |   TK_PYTUPLE {
+            $$.nrderefs = 0;
+            $$.argflags = 0;
+            $$.original_type = NULL;
+
             $$.atype = pytuple_type;
         }
     |   TK_PYLIST {
+            $$.nrderefs = 0;
+            $$.argflags = 0;
+            $$.original_type = NULL;
+
             $$.atype = pylist_type;
         }
     |   TK_PYDICT {
+            $$.nrderefs = 0;
+            $$.argflags = 0;
+            $$.original_type = NULL;
+
             $$.atype = pydict_type;
         }
     |   TK_PYCALLABLE {
+            $$.nrderefs = 0;
+            $$.argflags = 0;
+            $$.original_type = NULL;
+
             $$.atype = pycallable_type;
         }
     |   TK_PYSLICE {
+            $$.nrderefs = 0;
+            $$.argflags = 0;
+            $$.original_type = NULL;
+
             $$.atype = pyslice_type;
         }
     |   TK_PYTYPE {
+            $$.nrderefs = 0;
+            $$.argflags = 0;
+            $$.original_type = NULL;
+
             $$.atype = pytype_type;
         }
     |   TK_ELLIPSIS {
+            $$.nrderefs = 0;
+            $$.argflags = 0;
+            $$.original_type = NULL;
+
             $$.atype = ellipsis_type;
         }
     ;
@@ -2997,9 +3118,6 @@ static void finishClass(sipSpec *pt, moduleDef *mod, classDef *cd, optFlags *of)
     checkAttributes(pt, mod, cd->ecd, pyname, FALSE);
     cd->pyname = pyname;
 
-    if (cd->pyname != classBaseName(cd))
-        setIsRenamedClass(cd);
-
     if ((flg = findOptFlag(of, "TypeFlags", integer_flag)) != NULL)
         cd->userflags = flg->fvalue.ival;
 
@@ -3064,6 +3182,9 @@ static void finishClass(sipSpec *pt, moduleDef *mod, classDef *cd, optFlags *of)
             if (cd->defctor == NULL)
                 cd->defctor = last;
         }
+
+        if (getDeprecated(of))
+            setIsDeprecatedClass(cd);
 
         if (findOptFlag(of,"Abstract",bool_flag) != NULL)
         {
@@ -3271,9 +3392,6 @@ static enumDef *newEnum(sipSpec *pt,moduleDef *mod,char *name,optFlags *of,
     ed -> overs = NULL;
     ed -> next = pt -> enums;
 
-    if (name != NULL && strcmp(ed->pyname->text, name) != 0)
-        setIsRenamedEnum(ed);
-
     pt -> enums = ed;
 
     return ed;
@@ -3472,11 +3590,8 @@ static void instantiateClassTemplate(sipSpec *pt, moduleDef *mod,
      * have got this far we know there is room for it.
      */
     ad = &tcd->sig.args[tcd->sig.nrArgs++];
+    memset(ad, 0, sizeof (argDef));
     ad->atype = defined_type;
-    ad->name = NULL;
-    ad->argflags = 0;
-    ad->nrderefs = 0;
-    ad->defval = NULL;
     ad->u.snd = classFQCName(tcd->cd);
 
     appendScopedName(&type_names, text2scopePart(scopedNameTail(classFQCName(tcd->cd))));
@@ -3838,15 +3953,17 @@ static void templateType(argDef *ad, classTmplDef *tcd, templateDef *td, classDe
     for (a = 0; a < tcd->sig.nrArgs - 1; ++a)
         if (strcmp(name, scopedNameTail(tcd->sig.args[a].u.snd)) == 0)
         {
-            ad->atype = td->types.args[a].atype;
+            argDef *tad = &td->types.args[a];
+
+            ad->atype = tad->atype;
 
             /* We take the constrained flag from the real type. */
             resetIsConstrained(ad);
 
-            if (isConstrained(&td->types.args[a]))
+            if (isConstrained(tad))
                 setIsConstrained(ad);
 
-            ad->u = td->types.args[a].u;
+            ad->u = tad->u;
 
             return;
         }
@@ -3856,6 +3973,7 @@ static void templateType(argDef *ad, classTmplDef *tcd, templateDef *td, classDe
     {
         ad->atype = class_type;
         ad->u.cd = ncd;
+        ad->original_type = NULL;
     }
 }
 
@@ -4097,7 +4215,8 @@ static int foundInScope(scopedNameDef *fq_name, scopedNameDef *rel_name)
 /*
  * Create a new typedef.
  */
-static void newTypedef(sipSpec *pt,moduleDef *mod,char *name,argDef *type)
+static void newTypedef(sipSpec *pt, moduleDef *mod, char *name, argDef *type,
+        optFlags *optflgs)
 {
     typedefDef *td;
     scopedNameDef *fqname;
@@ -4124,8 +4243,8 @@ static void newTypedef(sipSpec *pt,moduleDef *mod,char *name,argDef *type)
     }
 
     /* Check it doesn't already exist. */
-    for (td = pt -> typedefs; td != NULL; td = td -> next)
-        if (sameScopedName(td -> fqname,fqname))
+    for (td = pt->typedefs; td != NULL; td = td->next)
+        if (sameScopedName(td->fqname, fqname))
         {
             fatalScopedName(fqname);
             fatal(" already defined\n");
@@ -4133,15 +4252,41 @@ static void newTypedef(sipSpec *pt,moduleDef *mod,char *name,argDef *type)
 
     td = sipMalloc(sizeof (typedefDef));
 
-    td -> fqname = fqname;
-    td -> ecd = scope;
-    td -> module = mod;
-    td -> type = *type;
-    td -> next = pt -> typedefs;
+    td->tdflags = 0;
+    td->fqname = fqname;
+    td->ecd = scope;
+    td->module = mod;
+    td->type = *type;
+    td->next = pt->typedefs;
 
-    mod -> nrtypedefs++;
+    if (findOptFlag(optflgs, "NoTypeName", bool_flag) != NULL)
+        setNoTypeName(td);
 
-    pt -> typedefs = td;
+    mod->nrtypedefs++;
+
+    pt->typedefs = td;
+}
+
+
+/*
+ * Speculatively try and resolve any typedefs.  In some cases (eg. when
+ * comparing template signatures) it helps to use the real type if it is known.
+ * Note that this wouldn't be necessary if we required that all types be known
+ * before they are used.
+ */
+static void resolveAnyTypedef(sipSpec *pt, argDef *ad)
+{
+    while (ad->atype == defined_type)
+    {
+        ad->atype = no_type;
+        searchTypedefs(pt, ad->u.snd, ad);
+
+        if (ad->atype == no_type)
+        {
+            ad->atype = defined_type;
+            break;
+        }
+    }
 }
 
 
@@ -4272,6 +4417,9 @@ static void newCtor(char *name,int sectFlags,signatureDef *args,
 
     if (getTransfer(optflgs))
         setIsResultTransferredCtor(ct);
+
+    if (getDeprecated(optflgs))
+        setIsDeprecatedCtor(ct);
 
     if (findOptFlag(optflgs,"NoDerived",bool_flag) != NULL)
     {
@@ -4514,6 +4662,9 @@ static void newFunction(sipSpec *pt,moduleDef *mod,int sflags,int isstatic,
         setIsReleaseGIL(od);
     else if (getHoldGIL(optflgs))
         setIsHoldGIL(od);
+
+    if (getDeprecated(optflgs))
+        setIsDeprecated(od);
 
     od -> next = NULL;
 
@@ -5289,6 +5440,15 @@ static int getReleaseGIL(optFlags *optflgs)
 static int getHoldGIL(optFlags *optflgs)
 {
     return (findOptFlag(optflgs, "HoldGIL", bool_flag) != NULL);
+}
+
+
+/*
+ * Get the /Deprecated/ option flag.
+ */
+static int getDeprecated(optFlags *optflgs)
+{
+    return (findOptFlag(optflgs, "Deprecated", bool_flag) != NULL);
 }
 
 

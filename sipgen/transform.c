@@ -1018,8 +1018,13 @@ static void setHierarchy(sipSpec *pt,classDef *base,classDef *cd,
     if (cd -> mro != NULL)
         return;
 
-    if (cd -> ecd != NULL)
-        setHierarchy(pt,base,cd -> ecd,head);
+    if (cd->ecd != NULL)
+    {
+        setHierarchy(pt, base, cd->ecd, head);
+
+        if (isDeprecatedClass(cd->ecd))
+            setIsDeprecatedClass(cd);
+    }
 
     if (cd -> iff -> type == class_iface)
     {
@@ -1045,6 +1050,9 @@ static void setHierarchy(sipSpec *pt,classDef *base,classDef *cd,
             for (mro = cl -> cd -> mro; mro != NULL; mro = mro -> next)
             {
                 appendToMRO(cd -> mro,&tailp,mro -> cd);
+
+                if (isDeprecatedClass(mro->cd))
+                    setIsDeprecatedClass(cd);
 
                 /*
                  * If the super-class is a QObject sub-class then this one is
@@ -1195,6 +1203,9 @@ static void transformCtors(sipSpec *pt, classDef *cd)
                 fatalScopedName(classFQCName(cd));
                 fatal(" has ctors with the same Python signature\n");
             }
+
+        if (isDeprecatedClass(cd))
+            setIsDeprecatedCtor(ct);
     }
 }
 
@@ -1286,6 +1297,9 @@ static void addDefaultCopyCtor(classDef *cd)
         copyct -> posthook = NULL;
         copyct -> next = NULL;
  
+        if (isDeprecatedClass(cd))
+            setIsDeprecatedCtor(copyct);
+
         /* Append it to the list. */
         for (tailp = &cd -> ctors; *tailp != NULL; tailp = &(*tailp) -> next)
             ;
@@ -1333,6 +1347,9 @@ static void transformScopeOverloads(sipSpec *pt, classDef *scope,
                 fatal("%s() has overloaded functions with the same Python signature\n", od->common->pyname->text);
             }
         }
+
+        if (scope != NULL && isDeprecatedClass(scope))
+            setIsDeprecated(od);
     }
 }
 
@@ -2168,18 +2185,20 @@ int sameSignature(signatureDef *sd1,signatureDef *sd2,int strict)
 
 
 #define pyAsString(t)   ((t) == ustring_type || (t) == sstring_type || \
-             (t) == string_type)
+            (t) == string_type)
 #define pyAsFloat(t)    ((t) == cfloat_type || (t) == float_type || \
-             (t) == cdouble_type || (t) == double_type)
-#define pyAsInt(t)  ((t) == cint_type || (t) == bool_type || \
-             (t) == short_type || (t) == ushort_type || \
-             (t) == int_type || (t) == uint_type)
+            (t) == cdouble_type || (t) == double_type)
+#define pyAsInt(t)  ((t) == bool_type || \
+            (t) == short_type || (t) == ushort_type || \
+            (t) == cint_type || (t) == int_type || (t) == uint_type)
 #define pyAsLong(t) ((t) == long_type || (t) == longlong_type)
 #define pyAsULong(t)    ((t) == ulong_type || (t) == ulonglong_type)
 #define pyAsAuto(t) ((t) == bool_type || \
-             (t) == short_type || (t) == ushort_type || \
-             (t) == int_type || (t) == uint_type || \
-             (t) == float_type || (t) == double_type)
+            (t) == short_type || (t) == ushort_type || \
+            (t) == int_type || (t) == uint_type || \
+            (t) == float_type || (t) == double_type)
+#define pyIsConstrained(t)  ((t) == cbool_type || (t) == cint_type || \
+            (t) == cfloat_type || (t) == cdouble_type)
 
 /*
  * Compare two argument types and return TRUE if they are the same.  "strict"
@@ -2199,6 +2218,15 @@ static int sameArgType(argDef *a1, argDef *a2, int strict)
 
         return sameBaseType(a1,a2);
     }
+
+    /* If both are constrained fundamental types then the types must match. */
+    if (pyIsConstrained(a1->atype) && pyIsConstrained(a2->atype))
+        return (a1->atype == a2->atype);
+
+    /* An unconstrained enum also acts as a (very) constrained int. */
+    if ((pyAsInt(a1->atype) && a2->atype == enum_type && !isConstrained(a2)) ||
+        (a1->atype == enum_type && !isConstrained(a1) && pyAsInt(a2->atype)))
+        return TRUE;
 
     /* Python will see all these as strings. */
     if (pyAsString(a1->atype) && pyAsString(a2->atype))
@@ -2712,15 +2740,18 @@ void searchTypedefs(sipSpec *pt, scopedNameDef *snd, argDef *ad)
 {
     typedefDef *td;
 
-    for (td = pt -> typedefs; td != NULL; td = td -> next)
-        if (sameScopedName(td -> fqname,snd))
+    for (td = pt->typedefs; td != NULL; td = td->next)
+        if (sameScopedName(td->fqname, snd))
         {
             /* Copy the type. */
 
-            ad -> atype = td -> type.atype;
-            ad -> argflags |= td -> type.argflags;
-            ad -> nrderefs += td -> type.nrderefs;
-            ad -> u = td -> type.u;
+            ad->atype = td->type.atype;
+            ad->argflags |= td->type.argflags;
+            ad->nrderefs += td->type.nrderefs;
+            ad->u = td->type.u;
+
+            if (ad->original_type == NULL)
+                ad->original_type = td;
 
             break;
         }

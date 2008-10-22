@@ -136,6 +136,7 @@ static int sip_api_assign_instance(void *dst, const void *src,
 static int sip_api_assign_mapped_type(void *dst, const void *src,
         sipMappedType *mt);
 static void sip_api_register_meta_type(int type, sipWrapperType *py_type);
+static int sip_api_deprecated(const char *classname, const char *method);
 
 
 /*
@@ -270,6 +271,7 @@ static const sipAPIDef sip_api = {
      * The following are not part of the public API.
      */
     sip_api_register_meta_type,
+    sip_api_deprecated
 };
 
 
@@ -374,6 +376,7 @@ static int parsePass2(sipWrapper *self, int selfarg, int nrargs,
         PyObject *sipArgs, const char *fmt, va_list va);
 static int getSelfFromArgs(sipWrapperType *type, PyObject *args, int argnr,
         sipWrapper **selfp);
+static int canConvertToNamedEnum(PyObject *obj, PyTypeObject *et);
 static PyObject *createEnumMember(sipTypeDef *td, sipEnumMemberDef *enm);
 static PyObject *handleGetLazyAttr(PyObject *nameobj, sipWrapperType *wt,
         sipWrapper *w);
@@ -736,6 +739,13 @@ static PyObject *transfer(PyObject *self, PyObject *args)
 
     if (PyArg_ParseTuple(args, "O!i:transfer", &sipWrapper_Type, &w, &toCpp))
     {
+#if PY_VERSION_HEX >= 0x02050000
+        if (PyErr_WarnEx(PyExc_DeprecationWarning, "sip.transfer() is deprecated", 1) < 0)
+#else
+        if (PyErr_Warn(PyExc_DeprecationWarning, "sip.transfer() is deprecated") < 0)
+#endif
+            return NULL;
+
         if (toCpp)
             sip_api_transfer_to(w, NULL);
         else
@@ -1583,10 +1593,6 @@ static PyObject *buildObject(PyObject *obj, const char *fmt, va_list va)
 
             break;
 
-        case 'e':
-            el = PyInt_FromLong(va_arg(va,int));
-            break;
-
         case 'E':
             {
                 int ev = va_arg(va, int);
@@ -1602,6 +1608,7 @@ static PyObject *buildObject(PyObject *obj, const char *fmt, va_list va)
             el = PyFloat_FromDouble(va_arg(va,double));
             break;
 
+        case 'e':
         case 'h':
         case 'i':
             el = PyInt_FromLong(va_arg(va,int));
@@ -1951,24 +1958,12 @@ static int sip_api_parse_result(int *isErr, PyObject *method, PyObject *res,
 
                 break;
 
-            case 'e':
-                {
-                    int v = PyInt_AsLong(arg);
-
-                    if (PyErr_Occurred())
-                        invalid = TRUE;
-                    else
-                        *va_arg(va,int *) = v;
-                }
-
-                break;
-
             case 'E':
                 {
                     PyTypeObject *et = va_arg(va, PyTypeObject *);
                     int *p = va_arg(va, int *);
 
-                    if (PyObject_TypeCheck(arg, et))
+                    if (canConvertToNamedEnum(arg, et))
                         *p = PyInt_AsLong(arg);
                     else
                         invalid = TRUE;
@@ -2012,6 +2007,7 @@ static int sip_api_parse_result(int *isErr, PyObject *method, PyObject *res,
 
                 break;
 
+            case 'e':
             case 'i':
                 {
                     int v = PyInt_AsLong(arg);
@@ -3015,37 +3011,24 @@ static int parsePass1(sipWrapper **selfp, int *selfargp, int *argsParsedp,
                 break;
             }
 
-        case 'e':
-            {
-                /* Anonymous enum. */
-
-                int v = PyInt_AsLong(arg);
-
-                if (PyErr_Occurred())
-                    valid = PARSE_TYPE;
-                else
-                    *va_arg(va,int *) = v;
-
-                break;
-            }
-
         case 'E':
             {
-                /* Named enum. */
+                /* Named enum or exact integer. */
 
                 PyTypeObject *et = va_arg(va, PyTypeObject *);
 
                 va_arg(va, int *);
 
-                if (!PyObject_TypeCheck(arg, et))
+                if (!canConvertToNamedEnum(arg, et))
                     valid = PARSE_TYPE;
             }
 
             break;
 
+        case 'e':
         case 'i':
             {
-                /* Integer. */
+                /* Integer or anonymous enum. */
 
                 int v = PyInt_AsLong(arg);
 
@@ -3187,7 +3170,7 @@ static int parsePass1(sipWrapper **selfp, int *selfargp, int *argsParsedp,
 
         case 'X':
             {
-                /* Constrained (ie. exact) types. */
+                /* Constrained types. */
 
                 switch (*fmt++)
                 {
@@ -3237,6 +3220,18 @@ static int parsePass1(sipWrapper **selfp, int *selfargp, int *argsParsedp,
                             valid = PARSE_TYPE;
 
                         break;
+                    }
+
+                case 'E':
+                    {
+                        /* Named enum. */
+
+                        PyTypeObject *et = va_arg(va, PyTypeObject *);
+
+                        va_arg(va, int *);
+
+                        if (!PyObject_TypeCheck(arg, et))
+                            valid = PARSE_TYPE;
                     }
 
                 default:
@@ -3545,10 +3540,27 @@ static int parsePass2(sipWrapper *self, int selfarg, int nrargs,
 
         case 'X':
             {
-                /* Constrained (ie. exact) type. */
+                /* Constrained types. */
 
-                ++fmt;
-                va_arg(va,void *);
+                switch (*fmt++)
+                {
+                case 'E':
+                    {
+                        /* Named enum. */
+
+                        int *p;
+
+                        va_arg(va, PyTypeObject *);
+                        p = va_arg(va, int *);
+
+                        *p = PyInt_AsLong(arg);
+
+                        break;
+                    }
+
+                default:
+                    va_arg(va,void *);
+                }
 
                 break;
             }
@@ -4422,6 +4434,21 @@ static PyObject *handleGetLazyAttr(PyObject *nameobj,sipWrapperType *wt,
 
 
 /*
+ * Return TRUE if an unconstrained object can be converted to a named enum.
+ */
+static int canConvertToNamedEnum(PyObject *obj, PyTypeObject *et)
+{
+    /*
+     * We allow an integer but don't allow another enum (hence the exact
+     * check).  Consider introducing a base type (sub-typed from int) common to
+     * all named enums so that we can specifically exclude then but allow an
+     * application defined sub-type of int.
+     */
+    return (PyObject_TypeCheck(obj, et) || PyInt_CheckExact(obj));
+}
+
+
+/*
  * Create a Python object for an enum member.
  */
 static PyObject *createEnumMember(sipTypeDef *td, sipEnumMemberDef *enm)
@@ -4538,6 +4565,30 @@ static void sip_api_no_method(int argsParsed, const char *classname, const char 
 static void sip_api_abstract_method(const char *classname, const char *method)
 {
     PyErr_Format(PyExc_TypeError,"%s.%s() is abstract and cannot be called as an unbound method", classname, method);
+}
+
+
+/*
+ * Report a deprecated class or method.
+ */
+static int sip_api_deprecated(const char *classname, const char *method)
+{
+    char buf[100];
+
+    if (classname == NULL)
+        PyOS_snprintf(buf, sizeof (buf), "%s() is deprecated", method);
+    else if (method == NULL)
+        PyOS_snprintf(buf, sizeof (buf), "%s constructor is deprecated",
+                classname);
+    else
+        PyOS_snprintf(buf, sizeof (buf), "%s.%s() is deprecated", classname,
+                method);
+
+#if PY_VERSION_HEX >= 0x02050000
+    return PyErr_WarnEx(PyExc_DeprecationWarning, buf, 1);
+#else
+    return PyErr_Warn(PyExc_DeprecationWarning, buf);
+#endif
 }
 
 
