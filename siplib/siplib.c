@@ -3232,6 +3232,8 @@ static int parsePass1(sipWrapper **selfp, int *selfargp, int *argsParsedp,
 
                         if (!PyObject_TypeCheck(arg, et))
                             valid = PARSE_TYPE;
+
+                        break;
                     }
 
                 default:
