@@ -82,6 +82,7 @@ static void addComplementarySlot(sipSpec *pt, classDef *cd, memberDef *md,
         slotType cslot, const char *cslot_name);
 static void resolveInstantiatedClassTemplate(sipSpec *pt, argDef *type);
 static void generateProperties(sipSpec *pt, moduleDef *mod, classDef *cd);
+static void findOptimizedMethods(sipSpec *pt, moduleDef *mod, classDef *cd);
 
 
 /*
@@ -113,12 +114,14 @@ void transform(sipSpec *pt)
         cd -> next = rev;
         rev = cd;
 
+#ifdef SIP_QT
         /*
          * Mark any QObject class.  This flag will ripple through all derived
          * classes when we set the hierarchy.
          */
         if (strcmp(classBaseName(cd), "QObject") == 0)
             setIsQObjectSubClass(cd);
+#endif
 
         cd = next;
     }
@@ -295,6 +298,11 @@ void transform(sipSpec *pt)
         for (cd = pt->classes; cd != NULL; cd = cd->next)
             if (generatingCodeForModule(pt, cd->iff->module))
                 generateProperties(pt, cd->iff->module, cd);
+
+    /* Mark METH_O and METH_NOARGS methods */
+    for (cd = pt->classes; cd != NULL; cd = cd->next)
+        if (generatingCodeForModule(pt, cd->iff->module))
+            findOptimizedMethods(pt, cd->iff->module, cd);
 }
 
 
@@ -3296,3 +3304,34 @@ static void generateProperties(sipSpec *pt, moduleDef *mod, classDef *cd)
     
     filterPropertiesWithoutGetters(pt);
 }
+
+static void findOptimizedMethods(sipSpec *pt, moduleDef *mod, classDef *cd)
+{
+    overDef* od;
+    memberDef* md;
+    int maxArgs;
+
+    if (!cd->visible)
+        return;
+
+    for (md = cd->members; md != NULL; md = md->next)
+    {
+        if (md->slot != no_slot)
+            continue;
+
+        maxArgs = 0;
+        for (od = cd->overs; od != NULL; od = od->next)
+        {
+            if (od->common == md)
+            {
+                maxArgs = max(maxArgs, od->pysig.nrArgs);
+
+                if (maxArgs == 0)
+                    setIsNoArgs(md);
+                else if (maxArgs == 1)
+                    setIsSingleArg(md);
+            }
+        }
+    }
+}
+

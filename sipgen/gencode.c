@@ -231,6 +231,7 @@ static const char *resultOwner(overDef *od);
 
 static int optWxThreadHop() { return 1; }
 static int optFastPath() { return 1; }
+static int optCallConvs() { return 1; }
 
 /*
  * Generate the code from a specification.
@@ -3677,9 +3678,16 @@ static int generateMethodTable(classDef *cd,FILE *fp)
              */
             mtab[i].is_static = FALSE;
 
-            prcode(fp,
-"    {%N, meth_%C_%s, METH_VARARGS%s, NULL}%s\n"
-                ,md->pyname,classFQCName(cd),md->pyname->text,(mtab[i].is_static ? "|METH_STATIC" : ""),((i + 1) < nr) ? "," : "");
+            prcode(fp, "    {%N, meth_%C_%s, ", md->pyname, classFQCName(cd), md->pyname->text);
+
+            /*if (optCallConvs() && isSingleArg(md))
+                prcode(fp, "METH_O");*/
+            if (optCallConvs() && isNoArgs(md))
+                prcode(fp, "METH_NOARGS");
+            else
+                prcode(fp, "METH_VARARGS%s", (mtab[i].is_static ? "|METH_STATIC" : ""));
+
+            prcode(fp, ", NULL}%s\n", ((i + 1) < nr) ? "," : "");
         }
 
         free(mtab);
@@ -5524,9 +5532,11 @@ static void generateShadowCode(sipSpec *pt, moduleDef *mod, classDef *cd,
 
     generateProtectedDefinitions(cd,fp);
 
+#ifdef SIP_QT
     /* Generate the emitters if needed. */
     if (!optNoEmitters(pt))
         generateEmitters(cd, fp);
+#endif
 }
 
 
@@ -7362,6 +7372,7 @@ static void generateShadowClassDeclaration(sipSpec *pt,classDef *cd,FILE *fp)
 
     generateProtectedDeclarations(cd,fp);
 
+#ifdef SIP_QT
     /* The public wrapper around each signal emitter. */
     if (!optNoEmitters(pt))
     {
@@ -7403,6 +7414,7 @@ static void generateShadowClassDeclaration(sipSpec *pt,classDef *cd,FILE *fp)
             }
         }
     }
+#endif
 
     /* The catcher around each virtual function in the hierarchy. */
     noIntro = TRUE;
@@ -9057,11 +9069,11 @@ static int skipOverload(overDef *od,memberDef *md,classDef *cd,classDef *ccd,
     /* Skip if it's not the right name. */
     if (od->common != md)
         return TRUE;
-
+#if SIP_QT
     /* Skip if it's a signal. */
     if (isSignal(od))
         return TRUE;
-
+#endif
     /* Skip if it's a private abstract. */
     if (isAbstract(od) && isPrivate(od))
         return TRUE;
@@ -10544,12 +10556,34 @@ static int generateArgParser(signatureDef *sd, classDef *cd, ctorDef *ct,
             );
 
     /* Generate the call to the parser function. */
-    if (od != NULL && isNumberSlot(od->common))
+    if (od != NULL && isNoArgs(od->common))
+    {
+        prcode(fp,
+"        /* fast path no args */\n");
+
+        if (handle_self)
+        {
+            if (isProtected(od) && hasShadow(cd))
+                prcode(fp,
+"        if (sipSelf && (sipCpp = (sip%C *)sipGetCppPtr((sipWrapper*)sipSelf, sipClass_%C)"
+                    , classFQCName(cd), classFQCName(cd));
+            else
+                prcode(fp,
+"        if (sipSelf && (sipCpp = (%U *)sipGetCppPtr((sipWrapper*)sipSelf, sipClass_%C)"
+                    ,cd, classFQCName(cd));
+            goto end_parens;
+        }
+        else
+        {
+            goto end_noparens;
+        }
+    }
+    else if (od != NULL && isNumberSlot(od->common))
     {
         single_arg = FALSE;
 
         prcode(fp,
-"        if (sipParsePair(%ssipArgsParsed,sipArg0,sipArg1,\"", (ct != NULL ? "" : "&"));
+"          if (sipParsePair(%ssipArgsParsed,sipArg0,sipArg1,\"", (ct != NULL ? "" : "&"));
     }
     else
     {
@@ -10567,8 +10601,10 @@ static int generateArgParser(signatureDef *sd, classDef *cd, ctorDef *ct,
 
     if (handle_self)
         prcode(fp,"%c",(isProtected(od) ? 'p' : 'B'));
+#ifdef SIP_QT
     else if (isQtSlot && od == NULL)
         prcode(fp,"C");
+#endif
 
     for (a = 0; a < sd->nrArgs; ++a)
     {
@@ -10874,7 +10910,9 @@ static int generateArgParser(signatureDef *sd, classDef *cd, ctorDef *ct,
         }
     }
 
+end_parens:
     prcode(fp,"))\n");
+end_noparens:
 
     return isQtSlot;
 }

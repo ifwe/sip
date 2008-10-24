@@ -179,6 +179,8 @@
 #define MEMBR_NUMERIC         0x0001      /* It is a numeric slot. */
 #define MEMBR_NO_ARG_PARSER   0x0002      /* Don't generate an argument parser. */
 #define MEMBR_NO_THREAD_CHECK 0x0004      /* Function should not thread check. */
+#define MEMBR_SINGLE_ARG      0x0008      /* Function will use METH_O */
+#define MEMBR_NO_ARGS         0x0016      /* Function will use METH_NOARGS */
 
 #define isNumeric(m)        ((m)->memberflags & MEMBR_NUMERIC)
 #define setIsNumeric(m)     ((m)->memberflags |= MEMBR_NUMERIC)
@@ -186,6 +188,10 @@
 #define setNoArgParser(m)   ((m)->memberflags |= MEMBR_NO_ARG_PARSER)
 #define noThreadCheck(m)    ((m)->memberflags & MEMBR_NO_THREAD_CHECK)
 #define setNoThreadCheck(m) ((m)->memberflags |= MEMBR_NO_THREAD_CHECK)
+#define setIsSingleArg(m)   ((m)->memberflags |= MEMBR_SINGLE_ARG)
+#define isSingleArg(m)      ((m)->memberflags & MEMBR_SINGLE_ARG)
+#define setIsNoArgs(m)      ((m)->memberflags |= MEMBR_NO_ARGS)
+#define isNoArgs(m)         ((m)->memberflags & MEMBR_NO_ARGS)
 
 
 /* Handle enum flags.  These are combined with the section flags. */
