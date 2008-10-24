@@ -1,3 +1,7 @@
+2008/10/23 18:18:17  phil
+Fixed a silly typo in the updated converting of constrained enums.
+
+
 2008/10/15 21:28:34  phil
 Fixed problems with the type name handling when the type is a pointer.
 
