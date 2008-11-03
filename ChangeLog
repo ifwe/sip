@@ -1,3 +1,17 @@
+2008/11/02 14:53:09  phil
+Fixed a bug in the detection of reimplemented methods when the method is a
+Python special method (ie. when the attribute is a method wrapper).
+
+
+2008/11/01 19:19:05  phil
+Updated the NEWS file.
+Changed the PyQt example in the docs to use PyQt4.
+
+
+2008/10/26 18:45:46  phil
+Fixes for Qt classes that doesn't have a public QMetaObject.
+
+
 2008/10/23 18:18:17  phil
 Fixed a silly typo in the updated converting of constrained enums.
 
