@@ -5334,6 +5334,8 @@ static int sip_api_add_mapped_type_instance(PyObject *dict, const char *name,
 static PyObject *sip_api_is_py_method(sip_gilstate_t *gil,
         sipMethodCache *pymc, sipWrapper *sipSelf, char *cname, char *mname)
 {
+    PyObject *method;
+
     /*
      * This is the most common case (where there is no Python reimplementation)
      * so we take a fast shortcut without acquiring the GIL.
@@ -5354,6 +5356,19 @@ static PyObject *sip_api_is_py_method(sip_gilstate_t *gil,
      */
     if (sipSelf == NULL)
         return NULL;
+
+    *gil = PyGILState_Ensure();
+    method = PyObject_GetAttrString((PyObject *)sipSelf, mname);
+    if (method) {
+        if (PyMethod_Check(method))
+            return method;
+        else
+            Py_DECREF(method);
+    }
+
+    PyErr_Clear();
+    PyGILState_Release(*gil);
+    return NULL;
 
 #ifdef WITH_THREAD
     *gil = PyGILState_Ensure();
