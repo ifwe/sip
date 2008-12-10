@@ -9287,6 +9287,8 @@ int typeNameCmp(argDef* ad, const char* s)
     fgets(buf, 255, fp);
     fclose(fp);
 
+    remove(".siptemp.tmp");
+
     return strcmp(s, buf);
 }
 
