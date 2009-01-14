@@ -9855,6 +9855,7 @@ static void generateFunctionCall(classDef *cd,classDef *ocd,overDef *od,
 {
     int needsNew, error_flag = FALSE, newline, is_result, result_size, a,
             deltemps;
+    int tookFastpath = 0;
     argDef *res = &od->pysig.result, orig_res;
 
     prcode(fp,
@@ -9898,6 +9899,7 @@ static void generateFunctionCall(classDef *cd,classDef *ocd,overDef *od,
     {
         prcode(fp,
 "            /* fast path */\n");
+        tookFastpath = TRUE;
         goto fastpath;
     }
 
@@ -10338,7 +10340,7 @@ fastpath:
                 (deltemps ? "return" : "sipResult ="), fp);
 
         /* Delete the temporaries now if we haven't already done so. */
-        if (!deltemps)
+        if (!tookFastpath && !deltemps)
         {
             deleteTemps(&od->pysig, fp);
 
