@@ -22,6 +22,8 @@
 #include "sip.h"
 #include "sipint.h"
 
+#include <windows.h>
+
 
 /*
  * These are the functions that make up the public and private SIP API.
@@ -5362,11 +5364,13 @@ static PyObject *sip_api_is_py_method(sip_gilstate_t *gil,
     if (method) {
         if (PyMethod_Check(method))
             return method;
-        else
+        else {
             Py_DECREF(method);
+        }
+    } else {
+        PyErr_Clear();
     }
 
-    PyErr_Clear();
     PyGILState_Release(*gil);
     return NULL;
 
