@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
-
+#include <fcntl.h>
 #include "sip.h"
 
 
@@ -11115,6 +11115,7 @@ static FILE *createCompilationUnit(moduleDef *mod, const char *fname,
     return fp;
 }
 
+static const char* temp_postfix = ".tmp";
 
 /*
  * Create a file with an optional standard header.
@@ -11124,8 +11125,14 @@ static FILE *createFile(moduleDef *mod, const char *fname,
 {
     FILE *fp;
 
+    char* tempFilename = (char*)_alloca(strlen(fname) + strlen(temp_postfix) + 1);
+    strcpy(tempFilename, fname);
+    strcpy(tempFilename + strlen(fname), temp_postfix);
+
+    printf("\n\nopening file %s\n\n", tempFilename);
+
     /* Create the file. */
-    if ((fp = fopen(fname, "w")) == NULL)
+    if ((fp = fopen(tempFilename, "w")) == NULL)
         fatal("Unable to create file \"%s\"\n",fname);
 
     /* The "stack" doesn't have to be very deep. */
@@ -11180,17 +11187,80 @@ static FILE *createFile(moduleDef *mod, const char *fname,
     return fp;
 }
 
+static void replace_slashes(char* s)
+{
+    while (*s) {
+        if (*s == '/')
+            *s = '\\';
+        ++s;
+    }
+}
+
+static void copy(const char* from, const char* to)
+{
+#ifdef _WIN32
+    static const char* copy_cmd = "copy /Y ";
+#else
+    static const char* copy_cmd = "cp ";
+#endif
+
+    char* buf = (char*)_alloca(sizeof(copy_cmd) + strlen(from) + strlen(to) + 5);
+
+    strcpy(buf, copy_cmd);
+    strcat(buf, from);
+    strcat(buf, " ");
+    strcat(buf, to);
+
+#ifdef _WIN32
+    replace_slashes(buf);
+#endif
+
+    if (system(buf) != 0)
+        fatal("Error copying: \"%s\"\n", buf);
+}
+
+extern void __stdcall DebugBreak();
+
+int contentsSame(const char* file_a, const char* file_b)
+{
+#ifdef _WIN32
+    char* buf = (char*)_alloca(strlen(file_a) + strlen(file_b) + 5);
+    static const char* compare_program = "fc ";
+    strcpy(buf, compare_program);
+    strcat(buf, file_a);
+    strcat(buf, " ");
+    strcat(buf, file_b);
+    replace_slashes(buf);
+    return system(buf) == 0;
+#else
+#error "todo"
+#endif
+}
+
 
 /*
  * Close a file and report any errors.
  */
 static void closeFile(FILE *fp)
 {
+    char* tempFilename;
+
     if (ferror(fp))
-        fatal("Error writing to \"%s\"\n",currentFileName);
+        fatal("Error writing to \"%s\"\n", currentFileName);
 
     if (fclose(fp))
-        fatal("Error closing \"%s\"\n",currentFileName);
+        fatal("Error closing \"%s\"\n", currentFileName);
+
+    tempFilename = (char*)_alloca(strlen(currentFileName) + strlen(temp_postfix) + 1);
+    strcpy(tempFilename, currentFileName);
+    strcpy(tempFilename + strlen(currentFileName), temp_postfix);
+
+    if (!contentsSame(currentFileName, tempFilename)) {
+        printf("\n\nNOT SAME: %s\n\n", currentFileName);
+        copy(tempFilename, currentFileName);
+    }
+
+    remove(tempFilename);
 
     currentLineNr = previousLineNr;
     currentFileName = previousFileName;
