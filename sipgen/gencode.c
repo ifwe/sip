@@ -231,6 +231,7 @@ static const char *resultOwner(overDef *od);
 
 static int optWxThreadHop() { return 1; }
 static int optFastPath() { return 1; }
+static int getNumVariables();
 
 /*
  * Generate the code from a specification.
