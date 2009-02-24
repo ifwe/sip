@@ -9895,7 +9895,7 @@ static void generateFunctionCall(classDef *cd,classDef *ocd,overDef *od,
              !isInplaceSequenceSlot(od->common) &&
              (res->atype != void_type || res->nrderefs != 0));
 
-    if (optFastPath() && fastPath(cd, od, needsNew))
+    if (optFastPath() && fastPath(cd, od))
     {
         prcode(fp,
 "            /* fast path */\n");

@@ -22,8 +22,6 @@
 #include "sip.h"
 #include "sipint.h"
 
-#include <windows.h>
-
 
 /*
  * These are the functions that make up the public and private SIP API.
