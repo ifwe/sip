@@ -2,7 +2,7 @@
 # extension modules created with SIP.  It provides information about file
 # locations, version numbers etc., and provides some classes and functions.
 #
-# Copyright (c) 2008 Riverbank Computing Limited <info@riverbankcomputing.com>
+# Copyright (c) 2009 Riverbank Computing Limited <info@riverbankcomputing.com>
 # 
 # This file is part of SIP.
 # 
@@ -979,6 +979,9 @@ class Makefile:
 
         cppflags = []
 
+        if not self._debug:
+            cppflags.append("-DNDEBUG")
+
         for f in self.optional_list("DEFINES"):
             cppflags.append("-D" + f)
 
@@ -1314,12 +1317,7 @@ class ModuleMakefile(Makefile):
             self._limit_exports = 0
         else:
             self._strip = strip
-
-            # The deprecated configuration flag has precedence.
-            if self.config.export_all:
-                self._limit_exports = 0
-            else:
-                self._limit_exports = not export_all
+            self._limit_exports = not export_all
 
         # Save the target name for later.
         self._target = self._build["target"]
@@ -1373,17 +1371,11 @@ class ModuleMakefile(Makefile):
         self.LFLAGS.extend(self.optional_list(lflags_console))
 
         if sys.platform == "darwin":
-            # We use the -F flag to explictly specify the directory containing
-            # the Python framework rather than rely on the default search path.
-            # This allows Apple's Python to be used even if a later python.org
-            # version is also installed.
             dl = string.split(sys.exec_prefix, os.sep)
-            try:
-                dl = dl[:dl.index("Python.framework")]
-            except ValueError:
+            if "Python.framework" not in dl:
                 error("SIP requires Python to be built as a framework")
-            self.LFLAGS.append("-F%s" % string.join(dl, os.sep))
-            self.LFLAGS.append("-framework Python")
+
+            self.LFLAGS.append("-undefined dynamic_lookup")
 
         Makefile.finalise(self)
 

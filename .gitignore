@@ -22,3 +22,5 @@ sipconfig.py
 
 .project
 .pydevproject
+
+*.suo

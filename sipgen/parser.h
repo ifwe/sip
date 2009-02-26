@@ -29,15 +29,15 @@
    /* Put the tokens into the symbol table, so that GDB and other debuggers
       know about them.  */
    enum yytokentype {
-     TK_OPTIONS = 258,
-     TK_NOEMITTERS = 259,
-     TK_DOC = 260,
-     TK_EXPORTEDDOC = 261,
-     TK_MAKEFILE = 262,
-     TK_ACCESSCODE = 263,
-     TK_GETCODE = 264,
-     TK_SETCODE = 265,
-     TK_PREINITCODE = 266,
+     TK_PLUGIN = 258,
+     TK_DOC = 259,
+     TK_EXPORTEDDOC = 260,
+     TK_MAKEFILE = 261,
+     TK_ACCESSCODE = 262,
+     TK_GETCODE = 263,
+     TK_SETCODE = 264,
+     TK_PREINITCODE = 265,
+     TK_INITCODE = 266,
      TK_POSTINITCODE = 267,
      TK_UNITCODE = 268,
      TK_MODCODE = 269,
@@ -130,18 +130,20 @@
      TK_RAISECODE = 356,
      TK_EXPLICIT = 357,
      TK_TEMPLATE = 358,
-     TK_ELLIPSIS = 359
+     TK_ELLIPSIS = 359,
+     TK_DEFMETATYPE = 360,
+     TK_DEFSUPERTYPE = 361
    };
 #endif
-#define TK_OPTIONS 258
-#define TK_NOEMITTERS 259
-#define TK_DOC 260
-#define TK_EXPORTEDDOC 261
-#define TK_MAKEFILE 262
-#define TK_ACCESSCODE 263
-#define TK_GETCODE 264
-#define TK_SETCODE 265
-#define TK_PREINITCODE 266
+#define TK_PLUGIN 258
+#define TK_DOC 259
+#define TK_EXPORTEDDOC 260
+#define TK_MAKEFILE 261
+#define TK_ACCESSCODE 262
+#define TK_GETCODE 263
+#define TK_SETCODE 264
+#define TK_PREINITCODE 265
+#define TK_INITCODE 266
 #define TK_POSTINITCODE 267
 #define TK_UNITCODE 268
 #define TK_MODCODE 269
@@ -235,12 +237,14 @@
 #define TK_EXPLICIT 357
 #define TK_TEMPLATE 358
 #define TK_ELLIPSIS 359
+#define TK_DEFMETATYPE 360
+#define TK_DEFSUPERTYPE 361
 
 
 
 
 #if ! defined (YYSTYPE) && ! defined (YYSTYPE_IS_DECLARED)
-#line 120 "parser.y"
+#line 121 "parser.y"
 typedef union YYSTYPE {
     char            qchar;
     char            *text;
@@ -262,7 +266,7 @@ typedef union YYSTYPE {
     classDef        *klass;
 } YYSTYPE;
 /* Line 1241 of yacc.c.  */
-#line 266 "parser.h"
+#line 270 "parser.h"
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1
 # define YYSTYPE_IS_TRIVIAL 1
