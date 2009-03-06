@@ -565,7 +565,7 @@ class Makefile:
                     "QtTest":           ("QtCore", "QtGui"),
                     "QtWebKit":         ("QtCore", "QtGui", "QtNetwork"),
                     "QtXml":            ("QtCore", ),
-                    "QtXmlPatterns":    ("QtCore", ),
+                    "QtXmlPatterns":    ("QtCore", "QtNetwork"),
                     "phonon":           ("QtCore", "QtGui"),
                     "QtDesigner":       ("QtCore", "QtGui"),
                     "QAxContainer":     ("QtCore", "QtGui")

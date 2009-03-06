@@ -528,7 +528,6 @@ static void generateInternalAPIHeader(sipSpec *pt, moduleDef *mod,
 "#define sipParseResult              sipAPI_%s->api_parse_result\n"
 "#define sipParseArgs                sipAPI_%s->api_parse_args\n"
 "#define sipParsePair                sipAPI_%s->api_parse_pair\n"
-"#define sipCommonCtor               sipAPI_%s->api_common_ctor\n"
 "#define sipCommonDtor               sipAPI_%s->api_common_dtor\n"
 "#define sipConvertFromSequenceIndex sipAPI_%s->api_convert_from_sequence_index\n"
 "#define sipConvertFromVoidPtr       sipAPI_%s->api_convert_from_void_ptr\n"
@@ -593,6 +592,7 @@ static void generateInternalAPIHeader(sipSpec *pt, moduleDef *mod,
 "#define sipVisitSlot                sipAPI_%s->api_visit_slot\n"
 "#define sipWrappedTypeName(wt)      ((wt)->type->td_cname)\n"
 "#define sipDeprecated               sipAPI_%s->api_deprecated\n"
+"#define sipKeepReference            sipAPI_%s->api_keep_reference\n"
 "#define sipRegisterPyType           sipAPI_%s->api_register_py_type\n"
 "#define sipTypeFromPyTypeObject     sipAPI_%s->api_type_from_py_type_object\n"
 "#define sipTypeScope                sipAPI_%s->api_type_scope\n"
@@ -1074,7 +1074,7 @@ static void generateCpp(sipSpec *pt, moduleDef *mod, const char *codeDir,
 "\n"
 "#define sipQtCreateUniversalSignal          0\n"
 "#define sipQtFindUniversalSignal            0\n"
-"#define sipQtSignalRelay                    0\n"
+"#define sipQtEmitSignal                     0\n"
 "#define sipQtConnectPySignal                0\n"
 "#define sipQtDisconnectPySignal             0\n"
             );
@@ -1584,7 +1584,7 @@ static void generateCpp(sipSpec *pt, moduleDef *mod, const char *codeDir,
 "    sipQtDisconnect,\n"
 "    sipQtSameSignalSlotName,\n"
 "    sipQtFindSipslot,\n"
-"    sipQtSignalRelay,\n"
+"    sipQtEmitSignal,\n"
 "    sipQtConnectPySignal,\n"
 "    sipQtDisconnectPySignal\n"
 "};\n"
@@ -4951,10 +4951,14 @@ static void generateShadowCode(sipSpec *pt, moduleDef *mod, classDef *cd,
                 ,ct->exceptions);
         }
 
+        if (nrVirts > 0)
+            prcode(fp,
+"    memset(sipPyMethods, 0, sizeof (sipPyMethods));\n"
+                );
+
         prcode(fp,
-"    sipCommonCtor(%s,%d);\n"
 "}\n"
-            ,(nrVirts > 0 ? "sipPyMethods" : "NULL"),nrVirts);
+            );
     }
 
     /* The destructor. */
@@ -5253,7 +5257,7 @@ static void generateVirtualCatcher(moduleDef *mod, classDef *cd, int virtNr,
 "    meth = sipIsPyMethod(&sipGILState,");
 
     if (isConst(od))
-        prcode(fp,"const_cast<sipMethodCache *>(");
+        prcode(fp, "const_cast<char *>(");
 
     prcode(fp,"&sipPyMethods[%d]",virtNr);
 
@@ -6954,7 +6958,7 @@ static void generateShadowClassDeclaration(sipSpec *pt,classDef *cd,FILE *fp)
     if ((nrVirts = countVirtuals(cd)) > 0)
         prcode(fp,
 "\n"
-"    sipMethodCache sipPyMethods[%d];\n"
+"    char sipPyMethods[%d];\n"
             ,nrVirts);
 
     prcode(fp,
@@ -7445,17 +7449,18 @@ static void generateVariable(classDef *context, argDef *ad, int argnr,
 
     /* Some types have supporting variables. */
     if (isInArg(ad))
+    {
+        if (isGetWrapper(ad))
+            prcode(fp,
+"        PyObject *a%dWrapper%s;\n"
+                , argnr, (ad->defval != NULL ? " = 0" : ""));
+
         switch (atype)
         {
         case class_type:
             if (ad->u.cd->convtocode != NULL && !isConstrained(ad))
                 prcode(fp,
 "        int a%dState = 0;\n"
-                    ,argnr);
-
-            if (isGetWrapper(ad))
-                prcode(fp,
-"        PyObject *a%dWrapper;\n"
                     ,argnr);
 
             break;
@@ -7476,6 +7481,7 @@ static void generateVariable(classDef *context, argDef *ad, int argnr,
                 );
             break;
         }
+    }
 }
 
 
@@ -9783,8 +9789,6 @@ static void generateFunctionCall(classDef *cd,classDef *ocd,overDef *od,
                 );
     }
 
-    /* Handle /TransferThis/ for non-factory methods. */
-    if (!isFactory(od))
         for (a = 0; a < od->pysig.nrArgs; ++a)
         {
             argDef *ad = &od->pysig.args[a];
@@ -9792,7 +9796,17 @@ static void generateFunctionCall(classDef *cd,classDef *ocd,overDef *od,
             if (!isInArg(ad))
                 continue;
 
-            if (isThisTransferred(ad))
+            /* Handle any /KeepReference/ arguments. */
+            if (ad->key > 0)
+            {
+                prcode(fp,
+"\n"
+"            sipKeepReference(sipSelf, %d, a%dWrapper);\n"
+                    , ad->key, a);
+            }
+
+            /* Handle /TransferThis/ for non-factory methods. */
+            if (!isFactory(od) && isThisTransferred(ad))
             {
                 prcode(fp,
 "\n"
@@ -9801,8 +9815,6 @@ static void generateFunctionCall(classDef *cd,classDef *ocd,overDef *od,
 "            else\n"
 "                sipTransferBack(sipSelf);\n"
                         );
-
-                break;
             }
         }
 
@@ -10267,6 +10279,9 @@ static int generateArgParser(signatureDef *sd, classDef *cd, ctorDef *ct,
             break;
         }
 
+        if (isGetWrapper(ad))
+            prcode(fp, "@");
+
         prcode(fp,fmt);
     }
 
@@ -10286,6 +10301,9 @@ static int generateArgParser(signatureDef *sd, classDef *cd, ctorDef *ct,
         if (!isInArg(ad))
             continue;
 
+        if (isGetWrapper(ad))
+            prcode(fp, ",&a%dWrapper", a);
+
         switch (ad->atype)
         {
         case mapped_type:
@@ -10301,8 +10319,6 @@ static int generateArgParser(signatureDef *sd, classDef *cd, ctorDef *ct,
 
             if (isThisTransferred(ad))
                 prcode(fp, ",%ssipOwner", (ct != NULL ? "" : "&"));
-            else if (isGetWrapper(ad))
-                prcode(fp, ",&a%dWrapper", a);
 
             if (ad->u.cd->convtocode != NULL && !isConstrained(ad))
                 prcode(fp, ",&a%dState", a);
@@ -10414,14 +10430,11 @@ static char *getSubFormatChar(char fc, argDef *ad)
             flags |= 0x01;
 
         if (isThisTransferred(ad))
-            flags |= 0x20;
-
-        if (isGetWrapper(ad))
-            flags |= 0x08;
+            flags |= 0x10;
 
         if (ad->atype == class_type)
             if (ad->u.cd->convtocode == NULL || isConstrained(ad))
-                flags |= 0x10;
+                flags |= 0x08;
     }
 
     fmt[0] = fc;

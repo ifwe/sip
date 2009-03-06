@@ -1,3 +1,20 @@
+2009/03/05  9:16:57  phil
+Taught the build system about the new dependency of QtXmlPatterns on QtNetwork.
+
+
+2009/03/04 15:06:09  phil
+Fixes for the updated method cache.
+
+
+2009/03/04 12:21:03  phil
+Greatly simplified the virtual reimplementation method cache now that attribute
+lookup has been cleaned up.
+
+
+2009/03/03 18:32:32  phil
+Implemented the /KeepReference/ argument annotation.
+
+
 2009/02/27  9:51:28  phil
 Added sipCanConvertToEnum() to the public API.
 

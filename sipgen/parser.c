@@ -768,10 +768,10 @@ static const unsigned short int yyrline[] =
     1956,  1962,  1965,  1970,  1973,  1978,  2026,  2031,  2037,  2064,
     2073,  2082,  2091,  2102,  2110,  2125,  2140,  2146,  2152,  2152,
     2153,  2156,  2157,  2160,  2160,  2161,  2164,  2197,  2203,  2211,
-    2271,  2274,  2282,  2285,  2290,  2301,  2315,  2332,  2339,  2346,
-    2353,  2360,  2367,  2374,  2381,  2388,  2395,  2402,  2409,  2416,
-    2423,  2430,  2437,  2444,  2451,  2458,  2465,  2472,  2479,  2486,
-    2493,  2500,  2509,  2515,  2531,  2534,  2542,  2548,  2555
+    2278,  2281,  2289,  2292,  2297,  2308,  2322,  2339,  2346,  2353,
+    2360,  2367,  2374,  2381,  2388,  2395,  2402,  2409,  2416,  2423,
+    2430,  2437,  2444,  2451,  2458,  2465,  2472,  2479,  2486,  2493,
+    2500,  2507,  2516,  2522,  2538,  2541,  2549,  2555,  2562
 };
 #endif
 
@@ -4457,6 +4457,13 @@ yyreduce:
             if (findOptFlag(&yyvsp[0].optflags,"TransferBack",bool_flag) != NULL)
                 yyval.memArg.argflags |= ARG_XFERRED_BACK;
 
+            if (findOptFlag(&yyvsp[0].optflags, "KeepReference", bool_flag) != NULL)
+            {
+                /* The wrapper is needed. */
+                yyval.memArg.argflags |= ARG_GET_WRAPPER;
+                yyval.memArg.key = currentModule->next_key++;
+            }
+
             if (findOptFlag(&yyvsp[0].optflags,"In",bool_flag) != NULL)
                 yyval.memArg.argflags |= ARG_IN;
 
@@ -4493,14 +4500,14 @@ yyreduce:
     break;
 
   case 310:
-#line 2271 "parser.y"
+#line 2278 "parser.y"
     {
             yyval.number = 0;
         }
     break;
 
   case 311:
-#line 2274 "parser.y"
+#line 2281 "parser.y"
     {
             if (currentSpec -> genc)
                 yyerror("References not allowed in a C module");
@@ -4510,21 +4517,21 @@ yyreduce:
     break;
 
   case 312:
-#line 2282 "parser.y"
+#line 2289 "parser.y"
     {
             yyval.number = 0;
         }
     break;
 
   case 313:
-#line 2285 "parser.y"
+#line 2292 "parser.y"
     {
             yyval.number = yyvsp[-1].number + 1;
         }
     break;
 
   case 314:
-#line 2290 "parser.y"
+#line 2297 "parser.y"
     {
             yyval.memArg.nrderefs = 0;
             yyval.memArg.argflags = 0;
@@ -4539,7 +4546,7 @@ yyreduce:
     break;
 
   case 315:
-#line 2301 "parser.y"
+#line 2308 "parser.y"
     {
             templateDef *td;
 
@@ -4557,7 +4564,7 @@ yyreduce:
     break;
 
   case 316:
-#line 2315 "parser.y"
+#line 2322 "parser.y"
     {
             yyval.memArg.nrderefs = 0;
             yyval.memArg.argflags = 0;
@@ -4578,7 +4585,7 @@ yyreduce:
     break;
 
   case 317:
-#line 2332 "parser.y"
+#line 2339 "parser.y"
     {
             yyval.memArg.nrderefs = 0;
             yyval.memArg.argflags = 0;
@@ -4589,7 +4596,7 @@ yyreduce:
     break;
 
   case 318:
-#line 2339 "parser.y"
+#line 2346 "parser.y"
     {
             yyval.memArg.nrderefs = 0;
             yyval.memArg.argflags = 0;
@@ -4600,17 +4607,6 @@ yyreduce:
     break;
 
   case 319:
-#line 2346 "parser.y"
-    {
-            yyval.memArg.nrderefs = 0;
-            yyval.memArg.argflags = 0;
-            yyval.memArg.original_type = NULL;
-
-            yyval.memArg.atype = uint_type;
-        }
-    break;
-
-  case 320:
 #line 2353 "parser.y"
     {
             yyval.memArg.nrderefs = 0;
@@ -4621,8 +4617,19 @@ yyreduce:
         }
     break;
 
-  case 321:
+  case 320:
 #line 2360 "parser.y"
+    {
+            yyval.memArg.nrderefs = 0;
+            yyval.memArg.argflags = 0;
+            yyval.memArg.original_type = NULL;
+
+            yyval.memArg.atype = uint_type;
+        }
+    break;
+
+  case 321:
+#line 2367 "parser.y"
     {
             yyval.memArg.nrderefs = 0;
             yyval.memArg.argflags = 0;
@@ -4633,7 +4640,7 @@ yyreduce:
     break;
 
   case 322:
-#line 2367 "parser.y"
+#line 2374 "parser.y"
     {
             yyval.memArg.nrderefs = 0;
             yyval.memArg.argflags = 0;
@@ -4644,7 +4651,7 @@ yyreduce:
     break;
 
   case 323:
-#line 2374 "parser.y"
+#line 2381 "parser.y"
     {
             yyval.memArg.nrderefs = 0;
             yyval.memArg.argflags = 0;
@@ -4655,7 +4662,7 @@ yyreduce:
     break;
 
   case 324:
-#line 2381 "parser.y"
+#line 2388 "parser.y"
     {
             yyval.memArg.nrderefs = 0;
             yyval.memArg.argflags = 0;
@@ -4666,7 +4673,7 @@ yyreduce:
     break;
 
   case 325:
-#line 2388 "parser.y"
+#line 2395 "parser.y"
     {
             yyval.memArg.nrderefs = 0;
             yyval.memArg.argflags = 0;
@@ -4677,7 +4684,7 @@ yyreduce:
     break;
 
   case 326:
-#line 2395 "parser.y"
+#line 2402 "parser.y"
     {
             yyval.memArg.nrderefs = 0;
             yyval.memArg.argflags = 0;
@@ -4688,7 +4695,7 @@ yyreduce:
     break;
 
   case 327:
-#line 2402 "parser.y"
+#line 2409 "parser.y"
     {
             yyval.memArg.nrderefs = 0;
             yyval.memArg.argflags = 0;
@@ -4699,7 +4706,7 @@ yyreduce:
     break;
 
   case 328:
-#line 2409 "parser.y"
+#line 2416 "parser.y"
     {
             yyval.memArg.nrderefs = 0;
             yyval.memArg.argflags = 0;
@@ -4710,7 +4717,7 @@ yyreduce:
     break;
 
   case 329:
-#line 2416 "parser.y"
+#line 2423 "parser.y"
     {
             yyval.memArg.nrderefs = 0;
             yyval.memArg.argflags = 0;
@@ -4721,7 +4728,7 @@ yyreduce:
     break;
 
   case 330:
-#line 2423 "parser.y"
+#line 2430 "parser.y"
     {
             yyval.memArg.nrderefs = 0;
             yyval.memArg.argflags = 0;
@@ -4732,7 +4739,7 @@ yyreduce:
     break;
 
   case 331:
-#line 2430 "parser.y"
+#line 2437 "parser.y"
     {
             yyval.memArg.nrderefs = 0;
             yyval.memArg.argflags = 0;
@@ -4743,7 +4750,7 @@ yyreduce:
     break;
 
   case 332:
-#line 2437 "parser.y"
+#line 2444 "parser.y"
     {
             yyval.memArg.nrderefs = 0;
             yyval.memArg.argflags = 0;
@@ -4754,7 +4761,7 @@ yyreduce:
     break;
 
   case 333:
-#line 2444 "parser.y"
+#line 2451 "parser.y"
     {
             yyval.memArg.nrderefs = 0;
             yyval.memArg.argflags = 0;
@@ -4765,7 +4772,7 @@ yyreduce:
     break;
 
   case 334:
-#line 2451 "parser.y"
+#line 2458 "parser.y"
     {
             yyval.memArg.nrderefs = 0;
             yyval.memArg.argflags = 0;
@@ -4776,7 +4783,7 @@ yyreduce:
     break;
 
   case 335:
-#line 2458 "parser.y"
+#line 2465 "parser.y"
     {
             yyval.memArg.nrderefs = 0;
             yyval.memArg.argflags = 0;
@@ -4787,7 +4794,7 @@ yyreduce:
     break;
 
   case 336:
-#line 2465 "parser.y"
+#line 2472 "parser.y"
     {
             yyval.memArg.nrderefs = 0;
             yyval.memArg.argflags = 0;
@@ -4798,7 +4805,7 @@ yyreduce:
     break;
 
   case 337:
-#line 2472 "parser.y"
+#line 2479 "parser.y"
     {
             yyval.memArg.nrderefs = 0;
             yyval.memArg.argflags = 0;
@@ -4809,7 +4816,7 @@ yyreduce:
     break;
 
   case 338:
-#line 2479 "parser.y"
+#line 2486 "parser.y"
     {
             yyval.memArg.nrderefs = 0;
             yyval.memArg.argflags = 0;
@@ -4820,7 +4827,7 @@ yyreduce:
     break;
 
   case 339:
-#line 2486 "parser.y"
+#line 2493 "parser.y"
     {
             yyval.memArg.nrderefs = 0;
             yyval.memArg.argflags = 0;
@@ -4831,7 +4838,7 @@ yyreduce:
     break;
 
   case 340:
-#line 2493 "parser.y"
+#line 2500 "parser.y"
     {
             yyval.memArg.nrderefs = 0;
             yyval.memArg.argflags = 0;
@@ -4842,7 +4849,7 @@ yyreduce:
     break;
 
   case 341:
-#line 2500 "parser.y"
+#line 2507 "parser.y"
     {
             yyval.memArg.nrderefs = 0;
             yyval.memArg.argflags = 0;
@@ -4853,7 +4860,7 @@ yyreduce:
     break;
 
   case 342:
-#line 2509 "parser.y"
+#line 2516 "parser.y"
     {
             /* The single or first type. */
 
@@ -4863,7 +4870,7 @@ yyreduce:
     break;
 
   case 343:
-#line 2515 "parser.y"
+#line 2522 "parser.y"
     {
             /* Check there is nothing after an ellipsis. */
             if (yyvsp[-2].signature.args[yyvsp[-2].signature.nrArgs - 1].atype == ellipsis_type)
@@ -4881,14 +4888,14 @@ yyreduce:
     break;
 
   case 344:
-#line 2531 "parser.y"
+#line 2538 "parser.y"
     {
             yyval.throwlist = NULL;
         }
     break;
 
   case 345:
-#line 2534 "parser.y"
+#line 2541 "parser.y"
     {
             if (currentSpec->genc)
                 yyerror("Exceptions not allowed in a C module");
@@ -4898,7 +4905,7 @@ yyreduce:
     break;
 
   case 346:
-#line 2542 "parser.y"
+#line 2549 "parser.y"
     {
             /* Empty list so use a blank. */
 
@@ -4908,7 +4915,7 @@ yyreduce:
     break;
 
   case 347:
-#line 2548 "parser.y"
+#line 2555 "parser.y"
     {
             /* The only or first exception. */
 
@@ -4919,7 +4926,7 @@ yyreduce:
     break;
 
   case 348:
-#line 2555 "parser.y"
+#line 2562 "parser.y"
     {
             /* Check that it wasn't ...(,arg...). */
 
@@ -4940,7 +4947,7 @@ yyreduce:
     }
 
 /* Line 1010 of yacc.c.  */
-#line 4944 "parser.c"
+#line 4951 "parser.c"
 
   yyvsp -= yylen;
   yyssp -= yylen;
@@ -5165,7 +5172,7 @@ yyreturn:
 }
 
 
-#line 2571 "parser.y"
+#line 2578 "parser.y"
 
 
 
@@ -5306,6 +5313,7 @@ static moduleDef *allocModule()
     newmod->version = -1;
     newmod->qobjclass = -1;
     newmod->nrvirthandlers = -1;
+    newmod->next_key = 1;
 
     /*
      * The consolidated module support needs these to be in order that they
