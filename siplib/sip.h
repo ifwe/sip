@@ -51,7 +51,7 @@ extern "C" {
  * Define the SIP version number.
  */
 #define SIP_VERSION         0x040800
-#define SIP_VERSION_STR     "4.8-snapshot-20090225"
+#define SIP_VERSION_STR     "4.8-snapshot-20090227"
 
 
 /*
@@ -1051,6 +1051,7 @@ typedef struct _sipAPIDef {
             PyObject *transferObj, int flags, int *statep, int *iserrp);
     void *(*api_force_convert_to_type)(PyObject *pyObj, const sipTypeDef *td,
             PyObject *transferObj, int flags, int *statep, int *iserrp);
+    int (*api_can_convert_to_enum)(PyObject *pyObj, const sipTypeDef *td);
     void (*api_release_type)(void *cpp, const sipTypeDef *td, int state);
     PyObject *(*api_convert_from_type)(void *cpp, const sipTypeDef *td,
             PyObject *transferObj);

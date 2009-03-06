@@ -7,7 +7,7 @@
 -----------------
 
 :Contact:   info@riverbankcomputing.com
-:Version:   4.8-snapshot-20090225
+:Version:   4.8-snapshot-20090227
 :Copyright: Copyright (c) 2008 Riverbank Computing Limited
 
 .. contents::
@@ -17,7 +17,7 @@
 Introduction
 ============
 
-This is the reference guide for SIP 4.8-snapshot-20090225.  SIP is a tool for
+This is the reference guide for SIP 4.8-snapshot-20090227.  SIP is a tool for
 automatically generating `Python <http://www.python.org>`__ bindings for C and
 C++ libraries.  SIP was originally developed in 1998 for
 `PyQt <http://www.riverbankcomputing.com/software/pyqt/>`__ - the Python
@@ -4299,6 +4299,15 @@ PyObject \*sipCallMethod(int \*iserr, PyObject \*method, const char \*format, ..
     This is normally called by handwritten code specified with the
     `%VirtualCatcherCode`_ directive with *method* being the supplied
     ``sipMethod``.
+
+
+sipCanConvertToEnum()
+---------------------
+
+int sipCanConvertToEnum(PyObject \*obj, const sipTypeDef \*td)
+    This returns a non-zero value if a Python object can be converted to a
+    named enum.  *obj* is the Python object.  *td* is the generated type
+    structure corresponding to the enum.
 
 
 sipCanConvertToInstance()
