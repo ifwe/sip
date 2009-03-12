@@ -3326,7 +3326,7 @@ static int isGetter(moduleDef* module, classDef* cd, overDef* over)
     /* starts with Get, looks like an accessor, and has no non default 
        arguments */
     return 0 == strncmp(over->cppname, "Get", 3) &&
-        isAccessor(over) &&
+        isAccessor(over) && over->methodcode == NULL &&
         0 == countNonDefaultArgs(over->cppsig->args, over->cppsig->nrArgs);
 }
 

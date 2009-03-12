@@ -142,7 +142,7 @@ static void generateVariableGetter(classDef *, varDef *, FILE *);
 static void generateVariableSetter(classDef *, varDef *, FILE *);
 static void generatePropertyHandler(classDef*, varDef *, FILE *);
 static int generateObjToCppConversion(argDef *, FILE *);
-static void generateVarMember(varDef *vd, FILE *fp);
+static void generateVarMember(varDef *vd, FILE *fp, int setter);
 static int generateVoidPointers(sipSpec *pt, moduleDef *mod, classDef *cd,
         FILE *fp);
 static int generateChars(sipSpec *pt, moduleDef *mod, classDef *cd, FILE *fp);
@@ -3629,7 +3629,7 @@ static void generateVariableGetter(classDef *context, varDef *vd, FILE *fp)
         return;
     }
 
-    needsNew = ((atype == class_type || atype == mapped_type) && vd->type.nrderefs == 0 && isConstArg(&vd->type));
+    needsNew = ((atype == class_type || atype == mapped_type) && vd->type.nrderefs == 0 && (isConstArg(&vd->type) || !isReference(&vd->type)));
 
     if (needsNew)
     {
@@ -3649,7 +3649,7 @@ static void generateVariableGetter(classDef *context, varDef *vd, FILE *fp)
             prcode(fp, "&");
     }
 
-    generateVarMember(vd, fp);
+    generateVarMember(vd, fp, 0);
 
     prcode(fp, "%s;\n"
 "\n"
@@ -3659,7 +3659,8 @@ static void generateVariableGetter(classDef *context, varDef *vd, FILE *fp)
     {
     case mapped_type:
         prcode(fp,
-"    return sipConvertFromType(sipVal, sipType_%T, NULL);\n"
+                /* TODO: don't use (void*) cast here. instead, remove const* if necessary (?) */
+"    return sipConvertFromType((void*)sipVal, sipType_%T, NULL);\n"
             , &vd->type);
 
         break;
@@ -3812,8 +3813,11 @@ static void generateVariableSetter(classDef *context, varDef *vd, FILE *fp)
     const char *first_arg;
     char *deref;
     int might_be_temp;
+    int read_only_property;
 
-    if (generating_c || !isStaticVar(vd))
+    read_only_property = isProperty(vd) && vd->setter == NULL;
+
+    if (!read_only_property && (generating_c || !isStaticVar(vd)))
         first_arg = "sipSelf";
     else
         first_arg = "";
@@ -3829,9 +3833,20 @@ static void generateVariableSetter(classDef *context, varDef *vd, FILE *fp)
             , vd->fqcname);
 
     prcode(fp,
-"static int varset_%C(void *%s, PyObject *sipPy)\n"
+"static int varset_%C(void *%s, PyObject *%s)\n"
 "{\n"
-        , vd->fqcname, first_arg);
+        , vd->fqcname, first_arg, (read_only_property ? "" : "sipPy"));
+
+    /* Read only property: just raise an exception. */
+    if (read_only_property)
+    {
+        prcode(fp, "    PyErr_SetString(PyExc_AttributeError, \"%s is a read-only property\");  \n",
+            vd->pyname->text);
+        prcode(fp, "    return NULL;\n");
+        prcode(fp, "}\n");
+        return;
+    }
+
 
     if (vd->setcode == NULL)
     {
@@ -3930,15 +3945,16 @@ static void generateVariableSetter(classDef *context, varDef *vd, FILE *fp)
             , vd->ecd->pyname, vd->pyname);
     }
 
-    if (atype == pyobject_type || atype == pytuple_type ||
-        atype == pylist_type || atype == pydict_type ||
-        atype == pycallable_type || atype == pyslice_type ||
-        atype == pytype_type)
+    if (!isProperty(vd) && 
+        (atype == pyobject_type || atype == pytuple_type ||
+         atype == pylist_type || atype == pydict_type ||
+         atype == pycallable_type || atype == pyslice_type ||
+         atype == pytype_type))
     {
         prcode(fp,
 "    Py_XDECREF(");
 
-        generateVarMember(vd, fp);
+        generateVarMember(vd, fp, 1);
 
         prcode(fp, ");\n"
 "    Py_INCREF(sipVal);\n"
@@ -3949,10 +3965,13 @@ static void generateVariableSetter(classDef *context, varDef *vd, FILE *fp)
     prcode(fp,
 "    ");
 
-    generateVarMember(vd, fp);
+    generateVarMember(vd, fp, 1);
 
-    prcode(fp, " = %ssipVal;\n"
-        , deref);
+    if (isProperty(vd))
+        prcode(fp, "(%ssipVal);\n", deref);
+    else
+        prcode(fp, " = %ssipVal;\n"
+            , deref);
 
     /* Note that wchar_t * leaks here. */
 
@@ -3978,14 +3997,24 @@ static void generateVariableSetter(classDef *context, varDef *vd, FILE *fp)
 /*
  * Generate the member variable of a class.
  */
-static void generateVarMember(varDef *vd, FILE *fp)
+static void generateVarMember(varDef *vd, FILE *fp, int setter)
 {
     if (isStaticVar(vd))
         prcode(fp,"%S::",classFQCName(vd->ecd));
     else
         prcode(fp,"sipCpp->");
 
+    if (isProperty(vd))
+        if (!setter)
+            prcode(fp, "Get");
+        else
+            prcode(fp, "Set");
+
     prcode(fp, "%s", scopedNameTail(vd->fqcname));
+
+    if (isProperty(vd))
+        if (!setter)
+            prcode(fp, "()");
 }
 
 
@@ -7714,6 +7743,7 @@ static void generateTypeDefinition(sipSpec *pt, classDef *cd, FILE *fp)
     int is_inst_class, is_inst_voidp, is_inst_char, is_inst_string;
     int is_inst_int, is_inst_long, is_inst_ulong, is_inst_longlong;
     int is_inst_ulonglong, is_inst_double;
+    int varCount;
     memberDef *md;
     moduleDef *mod;
 
@@ -7843,43 +7873,44 @@ static void generateTypeDefinition(sipSpec *pt, classDef *cd, FILE *fp)
             {
                 ++nr_vars;
 
-                if (isProperty(vd))
-                {
-                    generatePropertyHandler(cd, vd, fp);
-                }
-                else
-                {
-                    generateVariableGetter(cd, vd, fp);
-
-                    if (canSetVariable(vd))
-                        generateVariableSetter(cd, vd, fp);
-                }
-            }
-
-        /* Generate the variable table. */
-        prcode(fp,
-"\n"
-"sipVariableDef variables_%C[] = {\n"
-            ,classFQCName(cd));
-
-        for (vd = pt->vars; vd != NULL; vd = vd->next)
-            if (vd->ecd == cd && needsHandler(vd))
-            {
-                prcode(fp,
-"    {%N, varget_%C, ", vd->pyname, vd->fqcname);
+                generateVariableGetter(cd, vd, fp);
 
                 if (canSetVariable(vd))
-                    prcode(fp, "varset_%C", vd->fqcname);
-                else
-                    prcode(fp, "NULL");
-
-                prcode(fp, ", %d},\n"
-                    , (isStaticVar(vd) ? 1 : 0));
+                    generateVariableSetter(cd, vd, fp);
             }
 
-        prcode(fp,
-"};\n"
-            );
+        varCount = 0;
+        for (vd = pt->vars; vd != NULL; vd = vd->next)
+            if (vd->ecd == cd && needsHandler(vd))
+                ++varCount;
+
+        if (varCount > 0)
+        {
+            /* Generate the variable table. */
+            prcode(fp,
+    "\n"
+    "sipVariableDef variables_%C[] = {\n"
+                ,classFQCName(cd));
+
+            for (vd = pt->vars; vd != NULL; vd = vd->next)
+                if (vd->ecd == cd && needsHandler(vd))
+                {
+                    prcode(fp,
+    "    {%N, varget_%C, ", vd->pyname, vd->fqcname);
+
+                    if (canSetVariable(vd))
+                        prcode(fp, "varset_%C", vd->fqcname);
+                    else
+                        prcode(fp, "NULL");
+
+                    prcode(fp, ", %d},\n"
+                        , (isStaticVar(vd) ? 1 : 0));
+                }
+
+            prcode(fp,
+    "};\n"
+                );
+        }
     }
 
     /* Generate each instance table. */
