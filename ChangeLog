@@ -1,3 +1,40 @@
+2009/03/10 18:33:57  phil
+Changed the code generated for variable getters so that a copy is only returned
+if the variable is const.
+
+
+2009/03/09 19:14:11  phil
+Changed the generation of the string pool to get around MSVC's limitation on
+the size of a string.
+
+
+2009/03/09 17:40:00  phil
+Updated the NEWS file.
+
+
+2009/03/09 14:35:38  phil
+Made sure all generated code doesn't break strict aliasing.
+
+
+2009/03/09 13:55:23  phil
+SIP now automatically copies objects when they are returned as a const
+reference.
+
+
+2009/03/09 12:44:42  phil
+A further fix to the order in which modules have their types resolved.
+
+
+2009/03/06 18:40:56  phil
+Taught the build system about the QtScriptTools module.
+
+
+2009/03/06 16:44:18  phil
+Fixed a bug where types were being resolved in outer modules before inner
+modules.  This meant that template-based types created on the fly might be
+created in the wrong module.
+
+
 2009/03/05  9:16:57  phil
 Taught the build system about the new dependency of QtXmlPatterns on QtNetwork.
 
@@ -406,7 +443,7 @@ Safety checkin of the support for the new sip.simplewrapper type.
 
 2008/12/01  9:20:22  phil
 Added support for %InitialisationCode.  (Actually in the previous commit but I
-forgotto mention it.)
+forgot to mention it.)
 The text of an attribute exception now mimics that produced by the Python
 interpreter.
 

@@ -6705,7 +6705,7 @@ static int sipSimpleWrapper_init(sipSimpleWrapper *self, PyObject *args,
         /* Call the C++ ctor. */
         owner = NULL;
 
-        if ((sipNew = ctd->ctd_init(self, args, &owner, &argsparsed)) != NULL)
+        if ((sipNew = ctd->ctd_init(self, args, (PyObject **)&owner, &argsparsed)) != NULL)
             sipFlags = SIP_DERIVED_CLASS;
         else
         {
@@ -6729,7 +6729,7 @@ static int sipSimpleWrapper_init(sipSimpleWrapper *self, PyObject *args,
             {
                 argsparsed = 0;
 
-                if ((sipNew = ie->ie_extender(self, args, &owner, &argsparsed)) != NULL)
+                if ((sipNew = ie->ie_extender(self, args, (PyObject **)&owner, &argsparsed)) != NULL)
                     break;
 
                 pstate = argsparsed & PARSE_MASK;
@@ -6756,7 +6756,7 @@ static int sipSimpleWrapper_init(sipSimpleWrapper *self, PyObject *args,
 
         if (owner == NULL)
             sipFlags |= SIP_PY_OWNED;
-        else if (owner == (sipWrapper *)Py_None)
+        else if ((PyObject *)owner == Py_None)
         {
             /* This is the hack that means that C++ owns the new instance. */
             sipFlags |= SIP_CPP_HAS_REF;
@@ -6772,7 +6772,7 @@ static int sipSimpleWrapper_init(sipSimpleWrapper *self, PyObject *args,
     if (owner != NULL)
     {
         assert(PyObject_TypeCheck((PyObject *)self, (PyTypeObject *)&sipWrapper_Type));
-        addToParent((sipWrapper *)self, owner);
+        addToParent((sipWrapper *)self, (sipWrapper *)owner);
     }
 
     self->u.cppPtr = sipNew;

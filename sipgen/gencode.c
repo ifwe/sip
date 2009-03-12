@@ -224,6 +224,7 @@ static void generateNameCache(sipSpec *pt, FILE *fp);
 static const char *resultOwner(overDef *od);
 static void prCachedName(FILE *fp, nameDef *nd, const char *prefix);
 static void generateSignalTableEntry(classDef *cd, overDef *od, FILE *fp);
+static void generateTypesTable(sipSpec *pt, moduleDef *mod, FILE *fp);
 
 
 /*
@@ -705,7 +706,7 @@ static void generateInternalAPIHeader(sipSpec *pt, moduleDef *mod,
     prcode(fp,
 "\n"
 "/* The strings used by this module. */\n"
-"extern const char *sipStrings_%s;\n"
+"extern const char sipStrings_%s[];\n"
         , mname);
 
     /* The unscoped enum macros. */
@@ -996,18 +997,25 @@ static void generateNameCache(sipSpec *pt, FILE *fp)
     prcode(fp,
 "\n"
 "/* Define the strings used by this module. */\n"
-"const char *sipStrings_%s =", pt->module->name);
+"const char sipStrings_%s[] = {\n"
+        , pt->module->name);
 
     for (nd = pt->namecache; nd != NULL; nd = nd->next)
     {
+        const char *cp;
+
         if (!isUsedName(nd) || isSubstring(nd))
             continue;
 
-        prcode(fp, "\n"
-"    \"%s\\0\"", nd->text);
+        prcode(fp, "    ");
+
+        for (cp = nd->text; *cp != '\0'; ++cp)
+            prcode(fp, "'%c', ", *cp);
+
+        prcode(fp, "0,\n");
     }
 
-    prcode(fp, ";\n");
+    prcode(fp, "};\n");
 }
 
 
@@ -1320,71 +1328,7 @@ static void generateCpp(sipSpec *pt, moduleDef *mod, const char *codeDir,
 
     /* Generate the types table. */
     if (mod->nrtypes > 0)
-    {
-        int i;
-        argDef *ad;
-
-        prcode(fp,
-"\n"
-"\n"
-"/*\n"
-" * This defines each type in this module.\n"
-" */\n"
-"static sipTypeDef *typesTable[] = {\n"
-            );
-
-        for (ad = mod->types, i = 0; i < mod->nrtypes; ++i, ++ad)
-        {
-            const char *type_prefix, *type_suffix;
-
-            if (pluginPyQt4(pt))
-            {
-                type_prefix = "pyqt4";
-                type_suffix = ".super";
-            }
-            else if (pluginPyQt3(pt) && ad->atype == class_type)
-            {
-                type_prefix = "pyqt3";
-                type_suffix = ".super";
-            }
-            else
-            {
-                type_prefix = "sip";
-                type_suffix = "";
-            }
-
-            switch (ad->atype)
-            {
-            case class_type:
-                if (isExternal(ad->u.cd))
-                    prcode(fp,
-"    0,\n"
-                        );
-                else
-                    prcode(fp,
-"    &%sType_%s_%C%s.ctd_base,\n"
-                        , type_prefix, mod->name, classFQCName(ad->u.cd), type_suffix);
-
-                break;
-
-            case mapped_type:
-                prcode(fp,
-"    &%sMappedTypeDef_%T%s.mtd_base,\n"
-                    , type_prefix, ad, type_suffix);
-                break;
-
-            case enum_type:
-                prcode(fp,
-"    &enumTypes[%d].etd_base,\n"
-                    , ad->u.ed->enum_idx);
-                break;
-            }
-        }
-
-        prcode(fp,
-"};\n"
-            );
-    }
+        generateTypesTable(pt, mod, fp);
 
     if (mod->nrtypedefs > 0)
     {
@@ -1845,6 +1789,77 @@ static void generateCpp(sipSpec *pt, moduleDef *mod, const char *codeDir,
     mod->parts = parts;
 
     generateInternalAPIHeader(pt, mod, codeDir, xsl);
+}
+
+
+/*
+ * Generate the types table for a module.
+ */
+static void generateTypesTable(sipSpec *pt, moduleDef *mod, FILE *fp)
+{
+    int i;
+    argDef *ad;
+
+    prcode(fp,
+"\n"
+"\n"
+"/*\n"
+" * This defines each type in this module.\n"
+" */\n"
+"static sipTypeDef *typesTable[] = {\n"
+        );
+
+    for (ad = mod->types, i = 0; i < mod->nrtypes; ++i, ++ad)
+    {
+        const char *type_prefix, *type_suffix;
+
+        if (pluginPyQt4(pt))
+        {
+            type_prefix = "pyqt4";
+            type_suffix = ".super";
+        }
+        else if (pluginPyQt3(pt) && ad->atype == class_type)
+        {
+            type_prefix = "pyqt3";
+            type_suffix = ".super";
+        }
+        else
+        {
+            type_prefix = "sip";
+                type_suffix = "";
+        }
+
+        switch (ad->atype)
+        {
+        case class_type:
+            if (isExternal(ad->u.cd))
+                prcode(fp,
+"    0,\n"
+                    );
+            else
+                prcode(fp,
+"    &%sType_%s_%C%s.ctd_base,\n"
+                    , type_prefix, mod->name, classFQCName(ad->u.cd), type_suffix);
+
+            break;
+
+        case mapped_type:
+            prcode(fp,
+"    &%sMappedTypeDef_%T%s.mtd_base,\n"
+                , type_prefix, ad, type_suffix);
+            break;
+
+        case enum_type:
+            prcode(fp,
+"    &enumTypes[%d].etd_base,\n"
+                , ad->u.ed->enum_idx);
+            break;
+        }
+    }
+
+    prcode(fp,
+"};\n"
+        );
 }
 
 
@@ -3525,7 +3540,7 @@ static void generateVariableGetter(classDef *context, varDef *vd, FILE *fp)
         return;
     }
 
-    needsNew = ((atype == class_type || atype == mapped_type) && vd->type.nrderefs == 0);
+    needsNew = ((atype == class_type || atype == mapped_type) && vd->type.nrderefs == 0 && isConstArg(&vd->type));
 
     if (needsNew)
     {
@@ -3537,8 +3552,13 @@ static void generateVariableGetter(classDef *context, varDef *vd, FILE *fp)
 "    sipVal = new %b(", &vd->type);
     }
     else
+    {
         prcode(fp,
 "    sipVal = ");
+
+        if ((atype == class_type || atype == mapped_type) && vd->type.nrderefs == 0)
+            prcode(fp, "&");
+    }
 
     generateVarMember(vd, fp);
 
@@ -8347,11 +8367,11 @@ static void generateTypeInit(classDef *cd, FILE *fp)
 
     if (!generating_c)
         prcode(fp,
-"extern \"C\" {static void *init_%C(sipSimpleWrapper *, PyObject *, sipWrapper **, int *);}\n"
+"extern \"C\" {static void *init_%C(sipSimpleWrapper *, PyObject *, PyObject **, int *);}\n"
             , classFQCName(cd));
 
     prcode(fp,
-"static void *init_%C(sipSimpleWrapper *%s,PyObject *sipArgs,sipWrapper **%s,int *sipArgsParsed)\n"
+"static void *init_%C(sipSimpleWrapper *%s, PyObject *sipArgs, PyObject **%s, int *sipArgsParsed)\n"
 "{\n"
         ,classFQCName(cd),(need_self ? "sipSelf" : ""),(need_owner ? "sipOwner" : ""));
 
@@ -8657,7 +8677,7 @@ static void generateConstructorCall(classDef *cd,ctorDef *ct,int error_flag,
         if (isResultTransferredCtor(ct))
             prcode(fp,
 "\n"
-"            *sipOwner = (sipWrapper *)Py_None;\n"
+"            *sipOwner = Py_None;\n"
                 );
     }
 
@@ -9376,7 +9396,7 @@ static char getBuildResultFormat(argDef *ad)
  * Generate a function call.
  */
 static void generateFunctionCall(classDef *cd,classDef *ocd,overDef *od,
-                 int deref, FILE *fp)
+        int deref, FILE *fp)
 {
     int needsNew, error_flag = FALSE, newline, is_result, result_size, a,
             deltemps;
@@ -9404,15 +9424,17 @@ static void generateFunctionCall(classDef *cd,classDef *ocd,overDef *od,
     orig_res = *res;
 
     /* See if we need to make a copy of the result on the heap. */
-    if ((res->atype == class_type || res->atype == mapped_type) &&
-        !isReference(res) &&
-        res->nrderefs == 0)
+    needsNew = FALSE;
+
+    if ((res->atype == class_type || res->atype == mapped_type) && res->nrderefs == 0)
     {
-        needsNew = TRUE;
-        resetIsConstArg(res);
+        /* Make a copy if it is not a reference or it is a const reference. */
+        if (!isReference(res) || isConstArg(res))
+        {
+            needsNew = TRUE;
+            resetIsConstArg(res);
+        }
     }
-    else
-        needsNew = FALSE;
 
     /* See if sipRes is needed. */
     is_result = (!isInplaceNumberSlot(od->common) &&
@@ -9603,11 +9625,13 @@ static void generateFunctionCall(classDef *cd,classDef *ocd,overDef *od,
                     prcode(fp,"sipRes = new %b(",res);
             }
             else
+            {
                 prcode(fp,"sipRes = ");
 
-            /* See if we need the address of the result. */
-            if ((res->atype == class_type || res->atype == mapped_type) && isReference(res))
-                prcode(fp,"&");
+                /* See if we need the address of the result. */
+                if ((res->atype == class_type || res->atype == mapped_type) && isReference(res))
+                    prcode(fp,"&");
+            }
         }
 
         switch (od->common->slot)
