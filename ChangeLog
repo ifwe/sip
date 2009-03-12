@@ -1,3 +1,16 @@
+2009/03/11 22:30:09  phil
+configure.py now uses optparse.
+configure.py and the build system will now run under Python3.
+
+
+2009/03/11 16:39:08  phil
+Implemented __dict__ for sipsimplewrapper.
+
+
+2009/03/11 12:17:08  phil
+Added the SIP_PYMETHODDEF_CAST compatibility macro for Python v2.4 and earlier.
+
+
 2009/03/10 18:33:57  phil
 Changed the code generated for variable getters so that a copy is only returned
 if the variable is const.

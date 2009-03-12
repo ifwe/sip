@@ -301,7 +301,7 @@ ul.auto-toc {
 <tr><th class="docinfo-name">Contact:</th>
 <td><a class="first last reference" href="mailto:info&#64;riverbankcomputing.com">info&#64;riverbankcomputing.com</a></td></tr>
 <tr><th class="docinfo-name">Version:</th>
-<td>4.8-snapshot-20090310</td></tr>
+<td>4.8-snapshot-20090311</td></tr>
 <tr><th class="docinfo-name">Copyright:</th>
 <td>Copyright (c) 2009 Riverbank Computing Limited</td></tr>
 </tbody>
@@ -591,7 +591,7 @@ ul.auto-toc {
 </div>
 <div class="section">
 <h1><a class="toc-backref" href="#id25" id="introduction" name="introduction">1&nbsp;&nbsp;&nbsp;Introduction</a></h1>
-<p>This is the reference guide for SIP 4.8-snapshot-20090310.  SIP is a tool for
+<p>This is the reference guide for SIP 4.8-snapshot-20090311.  SIP is a tool for
 automatically generating <a class="reference" href="http://www.python.org">Python</a> bindings for C and
 C++ libraries.  SIP was originally developed in 1998 for
 <a class="reference" href="http://www.riverbankcomputing.com/software/pyqt/">PyQt</a> - the Python
@@ -608,7 +608,7 @@ you will always find the latest stable version, current development snapshots,
 and the latest version of this documentation.</p>
 <div class="section">
 <h2><a class="toc-backref" href="#id26" id="license" name="license">1.1&nbsp;&nbsp;&nbsp;License</a></h2>
-<p>SIP is licensed under the same terms as Python itself.  SIP places no
+<p>SIP is licensed under similar terms as Python itself.  SIP places no
 restrictions on the license you may apply to the bindings you create.</p>
 </div>
 <div class="section">
@@ -851,49 +851,67 @@ interpreter for which you wish SIP to generate bindings for.</p>
 <col class="description" />
 <tbody valign="top">
 <tr><td class="option-group">
-<kbd><span class="option">-h</span></kbd></td>
+<kbd><span class="option">--version</span></kbd></td>
+<td>Display the SIP version number.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-h</span>, <span class="option">--help</span></kbd></td>
 <td>Display a help message.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">-b <var>DIR</var></span>, <span class="option">--bindir=<var>DIR</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>The SIP code generator will be installed in the directory <tt class="docutils literal"><span class="pre">DIR</span></tt>.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">-d <var>DIR</var></span>, <span class="option">--destdir=<var>DIR</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>The SIP module will be installed in the directory <tt class="docutils literal"><span class="pre">DIR</span></tt>.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">-e <var>DIR</var></span>, <span class="option">--incdir=<var>DIR</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>The SIP header file will be installed in the directory <tt class="docutils literal"><span class="pre">DIR</span></tt>.</td></tr>
 <tr><td class="option-group">
-<kbd><span class="option">-b <var>dir</var></span></kbd></td>
-<td>The SIP code generator will be installed in the directory <tt class="docutils literal"><span class="pre">dir</span></tt>.</td></tr>
-<tr><td class="option-group">
-<kbd><span class="option">-d <var>dir</var></span></kbd></td>
-<td>The SIP module will be installed in the directory <tt class="docutils literal"><span class="pre">dir</span></tt>.</td></tr>
-<tr><td class="option-group">
-<kbd><span class="option">-e <var>dir</var></span></kbd></td>
-<td>The SIP header file will be installed in the directory <tt class="docutils literal"><span class="pre">dir</span></tt>.</td></tr>
-<tr><td class="option-group">
-<kbd><span class="option">-k</span></kbd></td>
+<kbd><span class="option">-k</span>, <span class="option">--static</span></kbd></td>
 <td>The SIP module will be built as a static library.  This is useful when
-building the SIP module as a Python builtin (see
-<a class="reference" href="#builtin-modules-and-custom-interpreters">Builtin Modules and Custom Interpreters</a>).</td></tr>
+building the SIP module as a Python builtin (see <a class="reference" href="#builtin-modules-and-custom-interpreters">Builtin Modules and
+Custom Interpreters</a>).</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">-n</span>, <span class="option">--universal</span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>The SIP code generator and module will be built as universal binaries under
+MacOS/X.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">-p <var>PLATFORM</var></span>, <span class="option">--platform=<var>PLATFORM</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Explicitly specify the platform/compiler to be used by the build system,
+otherwise a platform specific default will be used.  The
+<tt class="docutils literal"><span class="pre">--show-platforms</span></tt> option will display all the supported
+platform/compilers.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">-s <var>SDK</var></span>, <span class="option">--sdk=<var>SDK</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>If the <tt class="docutils literal"><span class="pre">-n</span></tt> option was given then this specifies the name of the SDK
+directory.  If a path is not given then it is assumed to be a sub-directory
+of <tt class="docutils literal"><span class="pre">/Developer/SDKs</span></tt>.</td></tr>
 <tr><td class="option-group">
-<kbd><span class="option">-n</span></kbd></td>
-<td>The SIP code generator and module will be built as universal binaries
-under MacOS/X.</td></tr>
-<tr><td class="option-group">
-<kbd><span class="option">-p <var>plat</var></span></kbd></td>
-<td>Explicitly specify the platform/compiler to be used by the build
-system, otherwise a platform specific default will be used.  The
-<tt class="docutils literal"><span class="pre">-h</span></tt> option will display all the supported platform/compilers and
-the default.</td></tr>
-<tr><td class="option-group">
-<kbd><span class="option">-s <var>sdk</var></span></kbd></td>
-<td>If the <tt class="docutils literal"><span class="pre">-n</span></tt> option was given then this specifies the name of the SDK
-directory.  If a path is not given then it is assumed to be a
-sub-directory of <tt class="docutils literal"><span class="pre">/Developer/SDKs</span></tt>.</td></tr>
-<tr><td class="option-group">
-<kbd><span class="option">-u</span></kbd></td>
+<kbd><span class="option">-u</span>, <span class="option">--debug</span></kbd></td>
 <td>The SIP module will be built with debugging symbols.</td></tr>
-<tr><td class="option-group">
-<kbd><span class="option">-v <var>dir</var></span></kbd></td>
-<td>By default <tt class="docutils literal"><span class="pre">.sip</span></tt> files will be installed in the directory <tt class="docutils literal"><span class="pre">dir</span></tt>.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">-v <var>DIR</var></span>, <span class="option">--sipdir=<var>DIR</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>By default <tt class="docutils literal"><span class="pre">.sip</span></tt> files will be installed in the directory <tt class="docutils literal"><span class="pre">DIR</span></tt>.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--show-platforms</span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>The list of all supported platform/compilers will be displayed.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--show-build-macros</span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>The list of all available build macros will be displayed.</td></tr>
 </tbody>
 </table>
 <p>The configure.py script takes many other options that allows the build system
 to be finely tuned.  These are of the form <tt class="docutils literal"><span class="pre">name=value</span></tt> or <tt class="docutils literal"><span class="pre">name+=value</span></tt>.
-The <tt class="docutils literal"><span class="pre">-h</span></tt> option will display each supported <tt class="docutils literal"><span class="pre">name</span></tt>, although not all are
-applicable to all platforms.</p>
+The <tt class="docutils literal"><span class="pre">--show-build-macros</span></tt> option will display each supported <tt class="docutils literal"><span class="pre">name</span></tt>,
+although not all are applicable to all platforms.</p>
 <p>The <tt class="docutils literal"><span class="pre">name=value</span></tt> form means that <tt class="docutils literal"><span class="pre">value</span></tt> will replace the existing value of
 <tt class="docutils literal"><span class="pre">name</span></tt>.</p>
 <p>The <tt class="docutils literal"><span class="pre">name+=value</span></tt> form means that <tt class="docutils literal"><span class="pre">value</span></tt> will be appended to the existing
