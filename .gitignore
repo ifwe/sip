@@ -1,3 +1,5 @@
+doc/sipref.html
+
 *.pyc
 *.o
 *.so
