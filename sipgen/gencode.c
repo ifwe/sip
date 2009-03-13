@@ -757,7 +757,7 @@ static void generateInternalAPIHeader(sipSpec *pt, moduleDef *mod,
     if (strcmp(mname, "_wxcore"))
     {
         prcode(fp,
-"typedef void (*wxpy_pending_delete_func)(sipTypeDef *type, void *sipCppV, int state);\n"
+"typedef void (*wxpy_pending_delete_func)(sipClassTypeDef *type, void *sipCppV, int state);\n"
 "extern wxpy_pending_delete_func wxpy_add_pending_delete;\n"
 "extern wxpy_pending_delete_func wxpy_remove_pending_delete;\n");
     }
@@ -4487,11 +4487,11 @@ int is_wxobject(classDef* cd)
 
     classList* superClass;
 
-    if (0 == strcmp(baseclass_name, cd->pyname))
+    if (0 == strcmp(baseclass_name, cd->pyname->text))
         return 1;
 
     for (superClass = cd->supers; superClass; superClass = superClass->next)
-        if (0 == strcmp(baseclass_name, superClass->cd->pyname) || is_wxobject(superClass->cd))
+        if (0 == strcmp(baseclass_name, superClass->cd->pyname->text) || is_wxobject(superClass->cd))
             return 1;
 
     if (strcmp(cd->pyname, "Timer") == 0)
