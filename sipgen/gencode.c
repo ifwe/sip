@@ -140,7 +140,6 @@ static void generateBinarySlotCall(classDef *cd, overDef *od, const char *op,
 static void generateNumberSlotCall(overDef *od, char *op, FILE *fp);
 static void generateVariableGetter(classDef *, varDef *, FILE *);
 static void generateVariableSetter(classDef *, varDef *, FILE *);
-static void generatePropertyHandler(classDef*, varDef *, FILE *);
 static int generateObjToCppConversion(argDef *, FILE *);
 static void generateVarMember(varDef *vd, FILE *fp, int setter);
 static int generateVoidPointers(sipSpec *pt, moduleDef *mod, classDef *cd,
@@ -3505,50 +3504,6 @@ static void generateConvertToDefinitions(mappedTypeDef *mtd,classDef *cd,
 "}\n"
             );
     }
-}
-
-/*
- * Generate a property handler.
- */
-static void generatePropertyHandler(classDef* context, varDef *vd, FILE *fp)
-{
-    prcode(fp, "\n\n");
-    if (!generating_c)
-        prcode(fp, "extern \"C\" {static PyObject *var_%C(PyObject *, PyObject *);}\n"
-                    , vd->fqcname);
-    prcode(fp,
-        "static PyObject *var_%C(PyObject *%s,PyObject *sipPy)\n"
-        "{\n", vd->fqcname, "sipSelf"); // always need self? (isStaticVar(vd) ? "" : "sipSelf"));
-
-    prcode(fp,
-        "    if (sipPy == NULL)\n"
-        "    {\n"
-        "        PyObject* args = PyTuple_New(0);\n"
-        "        PyObject* res = meth_");
-
-    /* getter */
-    prcode(fp, "%s_%s(sipSelf, args);\n", classBaseName(context), vd->getter->cppname);
-
-    prcode(fp,
-        "        Py_DECREF(args);\n"
-        "        return res;\n"
-        "    }\n\n");
-
-    if (vd->setter != NULL)
-    {
-        /* setter */
-        prcode(fp,  "    return meth_");
-        prcode(fp, "%s_%s(sipSelf, sipPy);\n", classBaseName(context), vd->setter->cppname);
-    }
-    else
-    {
-        /* no setter--raise an attribute error */
-        prcode(fp, "    PyErr_SetString(PyExc_AttributeError, \"%s is a read-only property\");  \n",
-            vd->pyname->text);
-        prcode(fp, "    return NULL;\n");
-    }
-
-    prcode(fp, "}\n\n");
 }
 
 /*
