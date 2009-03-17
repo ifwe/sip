@@ -20,7 +20,6 @@ from distutils import sysconfig
 
 import siputils
 
-
 # Initialise the globals.
 sip_version = 0x040708
 sip_version_str = "4.7.8-snapshot-20081102"
