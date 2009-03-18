@@ -9380,7 +9380,8 @@ static void generateFunctionBody(overDef *od, classDef *cd, classDef *ocd,
 
 int typeNameCmp(argDef* ad, const char* s)
 {
-    FILE* fp = fopen(".siptemp.tmp", "w");
+    const char* tempName = tmpnam(NULL);
+    FILE* fp = fopen(tempName, "w");
     const char buf[255];
 
     if (fp == NULL)
@@ -9389,11 +9390,11 @@ int typeNameCmp(argDef* ad, const char* s)
     prTypeName(fp, ad, FALSE);
     fclose(fp);
 
-    fp = fopen(".siptemp.tmp", "r");
+    fp = fopen(tempName, "r");
     fgets(buf, 255, fp);
     fclose(fp);
 
-    remove(".siptemp.tmp");
+    remove(tempName);
 
     return strcmp(s, buf);
 }
