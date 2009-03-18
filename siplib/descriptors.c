@@ -45,8 +45,7 @@ typedef struct _sipMethodDescr {
  * The type data structure.
  */
 PyTypeObject sipMethodDescr_Type = {
-    PyObject_HEAD_INIT(NULL)
-    0,                      /* ob_size */
+    PyVarObject_HEAD_INIT(NULL, 0)
     "sip.methoddescriptor", /* tp_name */
     sizeof (sipMethodDescr),    /* tp_basicsize */
     0,                      /* tp_itemsize */
@@ -142,8 +141,7 @@ typedef struct _sipVariableDescr {
  * The type data structure.
  */
 PyTypeObject sipVariableDescr_Type = {
-    PyObject_HEAD_INIT(NULL)
-    0,                      /* ob_size */
+    PyVarObject_HEAD_INIT(NULL, 0)
     "sip.variabledescriptor",   /* tp_name */
     sizeof (sipVariableDescr),  /* tp_basicsize */
     0,                      /* tp_itemsize */

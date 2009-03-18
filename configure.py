@@ -22,7 +22,7 @@ import siputils
 
 # Initialise the globals.
 sip_version = 0x040800
-sip_version_str = "4.8-snapshot-20090311"
+sip_version_str = "4.8-snapshot-20090317"
 py_version = sys.hexversion >> 8
 plat_py_site_dir = None
 plat_py_inc_dir = None
@@ -383,6 +383,7 @@ def main(argv):
 
         sys.exit()
 
+    # Convert the boolean 'universal' option to a string.
     if opts.universal:
         if '/' in opts.sdk:
             opts.universal = os.path.abspath(opts.sdk)
@@ -391,6 +392,8 @@ def main(argv):
 
         if not os.path.isdir(opts.universal):
             siputils.error("Unable to find the SDK directory %s. Use the -s flag to specify the name of the SDK (e.g. %s) or its full path." % (opts.universal, DEFAULT_MACOSX_SDK))
+    else:
+        opts.universal = ''
 
     # Get the platform specific macros for building.
     macros = siputils.parse_build_macros(os.path.join("specs", opts.platform),

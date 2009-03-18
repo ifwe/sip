@@ -31,3 +31,7 @@ sipconfig.py
 benchmark/
 =======
 *.suo
+
+sipgen/parser.c
+doc/sipref.html
+
