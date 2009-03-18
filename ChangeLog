@@ -1,3 +1,72 @@
+2009/03/17 18:38:32  phil
+Some fixes for consolidated module support for both Python v2 and v3.
+
+
+2009/03/17 10:51:52  phil
+Tweaked the build system to make it easier for Makefile sub-classes to add
+commands to targets.
+
+
+2009/03/16 20:59:59  phil
+Fixed a bug in generating Python v3 consolidated modules.
+
+
+2009/03/16 14:04:30  phil
+Fixed a typo that broke the build of the sip module for Python v2.
+
+
+2009/03/15 13:39:50  phil
+Tweaks to the Python portability macros.
+
+
+2009/03/15  9:59:29  phil
+More Python portability macros.
+
+
+2009/03/14 21:45:47  phil
+Fixed a Mac build regression handling the location of the SDK.
+
+
+2009/03/14 16:59:04  phil
+Added some more Python porting macros.
+
+
+2009/03/14 13:44:03  phil
+Removed a remaining Python v2 specific call from the build system.
+
+
+2009/03/14 11:42:39  phil
+The generated code now supports Python v3.
+
+
+2009/03/14 10:08:13  phil
+The sip module can now be imported by Python v3.
+
+
+2009/03/13 19:15:25  phil
+Ported the PyString_ calls in the sip module to Python v3.
+
+
+2009/03/13 16:42:53  phil
+Updated the generated module initialisation code for Python v3 - but not for
+consolidated modules yet.
+
+
+2009/03/13 15:13:10  phil
+Moved to PyLong_* for Python v3.
+
+
+2009/03/12 23:16:19  phil
+More porting of the sip module.  It now compiles but still calls Python v2
+functions.
+
+
+2009/03/12 18:17:11  phil
+Partially ported the sip module to Python v3.
+Added the %BIGetBufferCode and %BIReleaseBufferCode directives to support the
+buffer interface of Python v3.
+
+
 2009/03/11 22:30:09  phil
 configure.py now uses optparse.
 configure.py and the build system will now run under Python3.

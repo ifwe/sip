@@ -51,7 +51,7 @@ extern "C" {
  * Define the SIP version number.
  */
 #define SIP_VERSION         0x040800
-#define SIP_VERSION_STR     "4.8-snapshot-20090311"
+#define SIP_VERSION_STR     "4.8-snapshot-20090317"
 
 
 /*
@@ -153,6 +153,44 @@ extern "C" {
 #else
 #define SIP_SSIZE_T         int
 #define SIP_PYMETHODDEF_CAST(s) ((char *)(s))
+#endif
+
+#if PY_MAJOR_VERSION >= 3
+
+#define SIPLong_FromLong    PyLong_FromLong
+#define SIPLong_AsLong      PyLong_AsLong
+
+#define SIPBytes_Check      PyBytes_Check
+#define SIPBytes_FromString PyBytes_FromString
+#define SIPBytes_FromStringAndSize  PyBytes_FromStringAndSize
+#define SIPBytes_AsString   PyBytes_AsString
+#define SIPBytes_AS_STRING  PyBytes_AS_STRING
+#define SIPBytes_GET_SIZE   PyBytes_GET_SIZE
+
+#else
+
+#define SIPLong_FromLong    PyInt_FromLong
+#define SIPLong_AsLong      PyInt_AsLong
+
+#define SIPBytes_Check      PyString_Check
+#define SIPBytes_FromString PyString_FromString
+#define SIPBytes_FromStringAndSize  PyString_FromStringAndSize
+#define SIPBytes_AsString   PyString_AsString
+#define SIPBytes_AS_STRING  PyString_AS_STRING
+#define SIPBytes_GET_SIZE   PyString_GET_SIZE
+
+#endif
+
+#if !defined(Py_REFCNT)
+#define Py_REFCNT(ob)       (((PyObject*)(ob))->ob_refcnt)
+#endif
+
+#if !defined(Py_TYPE)
+#define Py_TYPE(ob)         (((PyObject*)(ob))->ob_type)
+#endif
+
+#if !defined(PyVarObject_HEAD_INIT)
+#define PyVarObject_HEAD_INIT(type, size)   PyObject_HEAD_INIT(type) size,
 #endif
 
 
@@ -279,8 +317,13 @@ typedef void *(*sipInitFunc)(sipSimpleWrapper *, PyObject *, PyObject **,
         int *);
 typedef int (*sipTraverseFunc)(void *, visitproc, void *);
 typedef int (*sipClearFunc)(void *);
+#if PY_MAJOR_VERSION >= 3
+typedef int (*sipGetBufferFunc)(PyObject *, void *, Py_buffer *, int);
+typedef void (*sipReleaseBufferFunc)(PyObject *, void *, Py_buffer *);
+#else
 typedef SIP_SSIZE_T (*sipBufferFunc)(PyObject *, void *, SIP_SSIZE_T, void **);
 typedef SIP_SSIZE_T (*sipSegCountFunc)(PyObject *, void *, SIP_SSIZE_T *);
+#endif
 typedef void (*sipDeallocFunc)(sipSimpleWrapper *);
 typedef void *(*sipCastFunc)(void *, const struct _sipTypeDef *);
 typedef const struct _sipTypeDef *(*sipSubClassConvertFunc)(void **);
@@ -396,7 +439,9 @@ typedef struct _sipSubClassConvertorDef {
 typedef enum {
     str_slot,           /* __str__ */
     int_slot,           /* __int__ */
+#if PY_MAJOR_VERSION < 3
     long_slot,          /* __long__ */
+#endif
     float_slot,         /* __float__ */
     len_slot,           /* __len__ */
     contains_slot,      /* __contains__ */
@@ -435,7 +480,9 @@ typedef enum {
     ne_slot,            /* __ne__ */
     gt_slot,            /* __gt__ */
     ge_slot,            /* __ge__ */
+#if PY_MAJOR_VERSION < 3
     cmp_slot,           /* __cmp__ */
+#endif
     nonzero_slot,       /* __nonzero__ */
     neg_slot,           /* __neg__ */
     repr_slot,          /* __repr__ */
@@ -591,6 +638,13 @@ typedef struct _sipClassTypeDef {
     /* The clear function. */
     sipClearFunc ctd_clear;
 
+#if PY_MAJOR_VERSION >= 3
+    /* The get buffer function. */
+    sipGetBufferFunc ctd_getbuffer;
+
+    /* The release buffer function. */
+    sipReleaseBufferFunc ctd_releasebuffer;
+#else
     /* The read buffer function. */
     sipBufferFunc ctd_readbuffer;
 
@@ -602,6 +656,7 @@ typedef struct _sipClassTypeDef {
 
     /* The char buffer function. */
     sipBufferFunc ctd_charbuffer;
+#endif
 
     /* The deallocation function. */
     sipDeallocFunc ctd_dealloc;
@@ -985,8 +1040,10 @@ typedef struct _sipPyMethod {
     /* Self if it is a bound method. */
     PyObject *mself;
 
+#if PY_MAJOR_VERSION < 3
     /* The class. */
     PyObject *mclass;
+#endif
 } sipPyMethod;
 
 
@@ -1251,7 +1308,7 @@ typedef struct _sipQtAPI {
 /*
  * The following are deprecated parts of the public API.
  */
-#define sipClassName(w)     PyString_FromString((w)->ob_type->tp_name)
+#define sipClassName(w)     PyString_FromString(Py_TYPE(w)->tp_name)
 
 
 /*
