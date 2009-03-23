@@ -1,7 +1,7 @@
 # This is the build file for the extension module.
 #
-# Copyright (c) 2008 Riverbank Computing Limited <info@riverbankcomputing.com>
-#
+# Copyright (c) 2009 Riverbank Computing Limited <info@riverbankcomputing.com>
+# 
 # This file is part of SIP.
 #
 # This copy of SIP is licensed for use under the terms of the SIP License
@@ -11,5 +11,5 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 target = sip
-sources = siplib.c qtlib.c threads.c objmap.c bool.cpp
+sources = siplib.c descriptors.c qtlib.c threads.c objmap.c bool.cpp
 headers = sip.h sipint.h

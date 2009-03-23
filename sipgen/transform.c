@@ -1,7 +1,7 @@
 /*
  * The parse tree transformation module for SIP.
  *
- * Copyright (c) 2008 Riverbank Computing Limited <info@riverbankcomputing.com>
+ * Copyright (c) 2009 Riverbank Computing Limited <info@riverbankcomputing.com>
  * 
  * This file is part of SIP.
  * 
@@ -32,10 +32,8 @@ static void addUniqueModule(moduleDef *mod, moduleDef *imp);
 static void ensureInput(classDef *,overDef *,argDef *);
 static void defaultInput(argDef *);
 static void defaultOutput(argDef *ad);
-static void assignClassNrs(sipSpec *,moduleDef *,nodeDef *);
-static void assignEnumNrs(sipSpec *pt);
-static void positionClass(classDef *);
-static void addNodeToParent(nodeDef *,classDef *);
+static void createSortedNumberedTypesTable(sipSpec *pt, moduleDef *mod);
+static int compareTypes(const void *t1, const void *t2);
 static void addAutoOverload(sipSpec *,classDef *,overDef *);
 static void ifaceFileIsUsed(ifaceFileList **used, argDef *ad);
 static void ifaceFilesAreUsedByOverload(ifaceFileList **used, overDef *od);
@@ -43,17 +41,18 @@ static void ifaceFilesAreUsedBySignature(ifaceFileList **used,
         signatureDef *sd);
 static void scopeDefaultValue(sipSpec *,classDef *,argDef *);
 static void setHierarchy(sipSpec *,classDef *,classDef *,classList **);
+static void transformModules(sipSpec *pt, moduleDef *mod);
 static void transformCtors(sipSpec *,classDef *);
 static void transformCasts(sipSpec *,classDef *);
 static void addDefaultCopyCtor(classDef *);
 static void transformScopeOverloads(sipSpec *pt, classDef *scope,
         overDef *overs);
-static void transformVariableList(sipSpec *);
-static void transformMappedTypes(sipSpec *);
+static void transformVariableList(sipSpec *pt, moduleDef *mod);
+static void transformMappedTypes(sipSpec *pt, moduleDef *mod);
 static void getVisibleMembers(sipSpec *,classDef *);
 static void getVirtuals(sipSpec *pt,classDef *cd);
 static void getClassVirtuals(classDef *,classDef *);
-static void transformTypedefs(sipSpec *pt);
+static void transformTypedefs(sipSpec *pt, moduleDef *mod);
 static void resolveMappedTypeTypes(sipSpec *,mappedTypeDef *);
 static void resolveCtorTypes(sipSpec *,classDef *,ctorDef *);
 static void resolveFuncTypes(sipSpec *,moduleDef *,classDef *,overDef *);
@@ -62,8 +61,7 @@ static void resolveVariableType(sipSpec *,varDef *);
 static void fatalNoDefinedType(scopedNameDef *);
 static void getBaseType(sipSpec *,moduleDef *,classDef *,argDef *);
 static void searchScope(sipSpec *,classDef *,scopedNameDef *,argDef *);
-static void searchMappedTypes(sipSpec *,scopedNameDef *,argDef *);
-void searchTypedefs(sipSpec *pt, scopedNameDef *snd, argDef *ad);
+static void searchMappedTypes(sipSpec *,moduleDef *,scopedNameDef *,argDef *);
 static void searchEnums(sipSpec *,scopedNameDef *,argDef *);
 static void searchClasses(sipSpec *,moduleDef *mod,scopedNameDef *,argDef *);
 static void appendToMRO(mroDef *,mroDef ***,classDef *);
@@ -82,6 +80,7 @@ static void addComplementarySlot(sipSpec *pt, classDef *cd, memberDef *md,
         slotType cslot, const char *cslot_name);
 static void resolveInstantiatedClassTemplate(sipSpec *pt, argDef *type);
 static void generateProperties(sipSpec *pt, moduleDef *mod, classDef *cd);
+static void setStringPoolOffsets(sipSpec *pt);
 
 
 /*
@@ -94,14 +93,12 @@ void transform(sipSpec *pt)
     classDef *cd, *rev, **tail;
     classList *newl;
     overDef *od;
-    mappedTypeDef *mtd;
 
     /*
-     * The class list has the main module's classes at the front and the
-     * ones from the module at the most nested %Import at the end.  This
-     * affects some of the following algorithms, eg. when assigning class
-     * numbers.  We have to have consistency whenever a module is used.  To
-     * achieve this we reverse the order of the classes.
+     * The class list has the main module's classes at the front and the ones
+     * from the module at the most nested %Import at the end.  This affects
+     * some of the following algorithms.  We have to have consistency whenever
+     * a module is used.  To achieve this we reverse the order of the classes.
      */
     rev = NULL;
     cd = pt -> classes;
@@ -135,6 +132,52 @@ void transform(sipSpec *pt)
             fatal("A module is missing a %%Module or %%CModule directive\n");
 
         setAllImports(mod);
+    }
+
+    /*
+     * Set the default meta-type for the main module if it doesn't have one
+     * explicitly set.
+     */
+    if (pt->module->defmetatype == NULL)
+    {
+        moduleListDef *mld;
+
+        for (mld = pt->module->allimports; mld != NULL; mld = mld->next)
+        {
+            if (mld->module->defmetatype == NULL)
+                continue;
+
+            if (pt->module->defmetatype == NULL)
+                pt->module->defmetatype = mld->module->defmetatype;
+            else if (pt->module->defmetatype != mld->module->defmetatype)
+                fatal("The %s module has imported different default meta-types %s and %s\n",
+                        pt->module->fullname->text,
+                        pt->module->defmetatype->text,
+                        mld->module->defmetatype->text);
+        }
+    }
+
+    /*
+     * Set the default super-type for the main module if it doesn't have one
+     * explicitly set.
+     */
+    if (pt->module->defsupertype == NULL)
+    {
+        moduleListDef *mld;
+
+        for (mld = pt->module->allimports; mld != NULL; mld = mld->next)
+        {
+            if (mld->module->defsupertype == NULL)
+                continue;
+
+            if (pt->module->defsupertype == NULL)
+                pt->module->defsupertype = mld->module->defsupertype;
+            else if (pt->module->defsupertype != mld->module->defsupertype)
+                fatal("The %s module has imported different default super-types %s and %s\n",
+                        pt->module->fullname->text,
+                        pt->module->defsupertype->text,
+                        mld->module->defsupertype->text);
+        }
     }
 
     /* Check each class has been defined. */
@@ -171,28 +214,17 @@ void transform(sipSpec *pt)
 
     *tail = NULL;
 
-    /* Transform typedefs, variables and global functions. */
-    transformTypedefs(pt);
-    transformVariableList(pt);
-
-    for (mod = pt->modules; mod != NULL; mod = mod->next)
-        if (generatingCodeForModule(pt, mod))
-            transformScopeOverloads(pt, NULL, mod->overs);
-
-    /* Transform class ctors, functions and casts. */
-    for (cd = pt->classes; cd != NULL; cd = cd->next)
+    /* Transform the various types in the modules. */
+    if (isConsolidated(pt->module))
     {
-        transformCtors(pt, cd);
-
-        if (!pt->genc)
-        {
-            transformScopeOverloads(pt, cd, cd->overs);
-            transformCasts(pt, cd);
-        }
+        /* Transform the modules included by the consolidated module. */
+        for (mod = pt->modules->next; mod != NULL; mod = mod->next)
+            transformModules(pt, mod);
     }
-
-    /* Transform mapped types based on templates. */
-    transformMappedTypes(pt);
+    else
+    {
+        transformModules(pt, pt->modules);
+    }
 
     /* Handle default ctors now that the argument types are resolved. */ 
     if (!pt -> genc)
@@ -200,32 +232,15 @@ void transform(sipSpec *pt)
             if (!noDefaultCtors(cd) && !isOpaque(cd) && cd->iff->type != namespace_iface)
                 addDefaultCopyCtor(cd);
 
-    /*
-     * Go through each class and add it to it's defining module's tree of
-     * classes.  The tree reflects the namespace hierarchy.
-     */
-    for (cd = pt->classes; cd != NULL; cd = cd->next)
-        addNodeToParent(&cd->iff->module->root, cd);
-
-    for (cd = pt -> classes; cd != NULL; cd = cd -> next)
-        positionClass(cd);
-
-    /* Assign module specific class numbers for all modules. */
+    /* Create the array of numbered types sorted by type name. */
     for (mod = pt->modules; mod != NULL; mod = mod->next)
-        assignClassNrs(pt, mod, &mod->root);
-
-    /* Assign module specific enum numbers for all enums. */
-    assignEnumNrs(pt);
+        createSortedNumberedTypesTable(pt, mod);
 
     /* Add any automatically generated methods. */
     for (cd = pt -> classes; cd != NULL; cd = cd -> next)
         for (od = cd -> overs; od != NULL; od = od -> next)
             if (isAutoGen(od))
                 addAutoOverload(pt,cd,od);
-
-    /* Allocate mapped types numbers. */
-    for (mtd = pt -> mappedtypes; mtd != NULL; mtd = mtd -> next)
-        mtd -> mappednr = mtd -> iff -> module -> nrmappedtypes++;
 
     /*
      * Move casts and slots around to their correct classes (if in the same
@@ -283,18 +298,111 @@ void transform(sipSpec *pt)
     }
 
     /* Mark classes that should be registered as Qt meta types. */
-#if SIP_QT
-    if (optRegisterTypes(pt))
-        for (cd = pt->classes; cd != NULL; cd = cd->next)
-            if (generatingCodeForModule(pt, cd->iff->module))
-                registerMetaType(cd);
-#endif
                 
     /* Autogenerate properties */
     if (optAutoProperties(pt))
         for (cd = pt->classes; cd != NULL; cd = cd->next)
             if (generatingCodeForModule(pt, cd->iff->module))
                 generateProperties(pt, cd->iff->module, cd);
+
+    if (pluginPyQt4(pt))
+        for (cd = pt->classes; cd != NULL; cd = cd->next)
+            if (generatingCodeForModule(pt, cd->iff->module))
+                registerMetaType(cd);
+
+    setStringPoolOffsets(pt);
+}
+
+
+/*
+ * Transform a module and the modules it imports.
+ */
+static void transformModules(sipSpec *pt, moduleDef *mod)
+{
+    classDef *cd;
+    moduleListDef *mld;
+
+    /* Handle the trivial case. */
+    if (isTransformed(mod))
+        return;
+
+    /*
+     * The modules on which this one depends must be done first because they
+     * might generate new template-based types and they must be defined in the
+     * right module.
+     */
+    for (mld = mod->imports; mld != NULL; mld = mld->next)
+        transformModules(pt, mld->module);
+
+    /* Transform typedefs, variables and global functions. */
+    transformTypedefs(pt, mod);
+    transformVariableList(pt, mod);
+    transformScopeOverloads(pt, NULL, mod->overs);
+
+    /* Transform class ctors, functions and casts. */
+    for (cd = pt->classes; cd != NULL; cd = cd->next)
+    {
+        if (cd->iff->module == mod)
+        {
+            transformCtors(pt, cd);
+
+            if (!pt->genc)
+            {
+                transformScopeOverloads(pt, cd, cd->overs);
+                transformCasts(pt, cd);
+            }
+        }
+    }
+
+    /* Transform mapped types based on templates. */
+    transformMappedTypes(pt, mod);
+
+    setIsTransformed(mod);
+}
+
+
+/*
+ * Set the offset into the string pool for every used name.
+ */
+static void setStringPoolOffsets(sipSpec *pt)
+{
+    nameDef *nd;
+    size_t offset = 0;
+
+    for (nd = pt->namecache; nd != NULL; nd = nd->next)
+    {
+        size_t len;
+        nameDef *prev;
+
+        if (!isUsedName(nd))
+            continue;
+
+        /* See if the tail of a previous used name could be used instead. */
+        len = nd->len;
+
+        for (prev = pt->namecache; prev->len > len; prev = prev->next)
+        {
+            size_t pos;
+
+            if (!isUsedName(prev) || isSubstring(prev))
+                continue;
+
+            pos = prev->len - len;
+
+            if (memcmp(&prev->text[pos], nd->text, len) == 0)
+            {
+                setIsSubstring(nd);
+                nd->offset = prev->offset + pos;
+                break;
+            }
+        }
+
+        if (!isSubstring(nd))
+        {
+            nd->offset = offset;
+            offset += len + 1;
+        }
+    }
 }
 
 
@@ -438,7 +546,7 @@ static void registerMetaType(classDef *cd)
 
     if (pub_def_ctor && pub_copy_ctor)
     {
-        setRegisterQtMetaType(cd);
+        setAssignmentHelper(cd);
         addToUsedList(&cd->iff->module->used, cd->iff);
     }
 }
@@ -780,38 +888,13 @@ static classDef *getProxy(moduleDef *mod, classDef *cd)
 
     pcd = sipMalloc(sizeof (classDef));
 
-    pcd->classflags = 0;
-    pcd->userflags = 0;
     pcd->classnr = -1;
     pcd->pyname = cd->pyname;
     pcd->iff = cd->iff;
     pcd->ecd = cd->ecd;
     pcd->real = cd;
-    pcd->node = NULL;
     pcd->supers = cd->supers;
     pcd->mro = cd->mro;
-    pcd->td = NULL;
-    pcd->ctors = NULL;
-    pcd->defctor = NULL;
-    pcd->dealloccode = NULL;
-    pcd->dtorcode = NULL;
-    pcd->dtorexceptions = NULL;
-    pcd->members = NULL;
-    pcd->overs = NULL;
-    pcd->casts = NULL;
-    pcd->vmembers = NULL;
-    pcd->visible = NULL;
-    pcd->cppcode = NULL;
-    pcd->convtosubcode = NULL;
-    pcd->subbase = NULL;
-    pcd->convtocode = NULL;
-    pcd->travcode = NULL;
-    pcd->clearcode = NULL;
-    pcd->readbufcode = NULL;
-    pcd->writebufcode = NULL;
-    pcd->segcountcode = NULL;
-    pcd->charbufcode = NULL;
-    pcd->picklecode = NULL;
     pcd->next = mod->proxies;
 
     mod->proxies = pcd;
@@ -1009,13 +1092,13 @@ static void addAutoOverload(sipSpec *pt,classDef *autocd,overDef *autood)
 /*
  * Set the complete hierarchy for a class.
  */
-static void setHierarchy(sipSpec *pt,classDef *base,classDef *cd,
-             classList **head)
+static void setHierarchy(sipSpec *pt, classDef *base, classDef *cd,
+        classList **head)
 {
-    mroDef **tailp = &cd -> mro;
+    mroDef **tailp = &cd->mro;
 
     /* See if it has already been done. */
-    if (cd -> mro != NULL)
+    if (cd->mro != NULL)
         return;
 
     if (cd->ecd != NULL)
@@ -1026,30 +1109,28 @@ static void setHierarchy(sipSpec *pt,classDef *base,classDef *cd,
             setIsDeprecatedClass(cd);
     }
 
-    if (cd -> iff -> type == class_iface)
+    if (cd->iff->type == class_iface)
     {
         classList *cl;
 
         /* The first thing is itself. */
-        appendToMRO(cd -> mro,&tailp,cd);
+        appendToMRO(cd->mro, &tailp, cd);
 
         if (cd->convtosubcode != NULL)
             cd->subbase = cd;
 
         /* Now do it's superclasses. */
-        for (cl = cd -> supers; cl != NULL; cl = cl -> next)
+        for (cl = cd->supers; cl != NULL; cl = cl->next)
         {
             mroDef *mro;
 
-            /*
-             * Make sure the super-class's hierarchy has been done.
-             */
-            setHierarchy(pt,base,cl -> cd,head);
+            /* Make sure the super-class's hierarchy has been done. */
+            setHierarchy(pt, base, cl->cd, head);
 
             /* Append the super-classes hierarchy. */
-            for (mro = cl -> cd -> mro; mro != NULL; mro = mro -> next)
+            for (mro = cl->cd->mro; mro != NULL; mro = mro->next)
             {
-                appendToMRO(cd -> mro,&tailp,mro -> cd);
+                appendToMRO(cd->mro, &tailp, mro->cd);
 
                 if (isDeprecatedClass(mro->cd))
                     setIsDeprecatedClass(cd);
@@ -1076,6 +1157,29 @@ static void setHierarchy(sipSpec *pt,classDef *base,classDef *cd,
                     cd->subbase = mro->cd->subbase;
             }
         }
+
+        /*
+         * If the class doesn't have an explicit meta-type then inherit from
+         * the module's default.
+         */
+        if (cd->metatype == NULL && cd->supers == NULL)
+            cd->metatype = cd->iff->module->defmetatype;
+
+        if (cd->metatype != NULL && generatingCodeForModule(pt, cd->iff->module))
+            setIsUsedName(cd->metatype);
+
+        /*
+         * If the class doesn't have an explicit super-type then inherit from
+         * the module's default.
+         */
+        if (cd->supertype == NULL && cd->supers == NULL)
+            cd->supertype = cd->iff->module->defsupertype;
+
+        if (cd->supertype != NULL && strcmp(cd->supertype->text, "sip.wrapper") == 0)
+            cd->supertype = NULL;
+
+        if (cd->supertype != NULL && generatingCodeForModule(pt, cd->iff->module))
+            setIsUsedName(cd->supertype);
     }
 
     /*
@@ -1153,29 +1257,33 @@ static void appendToMRO(mroDef *head,mroDef ***tailp,classDef *cd)
 
 
 /*
- * Get the base types for all typedefs.
+ * Get the base types for all typedefs of a module.
  */
-static void transformTypedefs(sipSpec *pt)
+static void transformTypedefs(sipSpec *pt, moduleDef *mod)
 {
     typedefDef *td;
 
-    for (td = pt -> typedefs; td != NULL; td = td -> next)
-        getBaseType(pt, td->module, td -> ecd, &td -> type);
+    for (td = pt->typedefs; td != NULL; td = td->next)
+        if (td->module == mod)
+            getBaseType(pt, td->module, td->ecd, &td->type);
 }
 
 
 /*
  * Transform the data types for mapped types based on a template.
  */
-static void transformMappedTypes(sipSpec *pt)
+static void transformMappedTypes(sipSpec *pt, moduleDef *mod)
 {
     mappedTypeDef *mt;
 
     for (mt = pt->mappedtypes; mt != NULL; mt = mt->next)
     {
-        /* Nothing to do if this isn't template based. */
-        if (mt->type.atype == template_type)
-            resolveMappedTypeTypes(pt, mt);
+        if (mt->iff->module == mod)
+        {
+            /* Nothing to do if this isn't template based. */
+            if (mt->type.atype == template_type)
+                resolveMappedTypeTypes(pt, mt);
+        }
     }
 }
 
@@ -1306,10 +1414,6 @@ static void addDefaultCopyCtor(classDef *cd)
  
         *tailp = copyct;
     }
-
-    /* We assume it has an assignment operator if it has a public copy ctor. */
-    if (isPublicCtor(copyct))
-        setCanAssign(cd);
 }
 
 
@@ -1355,15 +1459,16 @@ static void transformScopeOverloads(sipSpec *pt, classDef *scope,
 
 
 /*
- * Transform the data types for the variables.
+ * Transform the data types for the variables of a module.
  */
-static void transformVariableList(sipSpec *pt)
+static void transformVariableList(sipSpec *pt, moduleDef *mod)
 {
     varDef *vd;
 
     for (vd = pt->vars; vd != NULL; vd = vd->next)
-        if (vd->ecd == NULL || !isTemplateClass(vd->ecd))
-            resolveVariableType(pt, vd);
+        if (vd->module == mod)
+            if (vd->ecd == NULL || !isTemplateClass(vd->ecd))
+                resolveVariableType(pt, vd);
 }
 
 
@@ -1425,7 +1530,7 @@ static void getVisibleMembers(sipSpec *pt, classDef *cd)
                         if (!generatingCodeForModule(pt, cd->iff->module))
                             continue;
 
-                        if (isProtected(od) || (isSignal(od) && !optNoEmitters(pt)))
+                        if (isProtected(od) || (isSignal(od) && pluginPyQt3(pt)))
                             setIsUsedName(md->pyname);
                     }
             }
@@ -1775,6 +1880,7 @@ static void resolveVariableType(sipSpec *pt, varDef *vd)
             bad = FALSE;
         break;
 
+    case estring_type:
     case sstring_type:
     case ustring_type:
     case string_type:
@@ -1880,6 +1986,7 @@ static int supportedType(classDef *cd,overDef *od,argDef *ad,int outputs)
         ensureInput(cd,od,ad);
         return TRUE;
 
+    case estring_type:
     case sstring_type:
     case ustring_type:
     case string_type:
@@ -2185,7 +2292,7 @@ int sameSignature(signatureDef *sd1,signatureDef *sd2,int strict)
 
 
 #define pyAsString(t)   ((t) == ustring_type || (t) == sstring_type || \
-            (t) == string_type)
+            (t) == string_type || (t) == estring_type)
 #define pyAsFloat(t)    ((t) == cfloat_type || (t) == float_type || \
             (t) == cdouble_type || (t) == double_type)
 #define pyAsInt(t)  ((t) == bool_type || \
@@ -2271,31 +2378,31 @@ int sameBaseType(argDef *a1, argDef *a2)
          * name.  Hopefully this won't have wider side effects.
          */
         if (a1->atype == class_type && a2->atype == defined_type)
-            return sameScopedName(a1->u.cd->iff->fqcname, a2->u.snd);
+            return compareScopedNames(a1->u.cd->iff->fqcname, a2->u.snd) == 0;
 
         if (a1->atype == defined_type && a2->atype == class_type)
-            return sameScopedName(a1->u.snd, a2->u.cd->iff->fqcname);
+            return compareScopedNames(a1->u.snd, a2->u.cd->iff->fqcname) == 0;
 
         return FALSE;
     }
 
-    switch (a1 -> atype)
+    switch (a1->atype)
     {
     case class_type:
-        if (a1 -> u.cd != a2 -> u.cd)
+        if (a1->u.cd != a2->u.cd)
             return FALSE;
 
         break;
 
     case enum_type:
-        if (a1 -> u.ed != a2 -> u.ed)
+        if (a1->u.ed != a2->u.ed)
             return FALSE;
 
         break;
 
     case slotcon_type:
     case slotdis_type:
-        if (!sameSignature(a1 -> u.sa,a2 -> u.sa,TRUE))
+        if (!sameSignature(a1->u.sa, a2->u.sa, TRUE))
             return FALSE;
 
         break;
@@ -2305,41 +2412,40 @@ int sameBaseType(argDef *a1, argDef *a2)
             int a;
             templateDef *td1, *td2;
 
-            td1 = a1 -> u.td;
-            td2 = a2 -> u.td;
+            td1 = a1->u.td;
+            td2 = a2->u.td;
 
-            if (!sameScopedName(td1 -> fqname,td2 -> fqname) != 0 ||
-                td1 -> types.nrArgs != td2 -> types.nrArgs)
+            if (compareScopedNames(td1->fqname, td2->fqname) != 0 ||
+                td1->types.nrArgs != td2->types.nrArgs)
                 return FALSE;
 
-            for (a = 0; a < td1 -> types.nrArgs; ++a)
-                if (!sameBaseType(&td1 -> types.args[a],&td2 -> types.args[a]))
+            for (a = 0; a < td1->types.nrArgs; ++a)
+                if (!sameBaseType(&td1->types.args[a], &td2->types.args[a]))
                     return FALSE;
 
             break;
         }
 
     case struct_type:
-        if (!sameScopedName(a1 -> u.sname,a2 -> u.sname) != 0)
+        if (compareScopedNames(a1->u.sname, a2->u.sname) != 0)
             return FALSE;
 
         break;
 
     case defined_type:
-        if (!sameScopedName(a1 -> u.snd,a2 -> u.snd))
+        if (compareScopedNames(a1->u.snd, a2->u.snd) != 0)
             return FALSE;
 
         break;
 
     case mapped_type:
-        if (a1 -> u.mtd != a2 -> u.mtd)
+        if (a1->u.mtd != a2->u.mtd)
             return FALSE;
 
         break;
     }
 
     /* Must be the same if we've got this far. */
-
     return TRUE;
 }
 
@@ -2390,18 +2496,25 @@ static int nextSignificantArg(signatureDef *sd, int a)
 
 
 /*
- * Return TRUE if two scoped names are the same.
+ * The equivalent of strcmp() for scoped names.
  */
-
-int sameScopedName(scopedNameDef *snd1,scopedNameDef *snd2)
+int compareScopedNames(scopedNameDef *snd1, scopedNameDef *snd2)
 {
-    while (snd1 != NULL && snd2 != NULL && strcmp(snd1 -> name,snd2 -> name) == 0)
+    while (snd1 != NULL && snd2 != NULL)
     {
-        snd1 = snd1 -> next;
-        snd2 = snd2 -> next;
+        int res = strcmp(snd1->name, snd2->name);
+
+        if (res != 0)
+            return res;
+
+        snd1 = snd1->next;
+        snd2 = snd2->next;
     }
 
-    return (snd1 == NULL && snd2 == NULL);
+    if (snd1 == NULL)
+        return (snd2 == NULL ? 0 : -1);
+
+    return 1;
 }
 
 
@@ -2530,7 +2643,7 @@ static void getBaseType(sipSpec *pt, moduleDef *mod, classDef *defscope, argDef 
             searchScope(pt,defscope,snd,type);
 
         if (type -> atype == no_type)
-            searchMappedTypes(pt,snd,type);
+            searchMappedTypes(pt, mod, snd, type);
 
         if (type -> atype == no_type)
             searchTypedefs(pt,snd,type);
@@ -2560,7 +2673,7 @@ static void getBaseType(sipSpec *pt, moduleDef *mod, classDef *defscope, argDef 
     /* Replace the base type if it has been mapped. */
     if (type -> atype == struct_type || type -> atype == template_type)
     {
-        searchMappedTypes(pt,NULL,type);
+        searchMappedTypes(pt, mod, NULL, type);
 
         /*
          * If we still have a template then see if we need to automatically
@@ -2571,7 +2684,7 @@ static void getBaseType(sipSpec *pt, moduleDef *mod, classDef *defscope, argDef 
             mappedTypeTmplDef *mtt;
 
             for (mtt = pt->mappedtypetemplates; mtt != NULL; mtt = mtt->next)
-                if (sameScopedName(type->u.td->fqname, mtt->mt->type.u.td->fqname) && sameTemplateSignature(&mtt->mt->type.u.td->types, &type->u.td->types, TRUE))
+                if (compareScopedNames(type->u.td->fqname, mtt->mt->type.u.td->fqname) == 0 && sameTemplateSignature(&mtt->mt->type.u.td->types, &type->u.td->types, TRUE))
                 {
                     type->u.mtd = instantiateMappedTypeTemplate(pt, mod, mtt, type);
                     type->atype = mapped_type;
@@ -2604,7 +2717,8 @@ static void resolveInstantiatedClassTemplate(sipSpec *pt, argDef *type)
         resolveInstantiatedClassTemplate(pt, &sd->args[a]);
 
     for (cd = pt->classes; cd != NULL; cd = cd->next)
-        if (cd->td != NULL && sameScopedName(cd->td->fqname, td->fqname) &&
+        if (cd->td != NULL &&
+            compareScopedNames(cd->td->fqname, td->fqname) == 0 &&
             sameSignature(&cd->td->types, sd, TRUE))
         {
             type->atype = class_type;
@@ -2626,7 +2740,10 @@ static mappedTypeDef *instantiateMappedTypeTemplate(sipSpec *pt, moduleDef *mod,
     type_names = type_values = NULL;
     appendTypeStrings(type->u.td->fqname, &mtt->mt->type.u.td->types, &type->u.td->types, &mtt->sig, &type_names, &type_values);
 
-    mtd = allocMappedType(type);
+    mtd = allocMappedType(pt, type);
+
+    if (generatingCodeForModule(pt, mod))
+        setIsUsedName(mtd->cname);
 
     mtd->iff = findIfaceFile(pt, mod, type->u.td->fqname, mappedtype_iface, type);
     mtd->iff->module = mod;
@@ -2668,7 +2785,7 @@ static void searchScope(sipSpec *pt,classDef *scope,scopedNameDef *snd,
         tmpsnd = copyScopedName(classFQCName(mro -> cd));
         appendScopedName(&tmpsnd,copyScopedName(snd));
 
-        searchMappedTypes(pt,tmpsnd,ad);
+        searchMappedTypes(pt, mro->cd->iff->module, tmpsnd, ad);
 
         if (ad -> atype != no_type)
             break;
@@ -2701,7 +2818,8 @@ static void searchScope(sipSpec *pt,classDef *scope,scopedNameDef *snd,
  * Search the mapped types for a name and return the type.
  */
 
-static void searchMappedTypes(sipSpec *pt,scopedNameDef *snd,argDef *ad)
+static void searchMappedTypes(sipSpec *pt, moduleDef *context,
+        scopedNameDef *snd, argDef *ad)
 {
     mappedTypeDef *mtd;
     scopedNameDef *oname;
@@ -2709,17 +2827,35 @@ static void searchMappedTypes(sipSpec *pt,scopedNameDef *snd,argDef *ad)
     /* Patch back to defined types so we can use sameBaseType(). */
     if (snd != NULL)
     {
-        oname = ad -> u.snd;
-        ad -> u.snd = snd;
-        ad -> atype = defined_type;
+        oname = ad->u.snd;
+        ad->u.snd = snd;
+        ad->atype = defined_type;
     }
 
-    for (mtd = pt -> mappedtypes; mtd != NULL; mtd = mtd -> next)
-        if (sameBaseType(ad,&mtd -> type))
+    for (mtd = pt->mappedtypes; mtd != NULL; mtd = mtd->next)
+        if (sameBaseType(ad, &mtd->type))
         {
+            /*
+             * If we a building a consolidated module and this mapped type is
+             * defined in a different module then see if that other module is
+             * in a different branch of the module hierarchy.
+             */
+            if (isConsolidated(pt->module) && context != mtd->iff->module)
+            {
+                moduleListDef *mld;
+
+                for (mld = context->allimports; mld != NULL; mld = mld->next)
+                    if (mld->module == mtd->iff->module)
+                        break;
+
+                /* If it's in a different branch then we ignore it. */
+                if (mld == NULL)
+                    continue;
+            }
+
             /* Copy the type. */
-            ad -> atype = mapped_type;
-            ad -> u.mtd = mtd;
+            ad->atype = mapped_type;
+            ad->u.mtd = mtd;
 
             return;
         }
@@ -2727,8 +2863,8 @@ static void searchMappedTypes(sipSpec *pt,scopedNameDef *snd,argDef *ad)
     /* Restore because we didn't find anything. */
     if (snd != NULL)
     {
-        ad -> u.snd = oname;
-        ad -> atype = no_type;
+        ad->u.snd = oname;
+        ad->atype = no_type;
     }
 }
 
@@ -2741,10 +2877,12 @@ void searchTypedefs(sipSpec *pt, scopedNameDef *snd, argDef *ad)
     typedefDef *td;
 
     for (td = pt->typedefs; td != NULL; td = td->next)
-        if (sameScopedName(td->fqname, snd))
+    {
+        int res = compareScopedNames(td->fqname, snd);
+
+        if (res == 0)
         {
             /* Copy the type. */
-
             ad->atype = td->type.atype;
             ad->argflags |= td->type.argflags;
             ad->nrderefs += td->type.nrderefs;
@@ -2755,26 +2893,30 @@ void searchTypedefs(sipSpec *pt, scopedNameDef *snd, argDef *ad)
 
             break;
         }
+
+        /* The list is sorted so stop if we have gone too far. */
+        if (res > 0)
+            break;
+    }
 }
 
 
 /*
  * Search the enums for a name and return the type.
  */
-
-static void searchEnums(sipSpec *pt,scopedNameDef *snd,argDef *ad)
+static void searchEnums(sipSpec *pt, scopedNameDef *snd, argDef *ad)
 {
     enumDef *ed;
 
-    for (ed = pt -> enums; ed != NULL; ed = ed -> next)
+    for (ed = pt->enums; ed != NULL; ed = ed->next)
     {
-        if (ed -> fqcname == NULL)
+        if (ed->fqcname == NULL)
             continue;
 
-        if (sameScopedName(ed -> fqcname,snd))
+        if (compareScopedNames(ed->fqcname, snd) == 0)
         {
-            ad -> atype = enum_type;
-            ad -> u.ed = ed;
+            ad->atype = enum_type;
+            ad->u.ed = ed;
 
             break;
         }
@@ -2785,23 +2927,24 @@ static void searchEnums(sipSpec *pt,scopedNameDef *snd,argDef *ad)
 /*
  * Search the classes for one with a particular name and return it as a type.
  */
-static void searchClasses(sipSpec *pt, moduleDef *mod, scopedNameDef *cname, argDef *ad)
+static void searchClasses(sipSpec *pt, moduleDef *context,
+        scopedNameDef *cname, argDef *ad)
 {
     classDef *cd;
 
-    for (cd = pt -> classes; cd != NULL; cd = cd -> next)
+    for (cd = pt->classes; cd != NULL; cd = cd->next)
     {
         /*
-         * Ignore an external class unless it was declared in the same
-         * context (ie. module) as the name is being used.
+         * Ignore an external class unless it was declared in the same context
+         * (ie. module) as the name is being used.
          */
-        if (isExternal(cd) && cd->iff->module != mod)
+        if (isExternal(cd) && cd->iff->module != context)
             continue;
 
-        if (sameScopedName(classFQCName(cd), cname))
+        if (compareScopedNames(classFQCName(cd), cname) == 0)
         {
-            ad -> atype = class_type;
-            ad -> u.cd = cd;
+            ad->atype = class_type;
+            ad->u.cd = cd;
 
             break;
         }
@@ -2919,149 +3062,34 @@ static ifaceFileDef *getIfaceFile(argDef *ad)
 
 
 /*
- * Position a class so that it is after all its super-classes.
+ * Create the sorted array of numbered types for a module.
  */
-static void positionClass(classDef *cd)
-{
-    classList *cl;
-
-    /* See if it has already been done. */
-    if (cd -> node -> ordered)
-        return;
-
-    for (cl = cd -> supers; cl != NULL; cl = cl -> next)
-    {
-        nodeDef **ndp, *nd1, *nd2, *rp;
-
-        /* Ignore super-classes from different modules. */
-        if (cl -> cd -> iff -> module != cd -> iff -> module)
-            continue;
-
-        /* Make sure the super-class is positioned. */
-        positionClass(cl -> cd);
-
-        /*
-         * Find ancestors of the two that are siblings (ie. they have a
-         * common parent).
-         */
-        rp = &cd -> iff -> module -> root;
-
-        for (nd1 = cd -> node; nd1 != rp; nd1 = nd1 -> parent)
-        {
-            for (nd2 = cl -> cd -> node; nd2 != rp; nd2 = nd2 -> parent)
-                if (nd1 -> parent == nd2 -> parent)
-                    break;
-
-            if (nd2 != rp)
-                break;
-        }
-
-        /*
-         * The first node must appear after the second in the common
-         * parent's list of children.
-         */
-        for (ndp = &nd1 -> parent -> child; *ndp != NULL; ndp = &(*ndp) -> next)
-        {
-            nodeDef *nd = *ndp;
-
-            if (nd == nd2)
-                break;
-
-            if (nd == nd1)
-            {
-                /* Remove this one from the list. */
-                *ndp = nd -> next;
-
-                /* Find the super-class ancestor. */
-                while (*ndp != nd2)
-                    ndp = &(*ndp) -> next;
-
-                /*
-                 * Put this one back after the super-class
-                 * ancestor.
-                 */
-                nd -> next = (*ndp) -> next;
-                (*ndp) -> next = nd;
-
-                break;
-            }
-        }
-    }
-
-    cd -> node -> ordered = TRUE;
-}
-
-
-/*
- * Make sure a class is in the namespace tree.
- */
-static void addNodeToParent(nodeDef *root,classDef *cd)
-{
-    nodeDef *nd, *parent;
-
-    /* Skip classes already in the tree. */
-    if (cd -> node != NULL)
-        return;
-
-    /* Add this child to the parent. */
-    nd = sipMalloc(sizeof (nodeDef));
-
-    nd -> ordered = FALSE;
-    nd -> cd = cd;
-    nd -> child = NULL;
-
-    /* Get the address of the parent node. */
-    if (cd -> ecd == NULL)
-        parent = root;
-    else
-    {
-        /* Make sure the parent is in the tree. */
-        addNodeToParent(root,cd -> ecd);
-
-        parent = cd -> ecd -> node;
-    }
-
-    nd -> parent = parent;
-
-    /* Insert this at the head of the parent's children. */
-    nd -> next = parent -> child;
-    parent -> child = nd;
-
-    /* Remember where we are in the tree. */
-    cd -> node = nd;
-}
-
-
-/*
- * Assign the module specific class number for a class and all it's children.
- */
-static void assignClassNrs(sipSpec *pt, moduleDef *mod, nodeDef *nd)
+static void createSortedNumberedTypesTable(sipSpec *pt, moduleDef *mod)
 {
     classDef *cd;
-    nodeDef *cnd;
+    mappedTypeDef *mtd;
+    enumDef *ed;
+    argDef *ad;
+    int i;
 
-    /* Assign the class if it's not the root. */
-    if ((cd = nd->cd) != NULL)
+    /* Count the how many types there are. */
+    mod->nrtypes = 0;
+
+    for (cd = pt->classes; cd != NULL; cd = cd->next)
     {
-        cd->classnr = mod->nrclasses++;
+        if (cd->iff->module != mod)
+            continue;
 
-        /* If we find a class called QObject, assume it's Qt. */
-        if (strcmp(classBaseName(cd), "QObject") == 0)
-            mod->qobjclass = cd->classnr;
+        mod->nrtypes++;
     }
 
-    /* Assign all it's children. */
-    for (cnd = nd->child; cnd != NULL; cnd = cnd->next)
-        assignClassNrs(pt, mod, cnd);
-}
+    for (mtd = pt->mappedtypes; mtd != NULL; mtd = mtd->next)
+    {
+        if (mtd->iff->module != mod)
+            continue;
 
-
-/*
- * Assign the module specific enum number for all named enums.
- */
-static void assignEnumNrs(sipSpec *pt)
-{
-    enumDef *ed;
+        mod->nrtypes++;
+    }
 
     for (ed = pt->enums; ed != NULL; ed = ed->next)
     {
@@ -3071,8 +3099,96 @@ static void assignEnumNrs(sipSpec *pt)
         if (ed->ecd != NULL && isTemplateClass(ed->ecd))
             continue;
 
-        ed->enumnr = ed->module->nrenums++;
+        if (ed->module != mod)
+            continue;
+
+        mod->nrtypes++;
     }
+
+    if (mod->nrtypes == 0)
+        return;
+
+    /* Allocate and populate the table. */
+    ad = mod->types = sipCalloc(mod->nrtypes, sizeof (argDef));
+
+    for (cd = pt->classes; cd != NULL; cd = cd->next)
+    {
+        if (cd->iff->module != mod)
+            continue;
+
+        ad->atype = class_type;
+        ad->u.cd = cd;
+        ad->name = cd->iff->name->text;
+
+        ++ad;
+    }
+
+    for (mtd = pt->mappedtypes; mtd != NULL; mtd = mtd->next)
+    {
+        if (mtd->iff->module != mod)
+            continue;
+
+        ad->atype = mapped_type;
+        ad->u.mtd = mtd;
+        ad->name = mtd->cname->text;
+
+        ++ad;
+    }
+
+    for (ed = pt->enums; ed != NULL; ed = ed->next)
+    {
+        if (ed->fqcname == NULL)
+            continue;
+
+        if (ed->ecd != NULL && isTemplateClass(ed->ecd))
+            continue;
+
+        if (ed->module != mod)
+            continue;
+
+        ad->atype = enum_type;
+        ad->u.ed = ed;
+        ad->name = ed->cname->text;
+
+        ++ad;
+    }
+
+    /* Sort the table and assign type numbers. */
+    qsort(mod->types, mod->nrtypes, sizeof (argDef), compareTypes);
+
+    for (ad = mod->types, i = 0; i < mod->nrtypes; ++i, ++ad)
+    {
+        switch (ad->atype)
+        {
+        case class_type:
+            ad->u.cd->classnr = i;
+
+#ifdef SIP_QT
+            /* If we find a class called QObject, assume it's Qt. */
+            if (strcmp(ad->name, "QObject") == 0)
+                mod->qobjclass = i;
+#endif
+
+            break;
+
+        case mapped_type:
+            ad->u.mtd->mappednr = i;
+            break;
+
+        case enum_type:
+            ad->u.ed->enumnr = i;
+            break;
+        }
+    }
+}
+
+
+/*
+ * The qsort helper to compare two generated type names.
+ */
+static int compareTypes(const void *t1, const void *t2)
+{
+    return strcmp(((argDef *)t1)->name, ((argDef *)t2)->name);
 }
 
 
@@ -3100,7 +3216,9 @@ static void exitmsg(char* msg)
     exit(-1);
 }
 
-static varDef* findProperty(sipSpec *pt, moduleDef *module, classDef *cd, overDef *over, nameDef* propertyName)
+#include <windows.h>
+
+static varDef* findProperty(sipSpec *pt, moduleDef *module, classDef *cd, overDef *over, nameDef* propertyName, int* err)
 {
     varDef *var = NULL;
     for(var = pt->vars; var != NULL; var = var->next)
@@ -3109,8 +3227,10 @@ static varDef* findProperty(sipSpec *pt, moduleDef *module, classDef *cd, overDe
            var->module == module &&
            var->pyname == propertyName)
         {
-           if (!isProperty(var))
-               exitmsg("found property-like overload with no property flag set!");
+           if (!isProperty(var)) {
+               *err = 1;
+               return NULL;
+           }
            return var;
         }
     }
@@ -3142,6 +3262,7 @@ static int countNonDefaultArgs(argDef args[], int nrArgs)
 static varDef* addOrFindProperty(sipSpec* pt, moduleDef* module, classDef* cd, overDef* over)
 {
     int num_args;
+    int err = 0;
     nameDef* propertyName;
     varDef* var;
     scopedNameDef* varname;
@@ -3156,8 +3277,8 @@ static varDef* addOrFindProperty(sipSpec* pt, moduleDef* module, classDef* cd, o
     propertyName = cacheName(pt, over->cppname + 3);
         
     /* Find the property if it already exists. */
-    var = findProperty(pt, module, cd, over, propertyName);
-    if (var != NULL)
+    var = findProperty(pt, module, cd, over, propertyName, &err);
+    if (err || var != NULL)
         return var;
     
     /* We didn't find one, so make a new one. */
@@ -3205,14 +3326,14 @@ static varDef* addOrFindProperty(sipSpec* pt, moduleDef* module, classDef* cd, o
         setIsStaticVar(var);
                 
     /* Append the new variable to the module. */
-    insertVariable(pt, var);
+    addVariable(pt, var);
     return var;
 }
 
 static void addGetter(sipSpec* pt, moduleDef* module, classDef* cd, overDef* over)
 {
     varDef* prop = addOrFindProperty(pt, module, cd, over);
-    if (prop->getter == NULL)
+    if (prop && prop->getter == NULL)
         prop->getter = over;
 
 }
@@ -3220,7 +3341,7 @@ static void addGetter(sipSpec* pt, moduleDef* module, classDef* cd, overDef* ove
 static void addSetter(sipSpec* pt, moduleDef* module, classDef* cd, overDef* over)
 {
     varDef* prop = addOrFindProperty(pt, module, cd, over);
-    if (prop->setter == NULL)
+    if (prop && prop->setter == NULL)
         prop->setter = over;
 }
 
@@ -3241,7 +3362,7 @@ static int isGetter(moduleDef* module, classDef* cd, overDef* over)
     /* starts with Get, looks like an accessor, and has no non default 
        arguments */
     return 0 == strncmp(over->cppname, "Get", 3) &&
-        isAccessor(over) &&
+        isAccessor(over) && 
         0 == countNonDefaultArgs(over->cppsig->args, over->cppsig->nrArgs);
 }
 
@@ -3281,6 +3402,8 @@ static void filterPropertiesWithoutGetters(sipSpec *pt)
         var = next;
     }
 }
+
+#include <windows.h>
 
 static void generateProperties(sipSpec *pt, moduleDef *mod, classDef *cd)
 {    

@@ -1,7 +1,7 @@
 /*
  * The main header file for SIP.
  *
- * Copyright (c) 2008 Riverbank Computing Limited <info@riverbankcomputing.com>
+ * Copyright (c) 2009 Riverbank Computing Limited <info@riverbankcomputing.com>
  * 
  * This file is part of SIP.
  * 
@@ -39,7 +39,7 @@
 
 /* For convenience. */
 
-#define classBaseName(cd)   ((cd)->iff->name->text)
+#define classBaseName(cd)   scopedNameTail((cd)->iff->fqcname)
 #define classFQCName(cd)    ((cd)->iff->fqcname)
 
 
@@ -48,6 +48,7 @@
 #define MOD_HAS_DELAYED_DTORS   0x0001  /* It has a class with a delayed dtor. */
 #define MOD_IS_CONSOLIDATED     0x0002  /* It is a consolidated module. */
 #define MOD_IS_COMPOSITE        0x0004  /* It is a composite module. */
+#define MOD_IS_TRANSFORMED      0x0008  /* It's types have been transformed. */
 
 #define hasDelayedDtors(m)  ((m)->modflags & MOD_HAS_DELAYED_DTORS)
 #define setHasDelayedDtors(m)   ((m)->modflags |= MOD_HAS_DELAYED_DTORS)
@@ -56,6 +57,8 @@
 #define isComposite(m)      ((m)->modflags & MOD_IS_COMPOSITE)
 #define setIsComposite(m)   ((m)->modflags |= MOD_IS_COMPOSITE)
 #define isContainer(m)      ((m)->modflags & (MOD_IS_CONSOLIDATED | MOD_IS_COMPOSITE))
+#define setIsTransformed(m) ((m)->modflags |= MOD_IS_TRANSFORMED)
+#define isTransformed(m)    ((m)->modflags & MOD_IS_TRANSFORMED)
 
 
 /* Handle section flags. */
@@ -85,11 +88,10 @@
 #define CLASS_NO_DEFAULT_CTORS  0x00200000  /* Don't create default ctors. */
 #define CLASS_QOBJECT_SUB   0x00400000  /* It is derived from QObject. */
 #define CLASS_DTOR_HOLD_GIL 0x00800000  /* The dtor holds the GIL. */
-#define CLASS_QT_META_TYPE  0x01000000  /* Register as a Qt meta type. */
+#define CLASS_ASSIGN_HELPER 0x01000000  /* Generate an assignment helper. */
 #define CLASS_NO_QMETAOBJECT    0x02000000  /* It has no QMetaObject. */
-#define CLASS_CAN_ASSIGN    0x04000000  /* It has an assignment operator. */
-#define CLASS_IS_TEMPLATE   0x08000000  /* It is a template class. */
-#define CLASS_IS_DEPRECATED 0x10000000  /* It is deprecated. */
+#define CLASS_IS_TEMPLATE   0x04000000  /* It is a template class. */
+#define CLASS_IS_DEPRECATED 0x08000000  /* It is deprecated. */
 
 #define hasSigSlots(cd)     ((cd)->classflags & CLASS_HAS_SIGSLOTS)
 #define setHasSigSlots(cd)  ((cd)->classflags |= CLASS_HAS_SIGSLOTS)
@@ -125,12 +127,10 @@
 #define setIsQObjectSubClass(cd)    ((cd)->classflags |= CLASS_QOBJECT_SUB)
 #define isHoldGILDtor(c)    ((cd)->classflags & CLASS_DTOR_HOLD_GIL)
 #define setIsHoldGILDtor(c) ((cd)->classflags |= CLASS_DTOR_HOLD_GIL)
-#define registerQtMetaType(c)   ((cd)->classflags & CLASS_QT_META_TYPE)
-#define setRegisterQtMetaType(c)    ((cd)->classflags |= CLASS_QT_META_TYPE)
-#define noQMetaObject(c)    ((cd)->classflags & CLASS_NO_QMETAOBJECT)
-#define setNoQMetaObject(c) ((cd)->classflags |= CLASS_NO_QMETAOBJECT)
-#define canAssign(c)        ((cd)->classflags & CLASS_CAN_ASSIGN)
-#define setCanAssign(c)     ((cd)->classflags |= CLASS_CAN_ASSIGN)
+#define assignmentHelper(c) ((cd)->classflags & CLASS_ASSIGN_HELPER)
+#define setAssignmentHelper(c)      ((cd)->classflags |= CLASS_ASSIGN_HELPER)
+#define noPyQt4QMetaObject(c)       ((cd)->classflags & CLASS_NO_QMETAOBJECT)
+#define setPyQt4NoQMetaObject(c)    ((cd)->classflags |= CLASS_NO_QMETAOBJECT)
 #define isTemplateClass(cd) ((cd)->classflags & CLASS_IS_TEMPLATE)
 #define setIsTemplateClass(cd)  ((cd)->classflags |= CLASS_IS_TEMPLATE)
 #define resetIsTemplateClass(cd)    ((cd)->classflags &= ~CLASS_IS_TEMPLATE)
@@ -310,9 +310,10 @@
 #define ARG_CONSTRAINED     0x0800  /* Suppress type conversion. */
 #define ARG_SINGLE_SHOT     0x1000  /* The slot is only ever fired once. */
 #define ARG_RESULT_SIZE     0x2000  /* It defines the result size. */
+#define ARG_KEEP_REF        0x4000  /* Keep a reference. */
 
 #define isReference(a)      ((a)->argflags & ARG_IS_REF)
-#define setIsReference(a)   ((a)-> argflags |= ARG_IS_REF)
+#define setIsReference(a)   ((a)->argflags |= ARG_IS_REF)
 #define resetIsReference(a) ((a)->argflags &= ~ARG_IS_REF)
 #define isConstArg(a)       ((a)->argflags & ARG_IS_CONST)
 #define setIsConstArg(a)    ((a)->argflags |= ARG_IS_CONST)
@@ -341,19 +342,20 @@
 #define isSingleShot(a)     ((a)->argflags & ARG_SINGLE_SHOT)
 #define isResultSize(a)     ((a)->argflags & ARG_RESULT_SIZE)
 #define setResultSize(a)    ((a)->argflags |= ARG_RESULT_SIZE)
+#define keepReference(a)    ((a)->argflags & ARG_KEEP_REF)
+#define setKeepReference(a) ((a)->argflags |= ARG_KEEP_REF)
 
 
 /* Handle name flags. */
 
 #define NAME_IS_USED        0x01    /* It is used in the main module. */
-#define NAME_IS_CLASS       0x02    /* It is the name of a class. */
+#define NAME_IS_SUBSTR      0x02    /* It is a substring of another. */
 
 #define isUsedName(n)       ((n)->nameflags & NAME_IS_USED)
 #define setIsUsedName(n)    ((n)->nameflags |= NAME_IS_USED)
 #define resetIsUsedName(n)  ((n)->nameflags &= ~NAME_IS_USED)
-#define isClassName(n)      ((n)->nameflags & NAME_IS_CLASS)
-#define setIsClassName(n)   ((n)->nameflags |= NAME_IS_CLASS)
-#define resetIsClassName(n) ((n)->nameflags &= ~NAME_IS_CLASS)
+#define isSubstring(n)      ((n)->nameflags & NAME_IS_SUBSTR)
+#define setIsSubstring(n)   ((n)->nameflags |= NAME_IS_SUBSTR)
 
 
 /* Handle virtual handler flags. */
@@ -490,7 +492,8 @@ typedef enum {
     sstring_type,
     wstring_type,
     fake_void_type,
-    ssize_type
+    ssize_type,
+    estring_type
 } argType;
 
 
@@ -559,24 +562,11 @@ typedef struct _scopedNameDef {
 
 typedef struct _nameDef {
     int nameflags;                      /* The name flags. */
-    struct _moduleDef *module;          /* The main module. */
     const char *text;                   /* The text of the name. */
+    size_t len;                         /* The length of the name. */
+    size_t offset;                      /* The offset in the string pool. */
     struct _nameDef *next;              /* Next in the list. */
 } nameDef;
-
-
-/*
- * A node in the tree of classes used to determine the order in which the
- * classes need to be created.
- */
-
-typedef struct _nodeDef {
-    int ordered;                        /* Set if in order. */
-    struct _classDef *cd;               /* The class. */
-    struct _nodeDef *parent;            /* The parent. */
-    struct _nodeDef *child;             /* The first child. */
-    struct _nodeDef *next;              /* The next sibling. */
-} nodeDef;
 
 
 /* A literal code block. */
@@ -587,52 +577,6 @@ typedef struct _codeBlock {
     int linenr;                         /* The line in the file. */
     struct _codeBlock *next;            /* Next in the list. */
 } codeBlock;
-
-
-/* A module definition. */
-
-typedef struct _moduleDef {
-    const char *fullname;               /* The full module name. */
-    const char *name;                   /* The module base name. */
-    int version;                        /* The module version. */
-    int modflags;                       /* The module flags. */
-    int qobjclass;                      /* QObject class, -1 if none. */
-    struct _memberDef *othfuncs;        /* List of other functions. */
-    struct _overDef *overs;             /* Global overloads. */
-    codeBlock *hdrcode;                 /* Header code. */
-    codeBlock *cppcode;                 /* Global C++ code. */
-    codeBlock *copying;                 /* Software license. */
-    codeBlock *preinitcode;             /* Pre-initialisation code. */
-    codeBlock *postinitcode;            /* Post-initialisation code. */
-    codeBlock *unitcode;                /* Compilation unit code. */
-    int parts;                          /* The number of parts generated. */
-    char *file;                         /* The filename. */
-    qualDef *qualifiers;                /* The list of qualifiers. */
-    nodeDef root;                       /* Root of class tree. */
-    int nrtimelines;                    /* The nr. of timelines. */
-    int nrclasses;                      /* The nr. of classes. */
-    int nrexceptions;                   /* The nr. of exceptions. */
-    int nrmappedtypes;                  /* The nr. of mapped types. */
-    int nrenums;                        /* The nr. of named enums. */
-    int nrtypedefs;                     /* The nr. of typedefs. */
-    int nrvirthandlers;                 /* The nr. of virtual handlers. */
-    struct _virtHandlerDef *virthandlers;   /* The virtual handlers. */
-    licenseDef *license;                /* The software license. */
-    struct _classDef *proxies;          /* The list of proxy classes. */
-    struct _moduleDef *container;       /* The container module, if any. */
-    struct _ifaceFileList *used;        /* Interface files used. */
-    struct _moduleListDef *allimports;  /* The list of all imports. */
-    struct _moduleListDef *imports;     /* The list of direct imports. */
-    struct _moduleDef *next;            /* Next in the list. */
-} moduleDef;
-
-
-/* An entry in a linked module list. */
-
-typedef struct _moduleListDef {
-    moduleDef *module;                  /* The module itself. */
-    struct _moduleListDef *next;        /* The next in the list. */
-} moduleListDef;
 
 
 /* The arguments to a throw specifier. */
@@ -683,6 +627,7 @@ typedef struct {
     int argflags;                       /* The argument flags. */
     int nrderefs;                       /* Nr. of dereferences. */
     valueDef *defval;                   /* The default value. */
+    int key;                            /* The optional /KeepReference/ key. */
     struct _typedefDef *original_type;  /* The original type if typedef'd. */
     union {
         struct _signatureDef *sa;       /* If it is a function. */
@@ -713,6 +658,52 @@ typedef struct _fcallDef {
 } fcallDef;
 
 
+/* A module definition. */
+typedef struct _moduleDef {
+    nameDef *fullname;                  /* The full module name. */
+    const char *name;                   /* The module base name. */
+    int version;                        /* The module version. */
+    int modflags;                       /* The module flags. */
+    int qobjclass;                      /* QObject class, -1 if none. */
+    struct _memberDef *othfuncs;        /* List of other functions. */
+    struct _overDef *overs;             /* Global overloads. */
+    nameDef *defmetatype;               /* The optional default meta-type. */
+    nameDef *defsupertype;              /* The optional default super-type. */
+    codeBlock *hdrcode;                 /* Header code. */
+    codeBlock *cppcode;                 /* Global C++ code. */
+    codeBlock *copying;                 /* Software license. */
+    codeBlock *preinitcode;             /* Pre-initialisation code. */
+    codeBlock *initcode;                /* Initialisation code. */
+    codeBlock *postinitcode;            /* Post-initialisation code. */
+    codeBlock *unitcode;                /* Compilation unit code. */
+    int parts;                          /* The number of parts generated. */
+    char *file;                         /* The filename. */
+    qualDef *qualifiers;                /* The list of qualifiers. */
+    argDef *types;                      /* The array of numbered types. */
+    int nrtypes;                        /* The number of numbered types. */
+    int nrtimelines;                    /* The nr. of timelines. */
+    int nrexceptions;                   /* The nr. of exceptions. */
+    int nrtypedefs;                     /* The nr. of typedefs. */
+    int nrvirthandlers;                 /* The nr. of virtual handlers. */
+    int next_key;                       /* The next key to allocate. */
+    struct _virtHandlerDef *virthandlers;   /* The virtual handlers. */
+    licenseDef *license;                /* The software license. */
+    struct _classDef *proxies;          /* The list of proxy classes. */
+    struct _moduleDef *container;       /* The container module, if any. */
+    struct _ifaceFileList *used;        /* Interface files used. */
+    struct _moduleListDef *allimports;  /* The list of all imports. */
+    struct _moduleListDef *imports;     /* The list of direct imports. */
+    struct _moduleDef *next;            /* Next in the list. */
+} moduleDef;
+
+
+/* An entry in a linked module list. */
+typedef struct _moduleListDef {
+    moduleDef *module;                  /* The module itself. */
+    struct _moduleListDef *next;        /* The next in the list. */
+} moduleListDef;
+
+
 /* An interface file definition. */
 
 typedef struct _ifaceFileDef {
@@ -739,6 +730,7 @@ typedef struct _ifaceFileList {
 typedef struct _mappedTypeDef {
     int mtflags;                        /* The mapped type flags. */
     argDef type;                        /* The type being mapped. */
+    nameDef *cname;                     /* The C/C++ name. */
     int mappednr;                       /* The mapped type number. */
     ifaceFileDef *iff;                  /* The interface file. */
     codeBlock *convfromcode;            /* Convert from C++ code. */
@@ -860,9 +852,11 @@ typedef struct _enumMemberDef {
 
 typedef struct _enumDef {
     int enumflags;                      /* The enum flags. */
-    scopedNameDef *fqcname;             /* The name (may be NULL). */
     nameDef *pyname;                    /* The Python name (may be NULL). */
+    scopedNameDef *fqcname;             /* The C/C++ name (may be NULL). */
+    nameDef *cname;                     /* The C/C++ name (may be NULL). */
     int enumnr;                         /* The enum number. */
+    int enum_idx;                       /* The enum index within the module. */
     struct _classDef *ecd;              /* The enclosing class. */
     moduleDef *module;                  /* The owning module. */
     enumMemberDef *members;             /* The list of members. */
@@ -922,15 +916,16 @@ typedef struct _mroDef {
 
 typedef struct _classDef {
     int classflags;                     /* The class flags. */
-    int userflags;                      /* The user type flags. */
+    int pyqt4_flags;                    /* The PyQt4 specific flags. */
     int classnr;                        /* The class number. */
-    const char *pyname;                 /* The Python name. */
+    nameDef *pyname;                    /* The Python name. */
     ifaceFileDef *iff;                  /* The interface file. */
     struct _classDef *ecd;              /* The enclosing scope. */
     struct _classDef *real;             /* The real class if this is a proxy or extender. */
-    nodeDef *node;                      /* Position in class tree. */
     classList *supers;                  /* The parent classes. */
     mroDef *mro;                        /* The super-class hierarchy. */
+    nameDef *metatype;                  /* The meta-type. */
+    nameDef *supertype;                 /* The super-type. */
     templateDef *td;                    /* The instantiated template. */
     ctorDef *ctors;                     /* The constructors. */
     ctorDef *defctor;                   /* The default ctor. */
@@ -948,10 +943,12 @@ typedef struct _classDef {
     codeBlock *convtocode;              /* Convert to C++ code. */
     codeBlock *travcode;                /* Traverse code. */
     codeBlock *clearcode;               /* Clear code. */
-    codeBlock *readbufcode;             /* Read buffer code. */
-    codeBlock *writebufcode;            /* Write buffer code. */
-    codeBlock *segcountcode;            /* Segment count code. */
-    codeBlock *charbufcode;             /* Character buffer code. */
+    codeBlock *getbufcode;              /* Get buffer code (Python v3). */
+    codeBlock *releasebufcode;          /* Release buffer code (Python v3). */
+    codeBlock *readbufcode;             /* Read buffer code (Python v2). */
+    codeBlock *writebufcode;            /* Write buffer code (Python v2). */
+    codeBlock *segcountcode;            /* Segment count code (Python v2). */
+    codeBlock *charbufcode;             /* Character buffer code (Python v2). */
     codeBlock *picklecode;              /* Pickle code. */
     struct _classDef *next;             /* Next in the list. */
 } classDef;
@@ -994,7 +991,7 @@ typedef struct {
     codeBlock *docs;                    /* Documentation. */
     int sigslots;                       /* Set if signals or slots are used. */
     int genc;                           /* Set if we are generating C code. */
-    struct _stringList *options;        /* The list of options. */
+    struct _stringList *plugins;        /* The list of plugins. */
 } sipSpec;
 
 
@@ -1031,7 +1028,8 @@ void warning(char *,...);
 void fatal(char *,...);
 void fatalScopedName(scopedNameDef *);
 int setInputFile(FILE *open_fp, parserContext *pc, int optional);
-void *sipMalloc(size_t);
+void *sipMalloc(size_t n);
+void *sipCalloc(size_t nr, size_t n);
 char *sipStrdup(const char *);
 char *concat(const char *, ...);
 void append(char **, const char *);
@@ -1040,7 +1038,7 @@ int excludedFeature(stringList *,qualDef *);
 int sameSignature(signatureDef *,signatureDef *,int);
 int sameTemplateSignature(signatureDef *tmpl_sd, signatureDef *args_sd,
         int deep);
-int sameScopedName(scopedNameDef *,scopedNameDef *);
+int compareScopedNames(scopedNameDef *snd1, scopedNameDef *snd2);
 int sameBaseType(argDef *,argDef *);
 char *scopedNameTail(scopedNameDef *);
 scopedNameDef *text2scopePart(char *);
@@ -1051,7 +1049,6 @@ void appendToClassList(classList **,classDef *);
 void appendCodeBlock(codeBlock **headp, codeBlock *new);
 void prcode(FILE *fp, const char *fmt, ...);
 void prOverloadName(FILE *fp, overDef *od);
-void prScopedPythonName(FILE *fp, classDef *scope, const char *pyname);
 void prOverloadDecl(FILE *fp, classDef *context, overDef *od, int defval);
 void searchTypedefs(sipSpec *pt, scopedNameDef *snd, argDef *ad);
 int isIntReturnSlot(memberDef *md);
@@ -1059,15 +1056,13 @@ int isLongReturnSlot(memberDef *md);
 int isVoidReturnSlot(memberDef *md);
 int isNumberSlot(memberDef *md);
 int isRichCompareSlot(memberDef *md);
-mappedTypeDef *allocMappedType(argDef *type);
+mappedTypeDef *allocMappedType(sipSpec *pt, argDef *type);
 void appendString(stringList **headp, const char *s);
 void appendTypeStrings(scopedNameDef *ename, signatureDef *patt, signatureDef *src, signatureDef *known, scopedNameDef **names, scopedNameDef **values);
 codeBlock *templateCode(sipSpec *pt, ifaceFileList **used, codeBlock *ocb, scopedNameDef *names, scopedNameDef *values);
 ifaceFileDef *findIfaceFile(sipSpec *pt, moduleDef *mod, scopedNameDef *fqname, ifaceFileType iftype, argDef *ad);
-int optNoEmitters(sipSpec *pt);
-int optRegisterTypes(sipSpec *pt);
-int optQ_OBJECT4(sipSpec *pt);
-int optAssignmentHelpers(sipSpec *pt);
+int pluginPyQt3(sipSpec *pt);
+int pluginPyQt4(sipSpec *pt);
 void yywarning(char *);
 nameDef *cacheName(sipSpec *pt, const char *name);
 void insertVariable(sipSpec *pt, varDef *vd);
@@ -1084,6 +1079,7 @@ typedef enum {
     string_flag,
     name_flag,
     opt_name_flag,
+    dotted_name_flag,
     integer_flag
 } flagType;
 

@@ -1,7 +1,7 @@
 /*
  * The main module for SIP.
  *
- * Copyright (c) 2008 Riverbank Computing Limited <info@riverbankcomputing.com>
+ * Copyright (c) 2009 Riverbank Computing Limited <info@riverbankcomputing.com>
  * 
  * This file is part of SIP.
  * 
@@ -26,7 +26,7 @@
 #define PACKAGE "sip"
 #endif
 
-#define VERSION "4.7.8-snapshot-20081102"
+#define VERSION "4.8-snapshot-20090321"
 
 
 /* Global variables - see sip.h for their meaning. */

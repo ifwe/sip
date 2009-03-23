@@ -1,3 +1,5 @@
+doc/sipref.html
+
 *.pyc
 *.o
 *.so
@@ -27,3 +29,9 @@ sipconfig.py
 
 # temporary benchmark directory
 benchmark/
+=======
+*.suo
+
+sipgen/parser.c
+doc/sipref.html
+

@@ -1,7 +1,7 @@
 /*
  * This file defines the SIP library internal interfaces.
  *
- * Copyright (c) 2008 Riverbank Computing Limited <info@riverbankcomputing.com>
+ * Copyright (c) 2009 Riverbank Computing Limited <info@riverbankcomputing.com>
  * 
  * This file is part of SIP.
  * 
@@ -34,7 +34,7 @@ extern "C" {
 typedef struct
 {
     void *key;                  /* The C/C++ address. */
-    sipWrapper *first;          /* The first object at this address. */
+    sipSimpleWrapper *first;    /* The first object at this address. */
 } sipHashEntry;
 
 
@@ -52,21 +52,26 @@ typedef struct
 } sipObjectMap;
 
 
-extern PyInterpreterState *sipInterpreter;  /* The interpreter. */
+/*
+ * Support for the descriptors.
+ */
+extern PyTypeObject sipMethodDescr_Type;
+PyObject *sipMethodDescr_New(PyMethodDef *pmd);
+
+extern PyTypeObject sipVariableDescr_Type;
+PyObject *sipVariableDescr_New(sipVariableDef *vd, sipClassTypeDef *ctd);
 
 
 extern sipQtAPI *sipQtSupport;  /* The Qt support API. */
-extern sipWrapperType *sipQObjectClass; /* The Python QObject class. */
+extern sipWrapperType sipSimpleWrapper_Type;    /* The simple wrapper type. */
+extern sipTypeDef *sipQObjectType;  /* The QObject type. */
 
-void *sipGetRx(sipWrapper *txSelf, const char *sigargs, PyObject *rxObj,
+void *sipGetRx(sipSimpleWrapper *txSelf, const char *sigargs, PyObject *rxObj,
         const char *slot, const char **memberp);
-int sip_api_emit_signal(PyObject *self, const char *sig, PyObject *sigargs);
-PyObject *sip_api_get_sender();
 PyObject *sip_api_connect_rx(PyObject *txObj, const char *sig, PyObject *rxObj,
         const char *slot, int type);
 PyObject *sip_api_disconnect_rx(PyObject *txObj, const char *sig,
         PyObject *rxObj,const char *slot);
-sipSignature *sip_api_parse_signature(const char *sig);
 
 
 /*
@@ -74,43 +79,40 @@ sipSignature *sip_api_parse_signature(const char *sig);
  */
 void *sip_api_malloc(size_t nbytes);
 void sip_api_free(void *mem);
-void *sip_api_get_cpp_ptr(sipWrapper *w,sipWrapperType *type);
-PyObject *sip_api_convert_from_instance(void *cppPtr, sipWrapperType *type,
+void *sip_api_get_cpp_ptr(sipSimpleWrapper *w, const sipTypeDef *td);
+PyObject *sip_api_convert_from_type(void *cppPtr, const sipTypeDef *td,
         PyObject *transferObj);
-void sip_api_common_dtor(sipWrapper *sipSelf);
+void sip_api_common_dtor(sipSimpleWrapper *sipSelf);
 void sip_api_start_thread(void);
 void sip_api_end_thread(void);
-PyObject *sip_api_convert_from_named_enum(int eval, PyTypeObject *et);
-int sip_api_wrapper_check(PyObject *o);
-void sip_api_free_connection(sipSlotConnection *conn);
-int sip_api_emit_to_slot(const sipSlot *slot, PyObject *sigargs);
-int sip_api_same_connection(sipSlotConnection *conn, void *tx, const char *sig,
-        PyObject *rxObj, const char *slot);
+void sip_api_free_sipslot(sipSlot *slot);
+int sip_api_same_slot(const sipSlot *sp, PyObject *rxObj, const char *slot);
 PyObject *sip_api_invoke_slot(const sipSlot *slot, PyObject *sigargs);
-void sip_api_parse_type(const char *type, sipSigArg *arg);
+void *sip_api_convert_rx(sipWrapper *txSelf, const char *sigargs,
+        PyObject *rxObj, const char *slot, const char **memberp, int flags);
+int sip_api_save_slot(sipSlot *sp, PyObject *rxObj, const char *slot);
 
 
 /*
  * These are not part of the SIP API but are used within the SIP module.
  */
-void sipFreeSlotList(sipSlotList *rx);
 void sipSaveMethod(sipPyMethod *pm,PyObject *meth);
 void *sipGetPending(sipWrapper **op, int *fp);
-PyObject *sipWrapSimpleInstance(void *cppPtr, sipWrapperType *type,
+PyObject *sipWrapSimpleInstance(void *cppPtr, const sipTypeDef *td,
         sipWrapper *owner, int initflags);
 void *sipConvertRxEx(sipWrapper *txSelf, const char *sigargs,
         PyObject *rxObj, const char *slot, const char **memberp, int flags);
 
 void sipOMInit(sipObjectMap *om);
 void sipOMFinalise(sipObjectMap *om);
-sipWrapper *sipOMFindObject(sipObjectMap *om,void *key,sipWrapperType *type);
-void sipOMAddObject(sipObjectMap *om,sipWrapper *val);
-int sipOMRemoveObject(sipObjectMap *om,sipWrapper *val);
+sipSimpleWrapper *sipOMFindObject(sipObjectMap *om, void *key,
+        const sipTypeDef *td);
+void sipOMAddObject(sipObjectMap *om, sipSimpleWrapper *val);
+int sipOMRemoveObject(sipObjectMap *om, sipSimpleWrapper *val);
 
 void sipSetBool(void *ptr,int val);
 
-void *sipGetAddress(sipWrapper *w);
-void sipFindSigArgType(const char *name, size_t len, sipSigArg *at, int indir);
+void *sipGetAddress(sipSimpleWrapper *w);
 
 
 #ifdef __cplusplus

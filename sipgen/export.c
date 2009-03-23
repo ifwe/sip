@@ -1,7 +1,7 @@
 /*
  * The XML and API file generator module for SIP.
  *
- * Copyright (c) 2008 Riverbank Computing Limited <info@riverbankcomputing.com>
+ * Copyright (c) 2009 Riverbank Computing Limited <info@riverbankcomputing.com>
  * 
  * This file is part of SIP.
  * 
@@ -47,6 +47,7 @@ static void xmlIndent(int indent, FILE *fp);
 static const char *dirAttribute(argDef *ad);
 static void exportDefaultValue(argDef *ad, FILE *fp);
 static const char *pyType(argDef *ad, int sec, classDef **scope);
+static void prScopedPythonName(FILE *fp, classDef *scope, const char *pyname);
 
 
 /*
@@ -126,7 +127,7 @@ static int apiCtor(moduleDef *mod, classDef *scope, ctorDef *ct, int sec,
 
     /* Do the callable type form. */
     fprintf(fp, "%s.", mod->name);
-    prScopedPythonName(fp, scope->ecd, scope->pyname);
+    prScopedPythonName(fp, scope->ecd, scope->pyname->text);
     fprintf(fp, "(");
 
     need_comma = FALSE;
@@ -145,7 +146,7 @@ static int apiCtor(moduleDef *mod, classDef *scope, ctorDef *ct, int sec,
 
     /* Do the call __init__ form. */
     fprintf(fp, "%s.", mod->name);
-    prScopedPythonName(fp, scope->ecd, scope->pyname);
+    prScopedPythonName(fp, scope->ecd, scope->pyname->text);
     fprintf(fp, ".__init__(self");
 
     for (a = 0; a < ct->pysig.nrArgs; ++a)
@@ -379,7 +380,7 @@ static void xmlClass(sipSpec *pt, moduleDef *mod, classDef *cd, FILE *fp)
     {
         xmlIndent(indent, fp);
         fprintf(fp, "<OpaqueClass name=\"");
-        prScopedPythonName(fp, cd->ecd, cd->pyname);
+        prScopedPythonName(fp, cd->ecd, cd->pyname->text);
         fprintf(fp, "\"/>\n");
 
         return;
@@ -387,7 +388,7 @@ static void xmlClass(sipSpec *pt, moduleDef *mod, classDef *cd, FILE *fp)
 
     xmlIndent(indent++, fp);
     fprintf(fp, "<Class name=\"");
-    prScopedPythonName(fp, cd->ecd, cd->pyname);
+    prScopedPythonName(fp, cd->ecd, cd->pyname->text);
     fprintf(fp, "\"");
 
     if (cd->picklecode != NULL)
@@ -410,7 +411,7 @@ static void xmlClass(sipSpec *pt, moduleDef *mod, classDef *cd, FILE *fp)
             if (cl != cd->supers)
                 fprintf(fp, " ");
 
-            prScopedPythonName(fp, cl->cd->ecd, cl->cd->pyname);
+            prScopedPythonName(fp, cl->cd->ecd, cl->cd->pyname->text);
         }
 
         fprintf(fp, "\"");
@@ -570,6 +571,7 @@ static void xmlFunction(classDef *scope, memberDef *md, overDef *oloads,
         int indent, FILE *fp)
 {
     overDef *od;
+    const char *default_str = "default=\"1\" ";
 
     for (od = oloads; od != NULL; od = od->next)
     {
@@ -585,11 +587,13 @@ static void xmlFunction(classDef *scope, memberDef *md, overDef *oloads,
         if (isSignal(od))
         {
             xmlIndent(indent, fp);
-            fprintf(fp, "<Signal name=\"");
+            fprintf(fp, "<Signal %sname=\"", default_str);
             prScopedPythonName(fp, scope, md->pyname->text);
             fprintf(fp, "\" sig=\"");
             xmlCppSignature(fp, od);
             fprintf(fp, "\"/>\n");
+
+            default_str = "";
 
             continue;
         }
@@ -638,7 +642,7 @@ static int xmlOverload(classDef *scope, memberDef *md, overDef *od,
     if (xtnds != NULL)
     {
         fprintf(fp, " extends=\"");
-        prScopedPythonName(fp, xtnds->ecd, xtnds->pyname);
+        prScopedPythonName(fp, xtnds->ecd, xtnds->pyname->text);
         fprintf(fp, "\"");
     }
 
@@ -868,7 +872,7 @@ static const char *pyType(argDef *ad, int sec, classDef **scope)
     switch (ad->atype)
     {
     case class_type:
-        type_name = ad->u.cd->pyname;
+        type_name = ad->u.cd->pyname->text;
         *scope = ad->u.cd->ecd;
         break;
 
@@ -991,4 +995,20 @@ static const char *pyType(argDef *ad, int sec, classDef **scope)
     }
 
     return type_name;
+}
+
+
+/*
+ * Generate a scoped Python name.
+ */
+static void prScopedPythonName(FILE *fp, classDef *scope, const char *pyname)
+{
+    if (scope != NULL)
+    {
+        prScopedPythonName(fp, scope->ecd, NULL);
+        fprintf(fp, "%s.", scope->pyname->text);
+    }
+
+    if (pyname != NULL)
+        fprintf(fp, "%s", pyname);
 }

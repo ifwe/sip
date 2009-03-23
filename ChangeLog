@@ -1,3 +1,651 @@
+2009/03/21 23:35:50  phil
+Fixed a bug in the code generated for protected methods with multiple Python
+names.
+
+
+2009/03/20 18:17:16  phil
+Bytes and the buffer protocol are now also supported for non-byte char and
+char * (howver the buffer protocol support seems to be broken).
+
+
+2009/03/20 16:39:30  phil
+Many changes to the wrapping of strings for Python v3 so that char and char *
+(unless the /Byte/ annotation is specified) are handled as Unicode rather than
+bytes.  Such strings must be able to be encoded as Latin-1.
+Related to the above, the generated code is much more careful than it used to
+be about keeping Python string objects alive while their data is being used.
+
+
+2009/03/18 18:05:52  phil
+Fixed a long-standing bug in the handling of the /NoArgParser/ annotation that
+only came to light with Python v3.
+
+
+2009/03/18 15:01:53  phil
+More fixes for consolidated modules.  Python v2 and v3 should now be working.
+
+
+2009/03/17 18:38:32  phil
+Some fixes for consolidated module support for both Python v2 and v3.
+
+
+2009/03/17 10:51:52  phil
+Tweaked the build system to make it easier for Makefile sub-classes to add
+commands to targets.
+
+
+2009/03/16 20:59:59  phil
+Fixed a bug in generating Python v3 consolidated modules.
+
+
+2009/03/16 14:04:30  phil
+Fixed a typo that broke the build of the sip module for Python v2.
+
+
+2009/03/15 13:39:50  phil
+Tweaks to the Python portability macros.
+
+
+2009/03/15  9:59:29  phil
+More Python portability macros.
+
+
+2009/03/14 21:45:47  phil
+Fixed a Mac build regression handling the location of the SDK.
+
+
+2009/03/14 16:59:04  phil
+Added some more Python porting macros.
+
+
+2009/03/14 13:44:03  phil
+Removed a remaining Python v2 specific call from the build system.
+
+
+2009/03/14 11:42:39  phil
+The generated code now supports Python v3.
+
+
+2009/03/14 10:08:13  phil
+The sip module can now be imported by Python v3.
+
+
+2009/03/13 19:15:25  phil
+Ported the PyString_ calls in the sip module to Python v3.
+
+
+2009/03/13 16:42:53  phil
+Updated the generated module initialisation code for Python v3 - but not for
+consolidated modules yet.
+
+
+2009/03/13 15:13:10  phil
+Moved to PyLong_* for Python v3.
+
+
+2009/03/12 23:16:19  phil
+More porting of the sip module.  It now compiles but still calls Python v2
+functions.
+
+
+2009/03/12 18:17:11  phil
+Partially ported the sip module to Python v3.
+Added the %BIGetBufferCode and %BIReleaseBufferCode directives to support the
+buffer interface of Python v3.
+
+
+2009/03/11 22:30:09  phil
+configure.py now uses optparse.
+configure.py and the build system will now run under Python3.
+
+
+2009/03/11 16:39:08  phil
+Implemented __dict__ for sipsimplewrapper.
+
+
+2009/03/11 12:17:08  phil
+Added the SIP_PYMETHODDEF_CAST compatibility macro for Python v2.4 and earlier.
+
+
+2009/03/10 18:33:57  phil
+Changed the code generated for variable getters so that a copy is only returned
+if the variable is const.
+
+
+2009/03/09 19:14:11  phil
+Changed the generation of the string pool to get around MSVC's limitation on
+the size of a string.
+
+
+2009/03/09 17:40:00  phil
+Updated the NEWS file.
+
+
+2009/03/09 14:35:38  phil
+Made sure all generated code doesn't break strict aliasing.
+
+
+2009/03/09 13:55:23  phil
+SIP now automatically copies objects when they are returned as a const
+reference.
+
+
+2009/03/09 12:44:42  phil
+A further fix to the order in which modules have their types resolved.
+
+
+2009/03/06 18:40:56  phil
+Taught the build system about the QtScriptTools module.
+
+
+2009/03/06 16:44:18  phil
+Fixed a bug where types were being resolved in outer modules before inner
+modules.  This meant that template-based types created on the fly might be
+created in the wrong module.
+
+
+2009/03/05  9:16:57  phil
+Taught the build system about the new dependency of QtXmlPatterns on QtNetwork.
+
+
+2009/03/04 15:06:09  phil
+Fixes for the updated method cache.
+
+
+2009/03/04 12:21:03  phil
+Greatly simplified the virtual reimplementation method cache now that attribute
+lookup has been cleaned up.
+
+
+2009/03/03 18:32:32  phil
+Implemented the /KeepReference/ argument annotation.
+
+
+2009/02/27  9:51:28  phil
+Added sipCanConvertToEnum() to the public API.
+
+
+2009/02/26  9:05:27  phil
+Removed the __dict__ getter as it is no longer needed.
+Changed the declaration of the descriptors as they don't need to be exported.
+
+
+2009/02/25 23:13:36  phil
+Reverted to using type's and object's attribute getters and setters now that we
+populate the type dictionary of a generated type with all its lazy attributes
+in one go.
+Changed how an external attributer getter works now that it only needs to
+populate the type dictionary.
+
+
+2009/02/25 21:43:38  phil
+Safety checking of the working (but still to be changed) attribute lookup code.
+
+
+2009/02/25 15:13:32  phil
+Refactored the support for setting instance variables.
+
+
+2009/02/25 10:00:00  phil
+The refactored support for getting variables now works.
+
+
+2009/02/24 16:19:51  phil
+Safety commit of refactored wrapping of class variables.
+
+
+2009/02/23 22:21:08  phil
+Fixed the problem with looking up external lazy attributes - wrapped variables
+are the only thing not working.
+
+
+2009/02/23 18:29:11  phil
+Safety commit of new attribute lookup code.  Don't use this - it's broken.
+
+
+2009/02/23 10:45:53  phil
+Fixed a reference count leak when an external lazy attribute was a descriptor.
+
+
+2009/02/23  6:41:29  phil
+Fixed a crash when accessing a wrapped instance variable as a class variable.
+
+
+2009/02/22 22:52:22  phil
+Fixed a bug in the refactored attribute lookup.
+
+
+2009/02/22 19:05:10  phil
+Completed the support for the lazy attribute lookup hook.
+
+
+2009/02/21 19:03:54  phil
+Added initial support for registering lazy attribute getters.
+
+
+2009/02/21 11:20:27  phil
+The PyQt4 signal table is now generated.
+The XML export now marks the default signal.
+
+
+2009/02/20 10:55:59  phil
+Added the stub of signal table for PyQt4.
+
+
+2009/02/16 22:24:40  phil
+Removed some compiler warnings.
+
+
+2009/02/14 16:58:56  phil
+More signal/slot refactoring fixes.
+
+
+2009/02/14 16:26:47  phil
+Debugged the signal/slot refactoring.
+
+
+2009/02/14 14:36:06  phil
+Safety commit of latest signal/slot refactoring.
+
+
+2009/02/13 19:02:22  phil
+Fixed a build problem with Python 2.4.x and earlier.
+
+
+2009/02/13 17:05:13  phil
+PyQt3 signal support is now enabled with the %Plugin directive instead of
+%SIPOptions.
+Removed %SIPOptions.
+
+
+2009/02/13 16:36:26  phil
+The generated typedefs table is now sorted.
+
+
+2009/02/12 22:16:12  phil
+An unconstrained enum can now be a sub-class of int.
+
+
+2009/02/11 23:11:35  phil
+Renamed TypeFlags to PyQt4Flags.
+Renamed NoQMetaObject to PyQt4NoQMetaObject.
+Moved the type flags into the PyQt4-specific type structure.
+
+
+2009/02/11 20:31:43  phil
+Removed the registration of wrapped types with the Qt meta-type system as it is
+no longer needed by PyQt4.
+
+
+2009/02/07 17:00:39  phil
+Removed sipAssignType() and moved the helpers to the PyQt4 plugin.
+
+
+2009/02/02 10:54:38  phil
+The QObject.sender() support is now PyQt3 only again.
+
+
+2009/02/01 23:26:59  phil
+Fixed a bug in the generation of the sipParseArgs() sub-format character for
+types.
+
+
+2009/02/01 17:08:49  phil
+Changed the QObject::sender() support for PyQt4.
+
+
+2009/02/01 14:50:36  phil
+Debugged the merged types table.
+
+
+2009/01/31 17:20:21  phil
+Safety commit of the merge of the class, mapped types and enum tables.
+
+
+2009/01/30 18:10:53  phil
+Wrapped classes are now created as they are needed and not in the order they
+appear in the generated class table.  Therefore the class, mapped type and enum
+tables can now be merged and ordered by the type name (and searched using a
+binary search).
+
+
+2009/01/29 18:22:23  phil
+Moved the last of the type parsing to PyQt3.
+
+
+2009/01/29 14:43:13  phil
+Moved the registering of int types to PyQt4.
+
+
+2009/01/28 22:54:42  phil
+Refactored the support for looking up typedefs.
+
+
+2009/01/28 12:43:56  phil
+Moved the type parsing support to PyQt3.
+
+
+2009/01/27  9:40:29  phil
+Removed a remaining call to sipReleaseMappedType().
+
+
+2009/01/25 16:32:39  phil
+Fixed a too-few-arguments-to-a-print bug in the code generator.
+
+
+2009/01/25 13:29:37  phil
+Fixed compilation issues.
+
+
+2009/01/18 17:57:34  phil
+Replaced sipFindConnection() with sipFindSlot().
+
+
+2009/01/13 22:21:13  phil
+Replaced sipFreeConnection() with sipFreeSipslot().
+
+
+2009/01/12 22:41:31  phil
+Pushed the parsing of signatures into PyQt.
+
+
+2009/01/11 17:14:59  phil
+Replaced sipConvertRx() with sipConvertRxEx().
+
+
+2009/01/10 17:12:48  phil
+Removed the generation of an old Qt API entry.
+
+
+2009/01/09 19:29:02  phil
+Safety commit of partial refactoring of the Qt signal support.
+
+
+2009/01/04 22:21:36  phil
+Don't import the qt_register_type symbol if it isn't needed.
+Updated copyright notices.
+
+
+2008/12/30 14:54:42  phil
+sipTypeFromPyTypeObject() now takes a PyTypeObject* rather than a PyObject*.
+
+
+2008/12/30 14:11:19  phil
+Added sipTypeName() and sipTypeScope() to the public SIP API.
+
+
+2008/12/29 14:30:17  phil
+Migrated sipEnum_* to sipType_*.
+
+
+2008/12/27 18:23:34  phil
+sipType_* are now generated for enums.  These are used internally but the SIP
+API has not yet been changed.
+
+
+2008/12/27 15:48:11  phil
+Broke out the generated type structures for mapped and class types to different
+structures with a common header.
+
+
+2008/12/26 14:24:26  phil
+Wrapped enums now have their own meta-type.  This is the hook that will allow
+the C++ name of an enum to be derived from the enum's Python type object.
+
+
+2008/12/24 23:37:59  phil
+Added sip_api_init_module() to make sure dependent modules can be fully
+initialised before they are needed.
+
+
+2008/12/24 17:52:54  phil
+Removed the Qt meta-type id from the pyqt4TypeDef structure as we want to use
+it for mapped types as well but we would never know when it was safe to cast
+from a sipTypeDef pointer.
+
+
+2008/12/21 17:05:22  phil
+The PyQt4-specific extension to the generated type structure is now used for
+mapped types as well.
+
+
+2008/12/20 21:16:38  phil
+Changed the PyQt4-specifc handling of Qt meta-type registration.
+
+
+2008/12/20 16:42:50  phil
+A generated type structure now has its Python type object set earlier so that
+sub-meta-types can use sipIsExactWrappedType().
+Calls to QObject::metaObject() are no longer need to trigger the creation of
+the meta-object.
+
+
+2008/12/20 13:28:14  phil
+Added %Plugin and use it to support pyqt4TypeDef.
+
+
+2008/12/19 19:14:27  phil
+Moved the qt_qobject member out of sipWrapperType and into PyQt where it
+belongs.
+
+
+2008/12/19 17:21:42  phil
+Completed the migration of sipClass_* to sipType_*.
+
+
+2008/12/19 11:07:33  phil
+Documentation updates.  All uses of sipClass_* are only by deprecated parts of
+the API.
+
+
+2008/12/19 11:03:12  phil
+Deprecated the 'B' and 'C' format characters to sipBuildResult() and
+sipCallMethod().
+Added the new 'N' format character to sipBuildResult() and sipCallMethod().
+
+
+2008/12/17 22:25:19  phil
+Deprecated the 'C' format character of sipParseResult() in favor of the
+existing 'D' character.
+
+
+2008/12/17 17:25:51  phil
+Migrated the sub-class convertor code to using sipType rather than sipClass.
+
+
+2008/12/16 15:19:31  phil
+Fixed a bug where names of mapped type templates where being generated for
+modules that didn't need them.
+
+
+2008/12/14 17:02:44  phil
+Replaced the deprecated sipConvertFromInstance() and
+sipConvertFromNewInstance() with sipConvertFromType() and
+sipConvertFromNewType().
+
+
+2008/12/14 15:41:40  phil
+Replaced the deprecated sipForceConvertToInstance() and
+sipForceConvertToMappedType() with sipForceConvertToType().
+
+
+2008/12/14 15:04:45  phil
+Replaced the deprecated sipConvertToInstance() and sipConvertToMappedType()
+with sipConvertToType().
+
+
+2008/12/14 14:20:21  phil
+Replaced the deprecated sipCanConvertToInstance() and
+sipCanConvertToMappedType() by sipCanConvertToType().
+
+
+2008/12/13 19:40:56  phil
+Replaced the deprecated sipReleaseInstance() and sipReleaseMappedType() with
+sipReleaseType().
+
+
+2008/12/13 18:51:27  phil
+Replaced the deprecated sipGetWrapper() with sipGetPyObject().
+
+
+2008/12/13 18:02:31  phil
+More moves from sipClass_* to sipType_*.
+
+
+2008/12/13 14:10:14  phil
+More conversions from sipClass_* to sipType_*.
+
+
+2008/12/12 23:51:34  phil
+Merged the adding of type instances.
+
+
+2008/12/08 21:04:07  phil
+Started the port from sipClass_* to sipType_*.
+Added support for assert() to the build system.
+
+
+2008/12/08 19:43:28  phil
+Renamed sipMappedType_* to sipType_*.
+
+
+2008/12/07 22:37:14  phil
+Added sipType_* for wrapped types.  sipClass_* is now defined in terms of
+sipType_*.
+
+
+2008/12/07 17:32:13  phil
+Deprecated sipClassName().
+
+
+2008/12/07 17:01:36  phil
+Mapped types are now described by the same sipTypeDef structure that describes
+wrapped types.
+
+
+2008/12/06 21:48:47  phil
+Moved the 'user' field from sip.wrapper to sip.simplewrapper because PyQt uses
+it for some non-QObject types.
+
+
+2008/12/06 17:35:53  phil
+Restored %DefaultMetatype and the /Metatype/ class annotation.  This support is
+now complete.
+Documented the meta-type and super-type support.
+
+
+2008/12/03 22:06:16  phil
+Code generator changes to support sipSimpleWrapper.
+
+
+2008/12/03 18:29:39  phil
+The sip module now compiles again without any unexpected warnings.
+
+
+2008/12/02 22:26:37  phil
+Various compilation fixes.
+
+
+2008/12/01 21:03:13  phil
+Safety checkin of the support for the new sip.simplewrapper type.
+
+
+2008/12/01  9:20:22  phil
+Added support for %InitialisationCode.  (Actually in the previous commit but I
+forgot to mention it.)
+The text of an attribute exception now mimics that produced by the Python
+interpreter.
+
+
+2008/11/30 18:48:26  phil
+Refactored the super-type and meta-type support. Meta-types are now handled
+implicitly.
+
+
+2008/11/29 16:26:42  phil
+Debugged the metatype support.
+
+
+2008/11/27 22:44:38  phil
+The metatypes are now registered and readied.
+
+
+2008/11/27  0:12:18  phil
+Fixes for various regressions.
+
+
+2008/11/26 22:47:48  phil
+Use the string pool for calls to qRegisterMetaType().
+
+
+2008/11/26 22:40:16  phil
+Completed the code generator support for user defined metatypes.
+
+
+2008/11/24 22:33:00  phil
+Added the parser support for %Metatype and %DefaultMetatype.
+
+
+2008/11/23 15:31:13  phil
+The string pool now overlaps strings where possible.
+
+
+2008/11/23 14:41:09  phil
+Enum names now use the string pool.
+
+
+2008/11/23 12:28:44  phil
+Fixed a regression in the handling of nested namespaces.
+
+
+2008/11/23  0:29:01  phil
+Python and C++ type names now use the string pool.
+The string pool is currently broken for namespace extenders.
+
+
+2008/11/22 17:03:12  phil
+The generated name cache is now a single (const) string.
+
+
+2008/11/22 14:27:24  phil
+Removed all deprecated parts of the API and generated code.
+
+
+2008/11/21 17:03:06  phil
+Use "-undefined dynamic_lookup" rather than linking against the Python
+framework on MacOS.
+
+
+2008/11/18 10:56:01  phil
+Added sipWrapperType_Check() to the public API.
+
+
+2008/11/17 13:43:32  phil
+Merged v4.7.9 into the trunk.
+
+
+2008/11/17 13:39:28  phil
+Released as v4.7.9.
+
+
+2008/11/13 18:36:49  phil
+The new handling of the typedef names was correctly using the real types for
+virtual handler arguments but not the return values.
+
+
+2008/11/08 15:15:51  phil
+Merged v4.7.8 into the trunk.
+
+
+2008/11/08 11:50:56  phil
+Released as v4.7.8.
+
+
+2008/11/06 22:23:05  phil
+Fixed a minor code generating bug that caused too many blank lines to be
+generated with consolidated modules.
+
+
 2008/11/02 14:53:09  phil
 Fixed a bug in the detection of reimplemented methods when the method is a
 Python special method (ie. when the attribute is a method wrapper).

@@ -1,4 +1,24 @@
-v4.7.8 ??? Nov 2008
+v4.8 ??? 2009
+  - Added support for Python v3.
+  - Added the %BIGetBufferCode and %BIReleaseBufferCode to support the buffer
+    interface of Python v3.
+  - Added the %DefaultMetatype directive and the /Metatype/ class annotation to
+    allow the meta-type of a wrapped type to be changed.
+  - Added the %DefaultSupertype directive and the /Supertype/ class annotation
+    to allow the super-type of a wrapped type to be changed.
+  - Added the sip.simplewrapper type to be used as a super-type for wrapped
+    types that don't take part in parent/child relationships.
+  - Added the %InitialisationCode directive.
+  - Added the /KeepReference/ argument annotation.
+  - Added the /Byte/ argument annotation.
+  - super() now works as expected with wrapped types.
+  - Many additions and deprecations in the API to eliminate the differences
+    between classes and mapped types.  (See the documentation for the details.)
+
+v4.7.9 17th November 2008
+  - A bug fix release.
+
+v4.7.8 8th November 2008
   - Added the /Deprecated/ class and function annotation (based on a patch from
     Lorenzo Berni).
   - Templates now support instance variables and enums.
@@ -10,7 +30,7 @@ v4.7.8 ??? Nov 2008
     what the compiler sees.  The /NoTypeName/ typedef annotation can be used to
     suppress this behaviour.
 
-v4.7.7 8th Aug 2008
+v4.7.7 8th August 2008
   - C++ structs are now properly handled as a class with a default public
     section.
   - sip.dump() now includes the object's first child wrapper.
