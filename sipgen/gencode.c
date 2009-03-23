@@ -142,7 +142,7 @@ static void generateBinarySlotCall(classDef *cd, overDef *od, const char *op,
 static void generateNumberSlotCall(overDef *od, char *op, FILE *fp);
 static void generateVariableGetter(classDef *, varDef *, FILE *);
 static void generateVariableSetter(classDef *, varDef *, FILE *);
-static int generateObjToCppConversion(argDef *, FILE *);
+static int generateObjToCppConversion(varDef *, FILE *);
 static void generateVarMember(varDef *vd, FILE *fp, int setter);
 static int generateVoidPointers(sipSpec *pt, moduleDef *mod, classDef *cd,
         FILE *fp);
@@ -232,7 +232,7 @@ static int py2SlotOnly(slotType st);
 
 static int optWxThreadHop() { return 1; }
 static int optFastPath() { return 1; }
-static int getNumVariables();
+static int getNumVariables(varDef*, classDef*);
 
 /*
  * Generate the code from a specification.
@@ -3684,13 +3684,19 @@ static void generateConvertToDefinitions(mappedTypeDef *mtd,classDef *cd,
 static void generateVariableGetter(classDef *context, varDef *vd, FILE *fp)
 {
     argType atype = vd->type.atype;
-    const char *first_arg, *last_arg;
+    const char *first_arg, *pyobj_arg, *last_arg;
     int needsNew;
+    codeBlock* methodcode = isProperty(vd) && vd->getter ? vd->getter->methodcode : 0;
 
     if (generating_c || !isStaticVar(vd))
         first_arg = "sipSelf";
     else
         first_arg = "";
+
+    if (methodcode && usedInCode(methodcode, "sipSelf"))
+        pyobj_arg = "pySelf";
+    else
+        pyobj_arg = "";
 
     last_arg = (generating_c || usedInCode(vd->getcode, "sipPyType")) ? "sipPyType" : "";
 
@@ -3701,13 +3707,13 @@ static void generateVariableGetter(classDef *context, varDef *vd, FILE *fp)
 
     if (!generating_c)
         prcode(fp,
-"extern \"C\" {static PyObject *varget_%C(void *, PyObject *);}\n"
+"extern \"C\" {static PyObject *varget_%C(void *, PyObject *, PyObject *);}\n"
             , vd->fqcname);
 
     prcode(fp,
-"static PyObject *varget_%C(void *%s, PyObject *%s)\n"
+"static PyObject *varget_%C(void *%s, PyObject *%s, PyObject *%s)\n"
 "{\n"
-        , vd->fqcname, first_arg, last_arg);
+        , vd->fqcname, first_arg, pyobj_arg, last_arg);
 
     if (vd->getcode != NULL)
     {
@@ -3756,6 +3762,24 @@ static void generateVariableGetter(classDef *context, varDef *vd, FILE *fp)
         return;
     }
 
+    /* Handle a %MethodCode in the getter function. */
+    else if (methodcode)
+    {
+        if (needErrorFlag(vd->getter->methodcode))
+            prcode(fp, 
+"    int sipIsErr = 0;\n");
+        prcode(fp, "#define sipRes sipVal\n");
+        prcode(fp, "#define sipSelf pySelf\n");
+        generateCppCodeBlock(vd->getter->methodcode, fp);
+        prcode(fp, "#undef sipSelf\n");
+        prcode(fp, "#undef sipRes\n");
+        if (needErrorFlag(vd->getter->methodcode))
+            prcode(fp,
+"    if (sipIsErr)\n"
+"        return 0;\n");
+        goto generate_return;
+    }
+
     needsNew = ((atype == class_type || atype == mapped_type) && vd->type.nrderefs == 0 && (isConstArg(&vd->type) || !isReference(&vd->type)));
 
     if (needsNew)
@@ -3781,6 +3805,8 @@ static void generateVariableGetter(classDef *context, varDef *vd, FILE *fp)
     prcode(fp, "%s;\n"
 "\n"
         , ((needsNew && !generating_c) ? ")" : ""));
+
+generate_return:
 
     switch (atype)
     {
@@ -3934,7 +3960,6 @@ static void generateVariableGetter(classDef *context, varDef *vd, FILE *fp)
         );
 }
 
-
 /*
  * Generate a variable setter.
  */
@@ -3943,10 +3968,22 @@ static void generateVariableSetter(classDef *context, varDef *vd, FILE *fp)
     argType atype = vd->type.atype;
     const char *first_arg;
     char *deref;
+    codeBlock* methodcode = NULL;
     int might_be_temp;
-    int read_only_property;
+    int needs_pyself = FALSE;
+    int read_only_property = FALSE;
 
-    read_only_property = isProperty(vd) && vd->setter == NULL;
+    if (isProperty(vd))
+    {
+        if (vd->setter)
+        {
+            methodcode = vd->setter->methodcode;
+            if (isTransferred(&vd->setter->cppsig->args[0]))
+                needs_pyself = TRUE;
+        }
+        else
+            read_only_property = TRUE;
+    }
 
     if (!read_only_property && (generating_c || !isStaticVar(vd)))
         first_arg = "sipSelf";
@@ -3960,34 +3997,32 @@ static void generateVariableSetter(classDef *context, varDef *vd, FILE *fp)
 
     if (!generating_c)
         prcode(fp,
-"extern \"C\" {static int varset_%C(void *, PyObject *);}\n"
+"extern \"C\" {static int varset_%C(void *, PyObject*, PyObject *);}\n"
             , vd->fqcname);
 
     prcode(fp,
-"static int varset_%C(void *%s, PyObject *%s)\n"
+"static int varset_%C(void *%s, PyObject*%s, PyObject *%s)\n"
 "{\n"
-        , vd->fqcname, first_arg, (read_only_property ? "" : "sipPy"));
+        , vd->fqcname, first_arg, (needs_pyself ? " pySelf" : ""), (read_only_property ? "" : "sipPy"));
 
     /* Read only property: just raise an exception. */
     if (read_only_property)
     {
-        prcode(fp, "    PyErr_SetString(PyExc_AttributeError, \"%s is a read-only property\");  \n",
+        // TODO: share these strings
+        prcode(fp,
+"    PyErr_SetString(PyExc_AttributeError, \"%s is a read-only property\");  \n"
+"    return NULL;\n"
+"}\n",
             vd->pyname->text);
-        prcode(fp, "    return NULL;\n");
-        prcode(fp, "}\n");
         return;
     }
 
 
     if (vd->setcode == NULL)
     {
-        prcode(fp,
-"    ");
-
+        prcode(fp, "    ");
         generateNamedValueType(context, &vd->type, "sipVal", fp);
-
-        prcode(fp, ";\n"
-            );
+        prcode(fp, ";\n");
     }
 
     if (!isStaticVar(vd))
@@ -4021,7 +4056,6 @@ static void generateVariableSetter(classDef *context, varDef *vd, FILE *fp)
 "    return (sipErr ? -1 : 0);\n"
 "}\n"
             );
-
         return;
     }
 
@@ -4030,13 +4064,36 @@ static void generateVariableSetter(classDef *context, varDef *vd, FILE *fp)
 "    int sipValState;\n"
             );
 
-    if (atype == class_type || atype == mapped_type)
+    if (atype == class_type || atype == mapped_type || (methodcode && needErrorFlag(methodcode)))
         prcode(fp,
 "    int sipIsErr = 0;\n"
 "\n"
             );
 
-    might_be_temp = generateObjToCppConversion(&vd->type, fp);
+    /* Handle any property setter %MethodCode */
+    if (methodcode)
+    {
+        if (atype == pyobject_type)
+        {
+            prcode(fp,
+"    PyObject* a0 = sipPy;\n"
+"\n");
+            generateCppCodeBlock(methodcode, fp);
+
+            if (atype == class_type || atype == mapped_type || (methodcode && needErrorFlag(methodcode)))
+                prcode(fp,
+"    if (sipIsErr)\n"
+"        return -1;\n");
+        }
+        else
+        {
+            prcode(fp, "    ");
+            generateNamedValueType(context, &vd->type, "a0", fp);
+            prcode(fp, ";\n");
+        }
+    }
+
+    might_be_temp = generateObjToCppConversion(vd, fp);
 
     deref = "";
 
@@ -4093,6 +4150,24 @@ static void generateVariableSetter(classDef *context, varDef *vd, FILE *fp)
             );
     }
 
+    if (methodcode)
+    {
+        if (atype != pyobject_type)
+        {
+            prcode(fp,
+"    a0 = sipVal;\n"
+"\n");
+            generateCppCodeBlock(methodcode, fp);
+
+            if (!(atype == class_type || atype == mapped_type))
+                prcode(fp,
+"    if (sipIsErr)\n"
+"        return -1;\n");
+        }
+
+        goto cleanup;
+    }
+
     prcode(fp,
 "    ");
 
@@ -4104,17 +4179,18 @@ static void generateVariableSetter(classDef *context, varDef *vd, FILE *fp)
         prcode(fp, " = %ssipVal;\n"
             , deref);
 
+cleanup:
     /* Note that wchar_t * leaks here. */
 
     if (might_be_temp)
         prcode(fp,
 "\n"
-"    sipReleaseType(sipVal, sipType_%C, sipValState);\n"
+"    sipReleaseType((void*)sipVal, sipType_%C, sipValState);\n"
             , classFQCName(vd->type.u.cd));
     else if (vd->type.atype == mapped_type && vd->type.nrderefs == 0 && !noRelease(vd->type.u.mtd))
         prcode(fp,
 "\n"
-"    sipReleaseType(sipVal, sipType_%T, sipValState);\n"
+"    sipReleaseType((void*)sipVal, sipType_%T, sipValState);\n"
             , &vd->type);
 
     prcode(fp,
@@ -4122,8 +4198,8 @@ static void generateVariableSetter(classDef *context, varDef *vd, FILE *fp)
 "    return 0;\n"
 "}\n"
         );
-}
 
+}
 
 /*
  * Generate the member variable of a class.
@@ -4153,13 +4229,25 @@ static void generateVarMember(varDef *vd, FILE *fp, int setter)
  * Generate the declaration of a variable that is initialised from a Python
  * object.  Return TRUE if the value might be a temporary on the heap.
  */
-static int generateObjToCppConversion(argDef *ad,FILE *fp)
+static int generateObjToCppConversion(varDef *vd,FILE *fp)
 {
     int might_be_temp = FALSE;
     char *rhs = NULL;
+    const char* transfer = "NULL";
+    int needs_transfer = FALSE;
+    argDef* ad = &vd->type;
 
     prcode(fp,
 "    sipVal = ");
+
+    if (isProperty(vd) && isTransferred(&vd->setter->cppsig->args[0]))
+    {
+        prcode(fp, "/*transferred to C++*/ ");
+        if (!isStatic(vd->setter))
+            transfer = "reinterpret_cast<PyObject*>(pySelf)";
+        else
+            needs_transfer = TRUE;
+    }
 
     switch (ad->atype)
     {
@@ -4180,7 +4268,7 @@ static int generateObjToCppConversion(argDef *ad,FILE *fp)
 
             /* Note that we don't support /Transfer/ but could do. */
 
-            prcode(fp, "sipForceConvertToType(sipPy,sipType_%T,NULL,%s,%s,&sipIsErr)", ad, (ad->nrderefs ? "0" : "SIP_NOT_NONE"), (ad->nrderefs ? "NULL" : "&sipValState"));
+            prcode(fp, "sipForceConvertToType(sipPy,sipType_%T,%s,%s,%s,&sipIsErr)", ad, transfer, (ad->nrderefs ? "0" : "SIP_NOT_NONE"), (ad->nrderefs ? "NULL" : "&sipValState"));
 
             prcode(fp, "%s;\n"
                 , tail);
@@ -4211,7 +4299,7 @@ static int generateObjToCppConversion(argDef *ad,FILE *fp)
              * all types).
              */
 
-            prcode(fp, "sipForceConvertToType(sipPy,sipType_%C,NULL,%s,%s,&sipIsErr)", classFQCName(ad->u.cd), (ad->nrderefs ? "0" : "SIP_NOT_NONE"), (might_be_temp ? "&sipValState" : "NULL"));
+            prcode(fp, "sipForceConvertToType(sipPy,sipType_%C,%s,%s,%s,&sipIsErr)", classFQCName(ad->u.cd), transfer, (ad->nrderefs ? "0" : "SIP_NOT_NONE"), (might_be_temp ? "&sipValState" : "NULL"));
 
             prcode(fp, "%s;\n"
                 , tail);
@@ -4263,7 +4351,7 @@ static int generateObjToCppConversion(argDef *ad,FILE *fp)
 
     case bool_type:
     case cbool_type:
-        rhs = "(bool)SIPLong_AsLong(sipPy)";
+        rhs = "0 != SIPLong_AsLong(sipPy)";
         break;
 
     case ushort_type:
@@ -4322,6 +4410,9 @@ static int generateObjToCppConversion(argDef *ad,FILE *fp)
     if (rhs != NULL)
         prcode(fp, "%s;\n"
             , rhs);
+
+    if (needs_transfer)
+        prcode(fp, "    if(sipVal) sipTransferTo(sipPy, NULL); /* <<-- is this right? */\n");
 
     return might_be_temp;
 }
@@ -8106,7 +8197,7 @@ static void generateTypeDefinition(sipSpec *pt, classDef *cd, FILE *fp)
 
                 generateVariableGetter(cd, vd, fp);
 
-                if (canSetVariable(vd))
+                if (isProperty(vd) || canSetVariable(vd))
                     generateVariableSetter(cd, vd, fp);
             }
 
@@ -8129,7 +8220,7 @@ static void generateTypeDefinition(sipSpec *pt, classDef *cd, FILE *fp)
                     prcode(fp,
     "    {%N, varget_%C, ", vd->pyname, vd->fqcname);
 
-                    if (canSetVariable(vd))
+                    if (isProperty(vd) || canSetVariable(vd))
                         prcode(fp, "varset_%C", vd->fqcname);
                     else
                         prcode(fp, "NULL");

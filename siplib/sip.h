@@ -262,8 +262,10 @@ typedef struct _sipSimpleWrapper {
     /* The optional dictionary of extra references keyed by argument number. */
     PyObject *extra_refs;
 
+#ifdef SIP_USER_OBJECT
     /* For the user to use. */
     PyObject *user;
+#endif
 
     /* The instance dictionary. */
     PyObject *dict;
@@ -333,8 +335,8 @@ typedef int (*sipVirtHandlerFunc)(void *, PyObject *, ...);
 typedef void (*sipReleaseFunc)(void *, int);
 typedef PyObject *(*sipPickleFunc)(void *);
 typedef int (*sipAttrGetterFunc)(const struct _sipTypeDef *, PyObject *);
-typedef PyObject *(*sipVariableGetterFunc)(void *, PyObject *);
-typedef int (*sipVariableSetterFunc)(void *, PyObject *);
+typedef PyObject *(*sipVariableGetterFunc)(void *, PyObject*, PyObject *);
+typedef int (*sipVariableSetterFunc)(void *, PyObject*, PyObject *);
 
 
 /*

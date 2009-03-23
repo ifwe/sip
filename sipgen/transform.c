@@ -3142,9 +3142,11 @@ static void createSortedNumberedTypesTable(sipSpec *pt, moduleDef *mod)
         case class_type:
             ad->u.cd->classnr = i;
 
+#ifdef SIP_QT
             /* If we find a class called QObject, assume it's Qt. */
             if (strcmp(ad->name, "QObject") == 0)
                 mod->qobjclass = i;
+#endif
 
             break;
 
@@ -3193,7 +3195,9 @@ static void exitmsg(char* msg)
     exit(-1);
 }
 
-static varDef* findProperty(sipSpec *pt, moduleDef *module, classDef *cd, overDef *over, nameDef* propertyName)
+#include <windows.h>
+
+static varDef* findProperty(sipSpec *pt, moduleDef *module, classDef *cd, overDef *over, nameDef* propertyName, int* err)
 {
     varDef *var = NULL;
     for(var = pt->vars; var != NULL; var = var->next)
@@ -3202,8 +3206,10 @@ static varDef* findProperty(sipSpec *pt, moduleDef *module, classDef *cd, overDe
            var->module == module &&
            var->pyname == propertyName)
         {
-           if (!isProperty(var))
-               exitmsg("found property-like overload with no property flag set!");
+           if (!isProperty(var)) {
+               *err = 1;
+               return NULL;
+           }
            return var;
         }
     }
@@ -3235,6 +3241,7 @@ static int countNonDefaultArgs(argDef args[], int nrArgs)
 static varDef* addOrFindProperty(sipSpec* pt, moduleDef* module, classDef* cd, overDef* over)
 {
     int num_args;
+    int err = 0;
     nameDef* propertyName;
     varDef* var;
     scopedNameDef* varname;
@@ -3249,8 +3256,8 @@ static varDef* addOrFindProperty(sipSpec* pt, moduleDef* module, classDef* cd, o
     propertyName = cacheName(pt, over->cppname + 3);
         
     /* Find the property if it already exists. */
-    var = findProperty(pt, module, cd, over, propertyName);
-    if (var != NULL)
+    var = findProperty(pt, module, cd, over, propertyName, &err);
+    if (err || var != NULL)
         return var;
     
     /* We didn't find one, so make a new one. */
@@ -3305,7 +3312,7 @@ static varDef* addOrFindProperty(sipSpec* pt, moduleDef* module, classDef* cd, o
 static void addGetter(sipSpec* pt, moduleDef* module, classDef* cd, overDef* over)
 {
     varDef* prop = addOrFindProperty(pt, module, cd, over);
-    if (prop->getter == NULL)
+    if (prop && prop->getter == NULL)
         prop->getter = over;
 
 }
@@ -3313,7 +3320,7 @@ static void addGetter(sipSpec* pt, moduleDef* module, classDef* cd, overDef* ove
 static void addSetter(sipSpec* pt, moduleDef* module, classDef* cd, overDef* over)
 {
     varDef* prop = addOrFindProperty(pt, module, cd, over);
-    if (prop->setter == NULL)
+    if (prop && prop->setter == NULL)
         prop->setter = over;
 }
 
@@ -3334,7 +3341,7 @@ static int isGetter(moduleDef* module, classDef* cd, overDef* over)
     /* starts with Get, looks like an accessor, and has no non default 
        arguments */
     return 0 == strncmp(over->cppname, "Get", 3) &&
-        isAccessor(over) && over->methodcode == NULL &&
+        isAccessor(over) && 
         0 == countNonDefaultArgs(over->cppsig->args, over->cppsig->nrArgs);
 }
 
@@ -3374,6 +3381,8 @@ static void filterPropertiesWithoutGetters(sipSpec *pt)
         var = next;
     }
 }
+
+#include <windows.h>
 
 static void generateProperties(sipSpec *pt, moduleDef *mod, classDef *cd)
 {    

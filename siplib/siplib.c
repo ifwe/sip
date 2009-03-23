@@ -1025,6 +1025,7 @@ static int sip_api_export_module(sipExportedModuleDef *client,
             return -1;
         }
 
+#ifdef SIP_QT
         /* Only one module can claim to wrap QObject. */
         if (em->em_qt_api != NULL && client->em_qt_api != NULL)
         {
@@ -1034,6 +1035,7 @@ static int sip_api_export_module(sipExportedModuleDef *client,
 
             return -1;
         }
+#endif
     }
 
     /* Convert the module name to an object. */
@@ -4846,6 +4848,7 @@ static void sip_api_transfer_break(PyObject *self)
  */
 static void sip_api_transfer_to(PyObject *self, PyObject *owner)
 {
+    fprintf(stderr, "sip_api_transfer_to(self=%p, owner=%p)\n", self, owner);
     /*
      * There is a legitimate case where we try to transfer a PyObject that
      * may not be a SIP generated class.  The virtual handler code calls
@@ -7272,9 +7275,11 @@ static int sipSimpleWrapper_traverse(sipSimpleWrapper *self, visitproc visit,
         if ((vret = visit(self->extra_refs, arg)) != 0)
             return vret;
 
+#ifdef SIP_USER_OBJECT
     if (self->user != NULL)
         if ((vret = visit(self->user, arg)) != 0)
             return vret;
+#endif
 
     return 0;
 }
@@ -7319,10 +7324,12 @@ static int sipSimpleWrapper_clear(sipSimpleWrapper *self)
     self->extra_refs = NULL;
     Py_XDECREF(tmp);
 
+#ifdef SIP_USER_OBJECT
     /* Remove any user object. */
     tmp = self->user;
     self->user = NULL;
     Py_XDECREF(tmp);
+#endif
 
     return vret;
 }
@@ -7441,7 +7448,6 @@ static SIP_SSIZE_T sipSimpleWrapper_getcharbuffer(sipSimpleWrapper *self,
  */
 static void sipSimpleWrapper_dealloc(sipSimpleWrapper *self)
 {
-    forgetObject(self);
 
     /*
      * Now that the C++ object no longer exists we can tidy up the Python
@@ -7449,6 +7455,7 @@ static void sipSimpleWrapper_dealloc(sipSimpleWrapper *self)
      * removed too soon (if they were connected to QObject.destroyed()).
      */
     sipSimpleWrapper_clear(self);
+    forgetObject(self);
 
     /* Call the standard super-type dealloc. */
     PyBaseObject_Type.tp_dealloc((PyObject *)self);
@@ -7719,6 +7726,7 @@ static int sipWrapper_clear(sipWrapper *self)
 
     vret = sipSimpleWrapper_clear(sw);
 
+#ifdef SIP_QT
     /* Remove any slots connected via a proxy. */
     if (sipQtSupport != NULL && sipIsPyOwned(sw) && sipPossibleProxy(sw))
     {
@@ -7738,6 +7746,7 @@ static int sipWrapper_clear(sipWrapper *self)
             }
         }
     }
+#endif
 
     /* Detach children (which will be owned by C/C++). */
     while ((sw = (sipSimpleWrapper *)self->first_child) != NULL)
@@ -7762,13 +7771,13 @@ static int sipWrapper_clear(sipWrapper *self)
  */
 static void sipWrapper_dealloc(sipWrapper *self)
 {
+    sipWrapper_clear(self);
+
     /*
      * We can't simply call the super-type because things have to be done in a
      * certain order.  The first thing is to get rid of the wrapped instance.
      */
     forgetObject((sipSimpleWrapper *)self);
-
-    sipWrapper_clear(self);
 
     /* Skip the super-type's dealloc. */
     PyBaseObject_Type.tp_dealloc((PyObject *)self);
@@ -7787,6 +7796,7 @@ static int sipWrapper_traverse(sipWrapper *self, visitproc visit, void *arg)
     if ((vret = sipSimpleWrapper_traverse(sw, visit, arg)) != 0)
         return vret;
 
+#ifdef SIP_QT
     /* This should be handwritten code in PyQt. */
     if (sipQtSupport != NULL && sipIsPyOwned(sw))
     {
@@ -7807,6 +7817,7 @@ static int sipWrapper_traverse(sipWrapper *self, visitproc visit, void *arg)
             }
         }
     }
+#endif
 
     for (w = self->first_child; w != NULL; w = w->sibling_next)
     {
