@@ -61,7 +61,7 @@ static void resolveVariableType(sipSpec *,varDef *);
 static void fatalNoDefinedType(scopedNameDef *);
 static void getBaseType(sipSpec *,moduleDef *,classDef *,argDef *);
 static void searchScope(sipSpec *,classDef *,scopedNameDef *,argDef *);
-static void searchMappedTypes(sipSpec *,scopedNameDef *,argDef *);
+static void searchMappedTypes(sipSpec *,moduleDef *,scopedNameDef *,argDef *);
 static void searchEnums(sipSpec *,scopedNameDef *,argDef *);
 static void searchClasses(sipSpec *,moduleDef *mod,scopedNameDef *,argDef *);
 static void appendToMRO(mroDef *,mroDef ***,classDef *);
@@ -1880,6 +1880,7 @@ static void resolveVariableType(sipSpec *pt, varDef *vd)
             bad = FALSE;
         break;
 
+    case estring_type:
     case sstring_type:
     case ustring_type:
     case string_type:
@@ -1985,6 +1986,7 @@ static int supportedType(classDef *cd,overDef *od,argDef *ad,int outputs)
         ensureInput(cd,od,ad);
         return TRUE;
 
+    case estring_type:
     case sstring_type:
     case ustring_type:
     case string_type:
@@ -2290,7 +2292,7 @@ int sameSignature(signatureDef *sd1,signatureDef *sd2,int strict)
 
 
 #define pyAsString(t)   ((t) == ustring_type || (t) == sstring_type || \
-            (t) == string_type)
+            (t) == string_type || (t) == estring_type)
 #define pyAsFloat(t)    ((t) == cfloat_type || (t) == float_type || \
             (t) == cdouble_type || (t) == double_type)
 #define pyAsInt(t)  ((t) == bool_type || \
@@ -2641,7 +2643,7 @@ static void getBaseType(sipSpec *pt, moduleDef *mod, classDef *defscope, argDef 
             searchScope(pt,defscope,snd,type);
 
         if (type -> atype == no_type)
-            searchMappedTypes(pt,snd,type);
+            searchMappedTypes(pt, mod, snd, type);
 
         if (type -> atype == no_type)
             searchTypedefs(pt,snd,type);
@@ -2671,7 +2673,7 @@ static void getBaseType(sipSpec *pt, moduleDef *mod, classDef *defscope, argDef 
     /* Replace the base type if it has been mapped. */
     if (type -> atype == struct_type || type -> atype == template_type)
     {
-        searchMappedTypes(pt,NULL,type);
+        searchMappedTypes(pt, mod, NULL, type);
 
         /*
          * If we still have a template then see if we need to automatically
@@ -2783,7 +2785,7 @@ static void searchScope(sipSpec *pt,classDef *scope,scopedNameDef *snd,
         tmpsnd = copyScopedName(classFQCName(mro -> cd));
         appendScopedName(&tmpsnd,copyScopedName(snd));
 
-        searchMappedTypes(pt,tmpsnd,ad);
+        searchMappedTypes(pt, mro->cd->iff->module, tmpsnd, ad);
 
         if (ad -> atype != no_type)
             break;
@@ -2816,7 +2818,8 @@ static void searchScope(sipSpec *pt,classDef *scope,scopedNameDef *snd,
  * Search the mapped types for a name and return the type.
  */
 
-static void searchMappedTypes(sipSpec *pt,scopedNameDef *snd,argDef *ad)
+static void searchMappedTypes(sipSpec *pt, moduleDef *context,
+        scopedNameDef *snd, argDef *ad)
 {
     mappedTypeDef *mtd;
     scopedNameDef *oname;
@@ -2832,6 +2835,24 @@ static void searchMappedTypes(sipSpec *pt,scopedNameDef *snd,argDef *ad)
     for (mtd = pt->mappedtypes; mtd != NULL; mtd = mtd->next)
         if (sameBaseType(ad, &mtd->type))
         {
+            /*
+             * If we a building a consolidated module and this mapped type is
+             * defined in a different module then see if that other module is
+             * in a different branch of the module hierarchy.
+             */
+            if (isConsolidated(pt->module) && context != mtd->iff->module)
+            {
+                moduleListDef *mld;
+
+                for (mld = context->allimports; mld != NULL; mld = mld->next)
+                    if (mld->module == mtd->iff->module)
+                        break;
+
+                /* If it's in a different branch then we ignore it. */
+                if (mld == NULL)
+                    continue;
+            }
+
             /* Copy the type. */
             ad->atype = mapped_type;
             ad->u.mtd = mtd;
@@ -2906,8 +2927,8 @@ static void searchEnums(sipSpec *pt, scopedNameDef *snd, argDef *ad)
 /*
  * Search the classes for one with a particular name and return it as a type.
  */
-static void searchClasses(sipSpec *pt, moduleDef *mod, scopedNameDef *cname,
-        argDef *ad)
+static void searchClasses(sipSpec *pt, moduleDef *context,
+        scopedNameDef *cname, argDef *ad)
 {
     classDef *cd;
 
@@ -2917,7 +2938,7 @@ static void searchClasses(sipSpec *pt, moduleDef *mod, scopedNameDef *cname,
          * Ignore an external class unless it was declared in the same context
          * (ie. module) as the name is being used.
          */
-        if (isExternal(cd) && cd->iff->module != mod)
+        if (isExternal(cd) && cd->iff->module != context)
             continue;
 
         if (compareScopedNames(classFQCName(cd), cname) == 0)

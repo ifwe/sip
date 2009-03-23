@@ -1,3 +1,30 @@
+2009/03/21 23:35:50  phil
+Fixed a bug in the code generated for protected methods with multiple Python
+names.
+
+
+2009/03/20 18:17:16  phil
+Bytes and the buffer protocol are now also supported for non-byte char and
+char * (howver the buffer protocol support seems to be broken).
+
+
+2009/03/20 16:39:30  phil
+Many changes to the wrapping of strings for Python v3 so that char and char *
+(unless the /Byte/ annotation is specified) are handled as Unicode rather than
+bytes.  Such strings must be able to be encoded as Latin-1.
+Related to the above, the generated code is much more careful than it used to
+be about keeping Python string objects alive while their data is being used.
+
+
+2009/03/18 18:05:52  phil
+Fixed a long-standing bug in the handling of the /NoArgParser/ annotation that
+only came to light with Python v3.
+
+
+2009/03/18 15:01:53  phil
+More fixes for consolidated modules.  Python v2 and v3 should now be working.
+
+
 2009/03/17 18:38:32  phil
 Some fixes for consolidated module support for both Python v2 and v3.
 

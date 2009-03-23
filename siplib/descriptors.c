@@ -238,7 +238,7 @@ static int sipVariableDescr_descr_set(PyObject *self, PyObject *obj,
     if (get_instance_address(vd, obj, &addr) < 0)
         return -1;
 
-    return vd->vd->vd_setter(addr, obj, value);
+    return vd->vd->vd_setter(addr, value, obj);
 }
 
 
