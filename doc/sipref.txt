@@ -7,7 +7,7 @@
 -----------------
 
 :Contact:   info@riverbankcomputing.com
-:Version:   4.8-snapshot-20090311
+:Version:   4.8-snapshot-20090321
 :Copyright: Copyright (c) 2009 Riverbank Computing Limited
 
 .. contents::
@@ -17,7 +17,7 @@
 Introduction
 ============
 
-This is the reference guide for SIP 4.8-snapshot-20090311.  SIP is a tool for
+This is the reference guide for SIP 4.8-snapshot-20090321.  SIP is a tool for
 automatically generating `Python <http://www.python.org>`__ bindings for C and
 C++ libraries.  SIP was originally developed in 1998 for
 `PyQt <http://www.riverbankcomputing.com/software/pyqt/>`__ - the Python
@@ -258,7 +258,7 @@ The following parts of the API are now deprecated (but still supported).
     - The ``B``, ``C`` and ``E`` format characters of `sipBuildResult()`_ and
       `sipCallMethod()`_.
 
-    - The ``C`` and ``E`` format character of `sipParseResult()`_.
+    - The ``s``, ``C`` and ``E`` format character of `sipParseResult()`_.
 
 The following PyQt-specific support functions have been removed.
 
@@ -1185,9 +1185,10 @@ file.
 
     *super-classes* ::= *name* [``,`` *super-classes*]
 
-    *class-line* ::= [*class-statement* | `%BIGetReadBufferCode`_ |
-            `%BIGetWriteBufferCode`_ | `%BIGetSegCountCode`_ |
-            `%BIGetCharBufferCode`_ | `%ConvertToSubClassCode`_ |
+    *class-line* ::= [*class-statement* | `%BIGetBufferCode`_ |
+            `%BIGetReadBufferCode`_ | `%BIGetWriteBufferCode`_ |
+            `%BIGetSegCountCode`_ | `%BIGetCharBufferCode`_ |
+            `%BIReleaseBufferCode` | `%ConvertToSubClassCode`_ |
             `%ConvertToTypeCode`_ | `%GCClearCode`_ | `%GCTraverseCode`_ |
             `%PickleCode`_ | `%TypeCode`_ | `%TypeHeaderCode`_ |
             *constructor* | *destructor* | *method* | *static-method* |
@@ -1577,6 +1578,42 @@ For example::
     %End
 
 
+%BIGetBufferCode
+----------------
+
+.. parsed-literal::
+
+    %BIGetBufferCode
+        *code*
+    %End
+
+This directive (along with `%BIReleaseBufferCode`_) is used to specify code
+that implements the buffer interface of Python v3.  If Python v2 is being used
+then this is ignored.
+
+The following variables are made available to the handwritten code:
+
+Py_buffer \*sipBuffer
+    This is a pointer to the Python buffer structure that the handwritten code
+    must populate.
+
+*type* \*sipCpp
+    This is a pointer to the structure or class instance.  Its *type* is a
+    pointer to the structure or class.
+
+int sipFlags
+    These are the flags that specify what elements of the ``sipBuffer``
+    structure must be populated.
+
+int sipRes
+    The handwritten code should set this to 0 if there was no error or -1 if
+    there was an error.
+
+PyObject \*sipSelf
+    This is the Python object that wraps the the structure or class instance,
+    i.e. ``self``.
+
+
 %BIGetCharBufferCode
 --------------------
 
@@ -1587,10 +1624,8 @@ For example::
     %End
 
 This directive (along with `%BIGetReadBufferCode`_, `%BIGetSegCountCode`_ and
-`%BIGetWriteBufferCode`_) is used to specify code that implements Python's
-buffer interface.  See the section `Buffer Object Structures
-<http://www.python.org/dev/doc/devel/api/buffer-structs.html>`__ for the
-details.
+`%BIGetWriteBufferCode`_) is used to specify code that implements the buffer
+interface of Python v2.  If Python v3 is being used then this is ignored.
 
 The following variables are made available to the handwritten code:
 
@@ -1623,8 +1658,8 @@ PyObject \*sipSelf
     %End
 
 This directive (along with `%BIGetCharBufferCode`_, `%BIGetSegCountCode`_ and
-`%BIGetWriteBufferCode`_) is used to specify code that implements Python's
-buffer interface.
+`%BIGetWriteBufferCode`_) is used to specify code that implements the buffer
+interface of Python v2.  If Python v3 is being used then this is ignored.
 
 The following variables are made available to the handwritten code:
 
@@ -1657,8 +1692,8 @@ PyObject \*sipSelf
     %End
 
 This directive (along with `%BIGetCharBufferCode`_, `%BIGetReadBufferCode`_ and
-`%BIGetWriteBufferCode`_) is used to specify code that implements Python's
-buffer interface.
+`%BIGetWriteBufferCode`_) is used to specify code that implements the buffer
+interface of Python v2.  If Python v3 is being used then this is ignored.
 
 The following variables are made available to the handwritten code:
 
@@ -1689,8 +1724,8 @@ PyObject \*sipSelf
     %End
 
 This directive (along with `%BIGetCharBufferCode`_, `%BIGetReadBufferCode`_
-and `%BIGetSegCountCode`_ is used to specify code that implements Python's
-buffer interface.
+and `%BIGetSegCountCode`_ is used to specify code that implements the buffer
+interface of Python v2.  If Python v3 is being used then this is ignored.
 
 The following variables are made available to the handwritten code:
 
@@ -1707,6 +1742,33 @@ SIP_SSIZE_T sipRes
 
 SIP_SSIZE_T sipSegment
     This is the number of the segment of the write buffer.
+
+PyObject \*sipSelf
+    This is the Python object that wraps the the structure or class instance,
+    i.e. ``self``.
+
+
+%BIReleaseBufferCode
+--------------------
+
+.. parsed-literal::
+
+    %BIReleaseBufferCode
+        *code*
+    %End
+
+This directive (along with `%BIGetBufferCode`_) is used to specify code that
+implements the buffer interface of Python v3.  If Python v2 is being used then
+this is ignored.
+
+The following variables are made available to the handwritten code:
+
+Py_buffer \*sipBuffer
+    This is a pointer to the Python buffer structure.
+
+*type* \*sipCpp
+    This is a pointer to the structure or class instance.  Its *type* is a
+    pointer to the structure or class.
 
 PyObject \*sipSelf
     This is the Python object that wraps the the structure or class instance,
@@ -2634,7 +2696,7 @@ For example::
 
 This directive is used to specify handwritten code that is embedded in-line
 in the generated module initialisation code after the SIP module has been
-imported but before the module itself has been intialised.
+imported but before the module itself has been initialised.
 
 It is typically used to call `sipRegisterPyType()`_.
 
@@ -3405,6 +3467,13 @@ context of a method:
     ``a1``, etc.  The *type* of the variable is the same as the type defined in
     the specification.
 
+int a0Key
+    There is a variable for each argument of the C++ signature that has a type
+    where it is important to ensure that the corresponding Python object is not
+    garbage collected too soon.  This only applies to output arguments that
+    return ``'\0'`` terminated strings.  The variable would normally be passed
+    to `sipParseResult()`_ using either the ``A`` or ``B`` format characters.
+
 int sipIsErr
     The handwritten code should set this to a non-zero value, and raise an
     appropriate Python exception, if an error is detected.
@@ -3417,6 +3486,19 @@ PyObject \*sipMethod
     The handwritten code should set this to the result to be returned.  The
     *type* of the variable is the same as the type defined in the C++ signature
     in the specification.
+
+int sipResKey
+    This variable is only made available if the result has a type where it is
+    important to ensure that the corresponding Python object is not garbage
+    collected too soon.  This only applies to ``'\0'`` terminated strings.  The
+    variable would normally be passed to `sipParseResult()`_ using either the
+    ``A`` or ``B`` format characters.
+
+sipSimpleWrapper \*sipPySelf
+    This variableis only made available if either the ``a0Key`` or
+    ``sipResKey`` are made available.  It defines the context within which keys
+    are unique.  The variable would normally be passed to `sipParseResult()`_
+    using the ``S`` format character.
 
 No variables are made available in the context of a destructor.
 
@@ -3525,6 +3607,8 @@ rather than a ``'\0'`` terminated string.  There must be a corresponding
 argument with the ArraySize_ annotation specified.  The annotation may only be
 specified once in a list of arguments.
 
+The annotation also implies the Byte_ annotation.
+
 
 ArraySize
 *********
@@ -3534,6 +3618,18 @@ should be either ``short``, ``unsigned short``, ``int``, ``unsigned``,
 ``long`` or ``unsigned long``) refers to the size of an array.  There must be
 a corresponding argument with the Array_ annotation specified.  The annotation
 may only be specified once in a list of arguments.
+
+
+Byte
+****
+
+This boolean annotation specifies that the corresponding argument (which should
+be either ``char``, ``const char``, ``char *`` or ``const char *``) refers to
+an unencoded byte or byte array rather than an encoded character or ``'\0'``
+terminated encoded string.  Python v3 will use the ``bytes`` type rather than
+the ``str`` type to represent the argument.  Python v2 ignores the annotation.
+
+The annotation can also be used as a function, typedef or variable annotation.
 
 
 Constrained
@@ -4186,11 +4282,15 @@ PyObject \*sipBuildResult(int \*iserr, const char \*format, ...)
     will create, and the entry in brackets are the types of the C/C++ values
     to be passed. 
 
+    ``a`` (string) [char]
+        Convert a C/C++ ``char`` to a Python v2 or v3 string object.
+
     ``b`` (boolean) [int]
         Convert a C/C++ ``int`` to a Python boolean.
 
-    ``c`` (string) [char]
-        Convert a C/C++ ``char`` to a Python string.
+    ``c`` (string/bytes) [char]
+        Convert a C/C++ ``char`` to a Python v2 string object or a Python v3
+        bytes object.
 
     ``d`` (float) [double]
         Convert a C/C++ ``double`` to a Python floating point number.
@@ -4201,10 +4301,10 @@ PyObject \*sipBuildResult(int \*iserr, const char \*format, ...)
     ``f`` (float) [float]
         Convert a C/C++ ``float`` to a Python floating point number.
 
-    ``g`` (string) [char \*, SIP_SSIZE_T]
-        Convert a C/C++ character array and its length to a Python string.  If
-        the array is ``NULL`` then the length is ignored and the result is
-        ``Py_None``.
+    ``g`` (string/bytes) [char \*, SIP_SSIZE_T]
+        Convert a C/C++ character array and its length to a Python v2 string
+        object or a Python v3 bytes object.  If the array is ``NULL`` then the
+        length is ignored and the result is ``Py_None``.
 
     ``h`` (integer) [short]
         Convert a C/C++ ``short`` to a Python integer.
@@ -4224,9 +4324,10 @@ PyObject \*sipBuildResult(int \*iserr, const char \*format, ...)
     ``o`` (long) [unsigned long long]
         Convert a C/C++ ``unsigned long long`` to a Python long.
 
-    ``s`` (string) [char \*]
-        Convert a C/C++ ``'\0'`` terminated string to a Python string.  If the
-        string pointer is ``NULL`` then the result is ``Py_None``.
+    ``s`` (string/bytes) [char \*]
+        Convert a C/C++ ``'\0'`` terminated string to a Python v2 string object
+        or a Python v3 bytes object.  If the string pointer is ``NULL`` then
+        the result is ``Py_None``.
 
     ``t`` (long) [unsigned short]
         Convert a C/C++ ``unsigned short`` to a Python long.
@@ -4234,12 +4335,18 @@ PyObject \*sipBuildResult(int \*iserr, const char \*format, ...)
     ``u`` (long) [unsigned int]
         Convert a C/C++ ``unsigned int`` to a Python long.
 
-    ``w`` (unicode) [wchar_t]
-        Convert a C/C++ wide character to a Python unicode object.
+    ``w`` (unicode/string) [wchar_t]
+        Convert a C/C++ wide character to a Python v2 unicode object or a
+        Python v3 string object.
 
-    ``x`` (unicode) [wchar_t \*]
+    ``x`` (unicode/string) [wchar_t \*]
         Convert a C/C++ ``L'\0'`` terminated wide character string to a Python
-        unicode object.  If the string pointer is ``NULL`` then the result is
+        v2 unicode object or a Python v3 string object.  If the string pointer
+        is ``NULL`` then the result is ``Py_None``.
+
+    ``A`` (string) [char \*]
+        Convert a C/C++ ``'\0'`` terminated string to a Python v2 or v3 string
+        object.  If the string pointer is ``NULL`` then the result is
         ``Py_None``.
 
     ``B`` (wrapped instance) [*type* \*, sipWrapperType \*, PyObject \*]
@@ -4914,11 +5021,16 @@ int sipParseResult(int \*iserr, PyObject \*method, PyObject \*result, const char
     will convert, and the entry in brackets are the types of the C/C++ values
     to be passed. 
 
+    ``a`` (string) [char \*]
+        Convert a Python v2 string object or a Python V3 Latin-1 string object
+        of length 1 to a C/C++ ``char``.
+
     ``b`` (integer) [bool \*]
         Convert a Python integer to a C/C++ ``bool``.
 
-    ``c`` (string) [char \*]
-        Convert a Python string of length 1 to a C/C++ ``char``.
+    ``c`` (string/bytes) [char \*]
+        Convert a Python v2 string object or a Python v3 bytes object of length
+        1 to a C/C++ ``char``.
 
     ``d`` (float) [double \*]
         Convert a Python floating point number to a C/C++ ``double``.
@@ -4929,10 +5041,11 @@ int sipParseResult(int \*iserr, PyObject \*method, PyObject \*result, const char
     ``f`` (float) [float \*]
         Convert a Python floating point number to a C/C++ ``float``.
 
-    ``g`` (string) [const char \*\*, SIP_SSIZE_T \*]
-        Convert a Python string to a C/C++ character array and its length.  If
-        the Python object is ``Py_None`` then the array and length are ``NULL``
-        and zero respectively.
+    ``g`` (string/bytes) [const char \*\*, SIP_SSIZE_T \*]
+        Convert a Python v2 string object or a Python v3 bytes object to a
+        C/C++ character array and its length.  If the Python object is
+        ``Py_None`` then the array and length are ``NULL`` and zero
+        respectively.
 
     ``h`` (integer) [short \*]
         Convert a Python integer to a C/C++ ``short``.
@@ -4952,9 +5065,12 @@ int sipParseResult(int \*iserr, PyObject \*method, PyObject \*result, const char
     ``o`` (long) [unsigned long long \*]
         Convert a Python long to a C/C++ ``unsigned long long``.
 
-    ``s`` (string) [const char \*\*]
-        Convert a Python string to a C/C++ ``'\0'`` terminated string.  If the
-        Python object is ``Py_None`` then the string is ``NULL``.
+    ``s`` (string/bytes) [const char \*\*]
+        Convert a Python v2 string object or a Python v3 bytes object to a
+        C/C++ ``'\0'`` terminated string.  If the Python object is ``Py_None``
+        then the string is ``NULL``.
+
+        This is deprecated from SIP v4.8.  Instead you should use ``B``.
 
     ``t`` (long) [unsigned short \*]
         Convert a Python long to a C/C++ ``unsigned short``.
@@ -4962,13 +5078,30 @@ int sipParseResult(int \*iserr, PyObject \*method, PyObject \*result, const char
     ``u`` (long) [unsigned int \*]
         Convert a Python long to a C/C++ ``unsigned int``.
 
-    ``w`` (unicode) [wchar_t \*]
-        Convert a Python unicode object of length 1 to a C/C++ wide character.
+    ``w`` (unicode/string) [wchar_t \*]
+        Convert a Python v2 unicode object or a Python v3 string object of
+        length 1 to a C/C++ wide character.
 
-    ``x`` (unicode) [wchar_t \*\*]
-        Convert a Python unicode object to a C/C++ ``L'\0'`` terminated wide
-        character string.  If the Python object is ``Py_None`` then the string
-        is ``NULL``.
+    ``x`` (unicode/string) [wchar_t \*\*]
+        Convert a Python v2 unicode object or a Python v3 string object to a
+        C/C++ ``L'\0'`` terminated wide character string.  If the Python object
+        is ``Py_None`` then the string is ``NULL``.
+
+    ``A`` (string) [int, const char \*\*]
+        Convert a Python v2 string object or a Python v3 Latin-1 string object
+        to a C/C++ ``'\0'`` terminated string.  If the Python object is
+        ``Py_None`` then the string is ``NULL``.  The integer uniquely
+        identifies the object in the context defined by the ``S`` format
+        character and allows an extra reference to the object to be kept to
+        ensure that the string remains valid.
+
+    ``B`` (string/bytes) [int, const char \*\*]
+        Convert a Python v2 string object or a Python v3 bytes object to a
+        C/C++ ``'\0'`` terminated string.  If the Python object is ``Py_None``
+        then the string is ``NULL``.  The integer uniquely identifies the
+        object in the context defined by the ``S`` format character and allows
+        an extra reference to the object to be kept to ensure that the string
+        remains valid.
 
     ``Cf`` (wrapped class) [sipWrapperType \*, int \*, void \*\*]
         Convert a Python object to a C structure or a C++ class instance and
@@ -5021,6 +5154,11 @@ int sipParseResult(int \*iserr, PyObject \*method, PyObject \*result, const char
     ``O`` (object) [PyObject \*\*]
         A Python object is returned without any conversions.  The reference
         count is incremented.
+
+    ``S`` [sipSimpleWrapper \*]
+        This format character, if used, must be the first.  It is used with
+        other format characters to define a context and doesn't itself convert
+        an argument.
 
     ``T`` (object) [PyTypeObject \*, PyObject \*\*]
         A Python object is checked to see if it is a certain type and then
@@ -5554,11 +5692,11 @@ voidptr
         This returns the address as a Python CObject.
 
     asstring(self, size=-1)
-        This returns a copy of the block of memory as a Python string.  If
-        ``size`` is given then it specifies the number of bytes to copy.  If
-        it is not given (or is negative) then the size associated with the
-        address is used.  If there is no associated size then an exception is
-        raised.
+        This returns a copy of the block of memory as a Python v2 string object
+        or a Python v3 bytes object.  If ``size`` is given then it specifies
+        the number of bytes to copy.  If it is not given (or is negative) then
+        the size associated with the address is used.  If there is no
+        associated size then an exception is raised.
 
     getsize(self)
         This returns the size associated with the address.  It will be

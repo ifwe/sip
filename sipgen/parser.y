@@ -116,6 +116,7 @@ static overDef *instantiateTemplateOverloads(sipSpec *pt, overDef *tod,
         scopedNameDef *type_names, scopedNameDef *type_values);
 static void resolveAnyTypedef(sipSpec *pt, argDef *ad);
 static void addVariable(sipSpec *pt, varDef *vd);
+static void applyTypeFlags(argDef *ad, optFlags *flags);
 %}
 
 %union {
@@ -164,6 +165,8 @@ static void addVariable(sipSpec *pt, varDef *vd);
 %token          TK_VIRTUALCATCHERCODE
 %token          TK_TRAVERSECODE
 %token          TK_CLEARCODE
+%token          TK_GETBUFFERCODE
+%token          TK_RELEASEBUFFERCODE
 %token          TK_READBUFFERCODE
 %token          TK_WRITEBUFFERCODE
 %token          TK_SEGCOUNTCODE
@@ -276,6 +279,8 @@ static void addVariable(sipSpec *pt, varDef *vd);
 %type <codeb>           opttypehdrcode
 %type <codeb>           travcode
 %type <codeb>           clearcode
+%type <codeb>           getbufcode
+%type <codeb>           releasebufcode
 %type <codeb>           readbufcode
 %type <codeb>           writebufcode
 %type <codeb>           segcountcode
@@ -979,6 +984,16 @@ clearcode:  TK_CLEARCODE codeblock {
         }
     ;
 
+getbufcode: TK_GETBUFFERCODE codeblock {
+            $$ = $2;
+        }
+    ;
+
+releasebufcode: TK_RELEASEBUFFERCODE codeblock {
+            $$ = $2;
+        }
+    ;
+
 readbufcode:    TK_READBUFFERCODE codeblock {
             $$ = $2;
         }
@@ -1327,13 +1342,18 @@ exprlist:   {
 
 typedef:    TK_TYPEDEF cpptype TK_NAME optflags ';' {
             if (notSkipping())
+            {
+                applyTypeFlags(&$2, &$4);
                 newTypedef(currentSpec, currentModule, $3, &$2, &$4);
+            }
         }
     |   TK_TYPEDEF cpptype '(' deref TK_NAME ')' '(' cpptypelist ')' optflags ';' {
             if (notSkipping())
             {
                 signatureDef *sig;
                 argDef ftype;
+
+                applyTypeFlags(&$2, &$10);
 
                 memset(&ftype, 0, sizeof (argDef));
 
@@ -1514,6 +1534,28 @@ classline:  ifstart
                     yyerror("%GCClearCode already given for class");
 
                 scope->clearcode = $1;
+            }
+        }
+    |   getbufcode {
+            if (notSkipping())
+            {
+                classDef *scope = currentScope();
+
+                if (scope->getbufcode != NULL)
+                    yyerror("%BIGetBufferCode already given for class");
+
+                scope->getbufcode = $1;
+            }
+        }
+    |   releasebufcode {
+            if (notSkipping())
+            {
+                classDef *scope = currentScope();
+
+                if (scope->releasebufcode != NULL)
+                    yyerror("%BIReleaseBufferCode already given for class");
+
+                scope->releasebufcode = $1;
             }
         }
     |   readbufcode {
@@ -1748,6 +1790,8 @@ function:   cpptype TK_NAME '(' arglist ')' optconst optexceptions optabstract o
                 if (sectionFlags != 0 && (sectionFlags & (SECT_IS_PUBLIC | SECT_IS_PROT | SECT_IS_PRIVATE | SECT_IS_SLOT | SECT_IS_SIGNAL)) == 0)
                     yyerror("Class function must be in the public, private, protected, slot or signal sections");
 
+                applyTypeFlags(&$1, &$9);
+
                 $4.result = $1;
 
                 newFunction(currentSpec,currentModule,
@@ -1763,6 +1807,8 @@ function:   cpptype TK_NAME '(' arglist ')' optconst optexceptions optabstract o
             if (notSkipping())
             {
                 classDef *cd = currentScope();
+
+                applyTypeFlags(&$1, &$10);
 
                 /* Handle the unary '+' and '-' operators. */
                 if ((cd != NULL && $5.nrArgs == 0) || (cd == NULL && $5.nrArgs == 1))
@@ -1792,6 +1838,8 @@ function:   cpptype TK_NAME '(' arglist ')' optconst optexceptions optabstract o
 
                 if (scope == NULL || $4.nrArgs != 0)
                     yyerror("Operator casts must be specified in a class and have no arguments");
+
+                applyTypeFlags(&$2, &$9);
 
                 switch ($2.atype)
                 {
@@ -2178,6 +2226,8 @@ variable:   cpptype TK_NAME optflags ';' optaccesscode optgetcode optsetcode {
                 if (currentIsStatic && currentSpec -> genc)
                     yyerror("Cannot have static members in a C structure");
 
+                applyTypeFlags(&$1, &$3);
+
                 if ($6 != NULL || $7 != NULL)
                 {
                     if ($5 != NULL)
@@ -2235,8 +2285,7 @@ argtype:    cpptype optname optflags {
 
             if (findOptFlag(&$3, "KeepReference", bool_flag) != NULL)
             {
-                /* The wrapper is needed. */
-                $$.argflags |= ARG_GET_WRAPPER;
+                $$.argflags |= ARG_KEEP_REF;
                 $$.key = currentModule->next_key++;
             }
 
@@ -2272,6 +2321,8 @@ argtype:    cpptype optname optflags {
                     break;
                 }
             }
+
+            applyTypeFlags(&$$, &$3);
         }
     ;
 
@@ -2791,6 +2842,16 @@ ifaceFileDef *findIfaceFile(sipSpec *pt, moduleDef *mod, scopedNameDef *fqname,
         if (iftype == mappedtype_iface && iff->module != mod)
         {
             mappedTypeDef *mtd;
+
+            /*
+             * This is a bit of a cheat.  With consolidated modules it's
+             * possible to have two implementations of a mapped type in
+             * different branches of the module hierarchy.  We assume that, if
+             * there really are multiple implementations in the same branch,
+             * then it will be picked up in a non-consolidated build.
+             */
+            if (isConsolidated(pt->module))
+                continue;
 
             for (mtd = pt->mappedtypes; mtd != NULL; mtd = mtd->next)
             {
@@ -3476,6 +3537,7 @@ static char *type2string(argDef *ad)
             s = "unsigned char";
             break;
 
+        case estring_type:
         case string_type:
             s = "char";
             break;
@@ -3712,6 +3774,8 @@ static void instantiateClassTemplate(sipSpec *pt, moduleDef *mod,
     cd->convtocode = templateCode(pt, used, cd->convtocode, type_names, type_values);
     cd->travcode = templateCode(pt, used, cd->travcode, type_names, type_values);
     cd->clearcode = templateCode(pt, used, cd->clearcode, type_names, type_values);
+    cd->getbufcode = templateCode(pt, used, cd->getbufcode, type_names, type_values);
+    cd->releasebufcode = templateCode(pt, used, cd->releasebufcode, type_names, type_values);
     cd->readbufcode = templateCode(pt, used, cd->readbufcode, type_names, type_values);
     cd->writebufcode = templateCode(pt, used, cd->writebufcode, type_names, type_values);
     cd->segcountcode = templateCode(pt, used, cd->segcountcode, type_names, type_values);
@@ -5605,4 +5669,16 @@ static void addVariable(sipSpec *pt, varDef *vd)
 
     vd->next = *at;
     *at = vd;
+}
+
+
+/*
+ * Update a type according to optional flags.
+ */
+static void applyTypeFlags(argDef *ad, optFlags *flags)
+{
+    /* Apply the absence of the "Byte" annotation. */
+    if (findOptFlag(flags, "Byte", bool_flag) == NULL &&
+            ad->atype == string_type && !isArray(ad) && !isReference(ad))
+        ad->atype = estring_type;
 }

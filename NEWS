@@ -1,4 +1,7 @@
 v4.8 ??? 2009
+  - Added support for Python v3.
+  - Added the %BIGetBufferCode and %BIReleaseBufferCode to support the buffer
+    interface of Python v3.
   - Added the %DefaultMetatype directive and the /Metatype/ class annotation to
     allow the meta-type of a wrapped type to be changed.
   - Added the %DefaultSupertype directive and the /Supertype/ class annotation
@@ -7,6 +10,7 @@ v4.8 ??? 2009
     types that don't take part in parent/child relationships.
   - Added the %InitialisationCode directive.
   - Added the /KeepReference/ argument annotation.
+  - Added the /Byte/ argument annotation.
   - super() now works as expected with wrapped types.
   - Many additions and deprecations in the API to eliminate the differences
     between classes and mapped types.  (See the documentation for the details.)

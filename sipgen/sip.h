@@ -305,6 +305,7 @@
 #define ARG_CONSTRAINED     0x0800  /* Suppress type conversion. */
 #define ARG_SINGLE_SHOT     0x1000  /* The slot is only ever fired once. */
 #define ARG_RESULT_SIZE     0x2000  /* It defines the result size. */
+#define ARG_KEEP_REF        0x4000  /* Keep a reference. */
 
 #define isReference(a)      ((a)->argflags & ARG_IS_REF)
 #define setIsReference(a)   ((a)->argflags |= ARG_IS_REF)
@@ -336,6 +337,8 @@
 #define isSingleShot(a)     ((a)->argflags & ARG_SINGLE_SHOT)
 #define isResultSize(a)     ((a)->argflags & ARG_RESULT_SIZE)
 #define setResultSize(a)    ((a)->argflags |= ARG_RESULT_SIZE)
+#define keepReference(a)    ((a)->argflags & ARG_KEEP_REF)
+#define setKeepReference(a) ((a)->argflags |= ARG_KEEP_REF)
 
 
 /* Handle name flags. */
@@ -484,7 +487,8 @@ typedef enum {
     sstring_type,
     wstring_type,
     fake_void_type,
-    ssize_type
+    ssize_type,
+    estring_type
 } argType;
 
 
@@ -932,10 +936,12 @@ typedef struct _classDef {
     codeBlock *convtocode;              /* Convert to C++ code. */
     codeBlock *travcode;                /* Traverse code. */
     codeBlock *clearcode;               /* Clear code. */
-    codeBlock *readbufcode;             /* Read buffer code. */
-    codeBlock *writebufcode;            /* Write buffer code. */
-    codeBlock *segcountcode;            /* Segment count code. */
-    codeBlock *charbufcode;             /* Character buffer code. */
+    codeBlock *getbufcode;              /* Get buffer code (Python v3). */
+    codeBlock *releasebufcode;          /* Release buffer code (Python v3). */
+    codeBlock *readbufcode;             /* Read buffer code (Python v2). */
+    codeBlock *writebufcode;            /* Write buffer code (Python v2). */
+    codeBlock *segcountcode;            /* Segment count code (Python v2). */
+    codeBlock *charbufcode;             /* Character buffer code (Python v2). */
     codeBlock *picklecode;              /* Pickle code. */
     struct _classDef *next;             /* Next in the list. */
 } classDef;
