@@ -4856,7 +4856,7 @@ int is_wxobject(classDef* cd)
         if (0 == strcmp(baseclass_name, superClass->cd->pyname->text) || is_wxobject(superClass->cd))
             return 1;
 
-    if (strcmp(cd->pyname, "Timer") == 0)
+    if (strcmp(cd->pyname->text, "Timer") == 0)
         return 1;
 
     return 0;
