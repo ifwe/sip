@@ -4076,9 +4076,8 @@ static void generateVariableSetter(classDef *context, varDef *vd, FILE *fp)
     /* Read only property: just raise an exception. */
     if (read_only_property)
     {
-        // TODO: share these strings
         prcode(fp,
-"    PyErr_SetString(PyExc_AttributeError, \"%s is a read-only property\");  \n"
+"    PyErr_SetString(PyExc_AttributeError, \"\");\n"
 "    return NULL;\n"
 "}\n",
             vd->pyname->text);
