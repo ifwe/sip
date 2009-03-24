@@ -4077,7 +4077,7 @@ static void generateVariableSetter(classDef *context, varDef *vd, FILE *fp)
     if (read_only_property)
     {
         prcode(fp,
-"    PyErr_SetString(PyExc_AttributeError, \"\");\n"
+"    PyErr_SetNone(PyExc_AttributeError);\n"
 "    return NULL;\n"
 "}\n",
             vd->pyname->text);
