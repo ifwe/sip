@@ -116,7 +116,8 @@ static overDef *instantiateTemplateOverloads(sipSpec *pt, overDef *tod,
         scopedNameDef *type_names, scopedNameDef *type_values);
 static void resolveAnyTypedef(sipSpec *pt, argDef *ad);
 void addVariable(sipSpec *pt, varDef *vd);
-static void applyTypeFlags(argDef *ad, optFlags *flags);
+static void applyTypeFlags(moduleDef *mod, argDef *ad, optFlags *flags);
+static argType convertEncoding(const char *encoding);
 %}
 
 %union {
@@ -140,6 +141,7 @@ static void applyTypeFlags(argDef *ad, optFlags *flags);
     classDef        *klass;
 }
 
+%token          TK_DEFENCODING
 %token          TK_PLUGIN
 %token          TK_DOC
 %token          TK_EXPORTEDDOC
@@ -350,6 +352,7 @@ modstatement:   module
     |   platforms
     |   feature
     |   license
+    |   defencoding
     |   defmetatype
     |   defsupertype
     |   exphdrcode {
@@ -397,6 +400,15 @@ nsstatement:    ifstart
                     yyerror("%TypeHeaderCode can only be used in a namespace, class or mapped type");
 
                 appendCodeBlock(&scope->iff->hdrcode, $1);
+            }
+        }
+    ;
+
+defencoding:    TK_DEFENCODING TK_STRING {
+            if (notSkipping())
+            {
+                if ((currentModule->encoding = convertEncoding($2)) == no_type)
+                    yyerror("The value of %DefaultEncoding must be one of \"ASCII\", \"Latin-1\", \"UTF-8\" or \"None\"");
             }
         }
     ;
@@ -1343,7 +1355,7 @@ exprlist:   {
 typedef:    TK_TYPEDEF cpptype TK_NAME optflags ';' {
             if (notSkipping())
             {
-                applyTypeFlags(&$2, &$4);
+                applyTypeFlags(currentModule, &$2, &$4);
                 newTypedef(currentSpec, currentModule, $3, &$2, &$4);
             }
         }
@@ -1353,7 +1365,7 @@ typedef:    TK_TYPEDEF cpptype TK_NAME optflags ';' {
                 signatureDef *sig;
                 argDef ftype;
 
-                applyTypeFlags(&$2, &$10);
+                applyTypeFlags(currentModule, &$2, &$10);
 
                 memset(&ftype, 0, sizeof (argDef));
 
@@ -1790,7 +1802,7 @@ function:   cpptype TK_NAME '(' arglist ')' optconst optexceptions optabstract o
                 if (sectionFlags != 0 && (sectionFlags & (SECT_IS_PUBLIC | SECT_IS_PROT | SECT_IS_PRIVATE | SECT_IS_SLOT | SECT_IS_SIGNAL)) == 0)
                     yyerror("Class function must be in the public, private, protected, slot or signal sections");
 
-                applyTypeFlags(&$1, &$9);
+                applyTypeFlags(currentModule, &$1, &$9);
 
                 $4.result = $1;
 
@@ -1808,7 +1820,7 @@ function:   cpptype TK_NAME '(' arglist ')' optconst optexceptions optabstract o
             {
                 classDef *cd = currentScope();
 
-                applyTypeFlags(&$1, &$10);
+                applyTypeFlags(currentModule, &$1, &$10);
 
                 /* Handle the unary '+' and '-' operators. */
                 if ((cd != NULL && $5.nrArgs == 0) || (cd == NULL && $5.nrArgs == 1))
@@ -1839,7 +1851,7 @@ function:   cpptype TK_NAME '(' arglist ')' optconst optexceptions optabstract o
                 if (scope == NULL || $4.nrArgs != 0)
                     yyerror("Operator casts must be specified in a class and have no arguments");
 
-                applyTypeFlags(&$2, &$9);
+                applyTypeFlags(currentModule, &$2, &$9);
 
                 switch ($2.atype)
                 {
@@ -2226,7 +2238,7 @@ variable:   cpptype TK_NAME optflags ';' optaccesscode optgetcode optsetcode {
                 if (currentIsStatic && currentSpec -> genc)
                     yyerror("Cannot have static members in a C structure");
 
-                applyTypeFlags(&$1, &$3);
+                applyTypeFlags(currentModule, &$1, &$3);
 
                 if ($6 != NULL || $7 != NULL)
                 {
@@ -2322,7 +2334,7 @@ argtype:    cpptype optname optflags {
                 }
             }
 
-            applyTypeFlags(&$$, &$3);
+            applyTypeFlags(currentModule, &$$, &$3);
         }
     ;
 
@@ -2748,9 +2760,17 @@ void appendToClassList(classList **clp,classDef *cd)
  */
 static void newModule(FILE *fp, char *filename)
 {
+    moduleDef *importing_module = currentModule;
+
     parseFile(fp, filename, currentModule, FALSE);
     currentModule = allocModule();
     currentModule->file = filename;
+
+    /* Inherit from any importing module. */
+    if (importing_module != NULL)
+    {
+        currentModule->encoding = importing_module->encoding;
+    }
 }
 
 
@@ -2764,6 +2784,7 @@ static moduleDef *allocModule()
     newmod = sipMalloc(sizeof (moduleDef));
 
     newmod->version = -1;
+    newmod->encoding = string_type;
     newmod->qobjclass = -1;
     newmod->nrvirthandlers = -1;
     newmod->next_key = 1;
@@ -3536,7 +3557,9 @@ static char *type2string(argDef *ad)
             s = "unsigned char";
             break;
 
-        case estring_type:
+        case ascii_string_type:
+        case latin1_string_type:
+        case utf8_string_type:
         case string_type:
             s = "char";
             break;
@@ -5696,10 +5719,37 @@ void addVariable(sipSpec *pt, varDef *vd)
 /*
  * Update a type according to optional flags.
  */
-static void applyTypeFlags(argDef *ad, optFlags *flags)
+static void applyTypeFlags(moduleDef *mod, argDef *ad, optFlags *flags)
 {
-    /* Apply the absence of the "Byte" annotation. */
-    if (findOptFlag(flags, "Byte", bool_flag) == NULL &&
-            ad->atype == string_type && !isArray(ad) && !isReference(ad))
-        ad->atype = estring_type;
+    if (ad->atype == string_type && !isArray(ad) && !isReference(ad))
+    {
+        optFlag *of;
+
+        if ((of = findOptFlag(flags, "Encoding", string_flag)) == NULL)
+            ad->atype = mod->encoding;
+        else if ((ad->atype = convertEncoding(of->fvalue.sval)) == no_type)
+            yyerror("The value of the /Encoding/ annotation must be one of \"ASCII\", \"Latin-1\", \"UTF-8\" or \"None\"");
+    }
+}
+
+
+/*
+ * Return the argument type for a string with the given encoding or no_type if
+ * the encoding was invalid.
+ */
+static argType convertEncoding(const char *encoding)
+{
+    if (strcmp(encoding, "ASCII") == 0)
+        return ascii_string_type;
+
+    if (strcmp(encoding, "Latin-1") == 0)
+        return latin1_string_type;
+
+    if (strcmp(encoding, "UTF-8") == 0)
+        return utf8_string_type;
+
+    if (strcmp(encoding, "None") == 0)
+        return string_type;
+
+    return no_type;
 }

@@ -51,7 +51,7 @@ extern "C" {
  * Define the SIP version number.
  */
 #define SIP_VERSION         0x040800
-#define SIP_VERSION_STR     "4.8-snapshot-20090321"
+#define SIP_VERSION_STR     "4.8-snapshot-20090327"
 
 
 /*
@@ -888,10 +888,8 @@ typedef struct _sipCharInstanceDef {
     /* The char value. */
     char ci_val;
 
-#if PY_MAJOR_VERSION >= 3
-    /* Set if the value is encoded. */
-    char ci_encoded;
-#endif
+    /* The encoding used, either 'A', 'L', '8' or 'N'. */
+    char ci_encoding;
 } sipCharInstanceDef;
 
 
@@ -905,10 +903,8 @@ typedef struct _sipStringInstanceDef {
     /* The string value. */
     const char *si_val;
 
-#if PY_MAJOR_VERSION >= 3
-    /* Set if the value is encoded. */
-    char si_encoded;
-#endif
+    /* The encoding used, either 'A', 'L', '8' or 'N'. */
+    char si_encoding;
 } sipStringInstanceDef;
 
 
@@ -1205,8 +1201,12 @@ typedef struct _sipAPIDef {
     void (*api_add_delayed_dtor)(sipSimpleWrapper *w);
     char (*api_bytes_as_char)(PyObject *obj);
     char *(*api_bytes_as_string)(PyObject *obj);
-    char (*api_string_as_char)(PyObject *obj);
-    char *(*api_string_as_string)(PyObject **obj);
+    char (*api_string_as_ascii_char)(PyObject *obj);
+    char *(*api_string_as_ascii_string)(PyObject **obj);
+    char (*api_string_as_latin1_char)(PyObject *obj);
+    char *(*api_string_as_latin1_string)(PyObject **obj);
+    char (*api_string_as_utf8_char)(PyObject *obj);
+    char *(*api_string_as_utf8_string)(PyObject **obj);
 #if defined(HAVE_WCHAR_H)
     wchar_t (*api_unicode_as_wchar)(PyObject *obj);
     wchar_t *(*api_unicode_as_wstring)(PyObject *obj);
