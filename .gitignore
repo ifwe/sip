@@ -26,3 +26,6 @@ sipconfig.py
 .pydevproject
 
 *.suo
+
+sipgen/parser.c
+
