@@ -1,3 +1,22 @@
+2009/03/27 19:08:22  phil
+Fixed a couple of missing calls to clear the error flag while parsing strings.
+
+
+2009/03/26 22:25:45  phil
+Replaced the new /Byte/ annotation with the even newer /Encoding/ annotation
+and %DefaultEncoding directive.
+
+
+2009/03/24 19:13:08  phil
+Changed the order in which PyQt4 signals are generated so that those with
+optional arguments appear with the most arguments first and least last.
+
+
+2009/03/23 15:56:18  phil
+Backed out the removal of sipSelfWasArg and supporting code as it really is
+needed.  However, changed how it was set so that super() should still work.
+
+
 2009/03/21 23:35:50  phil
 Fixed a bug in the code generated for protected methods with multiple Python
 names.
