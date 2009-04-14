@@ -465,14 +465,16 @@ static int objectify(const char *s, PyObject **objp);
  */
 #if PY_MAJOR_VERSION >= 3
 #define SIP_MODULE_ENTRY    PyInit_sip
+#define SIP_MODULE_TYPE     PyObject *
 #define SIP_FATAL(s)        return NULL
 #else
 #define SIP_MODULE_ENTRY    initsip
+#define SIP_MODULE_TYPE     void
 #define SIP_FATAL(s)        Py_FatalError(s)
 #endif
 
 #if defined(SIP_STATIC_MODULE)
-void SIP_MODULE_ENTRY(void)
+SIP_MODULE_TYPE SIP_MODULE_ENTRY(void)
 #else
 PyMODINIT_FUNC SIP_MODULE_ENTRY(void)
 #endif
@@ -3839,6 +3841,10 @@ static void callPyDtor(sipSimpleWrapper *self)
         /* Discard any result. */
         Py_XDECREF(res);
 
+        /* Handle any error the best we can. */
+        if (PyErr_Occurred())
+            PyErr_Print();
+
         SIP_RELEASE_GIL(sipGILState);
     }
 }
@@ -4621,7 +4627,10 @@ static int add_lazy_attrs(sipClassTypeDef *ctd)
         }
     }
 
-    /* Get any lazy attributes from registered getters. */
+    /*
+     * Get any lazy attributes from registered getters.  This must be done last
+     * to allow any existing attributes to be replaced.
+     */
     for (ag = sipAttrGetters; ag != NULL; ag = ag->next)
         if (ag->type == NULL || PyType_IsSubtype((PyTypeObject *)wt, ag->type))
             if (ag->getter((sipTypeDef *)ctd, dict) < 0)

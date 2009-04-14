@@ -1,3 +1,20 @@
+2009/04/09 13:00:09  phil
+Print any exception raised by __dtor__.
+
+
+2009/04/01 15:07:01  phil
+Added support for PyQt4's support for signals that have overloaded methods.
+
+
+2009/03/30 19:48:55  phil
+Fixed a compiler warning message if sipCpp isn't used by %BIGetBufferCode.
+
+
+2009/03/30 12:48:19  phil
+Fixed the declaration of the module initialisation function when building
+static modules for Python v3.
+
+
 2009/03/27 19:08:22  phil
 Fixed a couple of missing calls to clear the error flag while parsing strings.
 
