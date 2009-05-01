@@ -4880,17 +4880,22 @@ static void generateSlot(moduleDef *mod, classDef *cd, enumDef *ed,
             );
 }
 
-int is_wxobject(classDef* cd)
+int destruct_on_main_thread(classDef* cd)
 {
     static const char* baseclass_name = "Window";
 
     classList* superClass;
 
+    /* Return TRUE if /MainThreadDestructor/ was specified. */
+    if (isMainThreadDestructor(cd))
+        return TRUE;
+
     if (0 == strcmp(baseclass_name, cd->pyname->text))
         return 1;
 
     for (superClass = cd->supers; superClass; superClass = superClass->next)
-        if (0 == strcmp(baseclass_name, superClass->cd->pyname->text) || is_wxobject(superClass->cd))
+        if (0 == strcmp(baseclass_name, superClass->cd->pyname->text) || 
+            destruct_on_main_thread(superClass->cd))
             return 1;
 
     if (strcmp(cd->pyname->text, "Timer") == 0)
@@ -5036,7 +5041,7 @@ static void generateClassFunctions(sipSpec *pt, moduleDef *mod, classDef *cd,
              * way to call it which we haven't worked out (because we don't
              * fully understand C++).
              */
-            if (optWxThreadHop() && is_wxobject(cd))
+            if (optWxThreadHop() && destruct_on_main_thread(cd))
             {
 
                 prcode(fp,
@@ -5078,7 +5083,7 @@ static void generateClassFunctions(sipSpec *pt, moduleDef *mod, classDef *cd,
                     );
         }
 
-        if (optWxThreadHop() && is_wxobject(cd) && (hasShadow(cd) || isPublicDtor(cd)) && cd->dealloccode == NULL)
+        if (optWxThreadHop() && destruct_on_main_thread(cd) && (hasShadow(cd) || isPublicDtor(cd)) && cd->dealloccode == NULL)
             prcode(fp, "    }\n");
 
         prcode(fp,

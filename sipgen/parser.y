@@ -3208,6 +3208,9 @@ static void finishClass(sipSpec *pt, moduleDef *mod, classDef *cd, optFlags *of)
         if (getDeprecated(of))
             setIsDeprecatedClass(cd);
 
+        if (getMainThreadDestructor(of))
+            setMainThreadDestructor(cd);
+
         if (findOptFlag(of,"Abstract",bool_flag) != NULL)
         {
             setIsAbstractClass(cd);
@@ -5583,6 +5586,14 @@ static int getHoldGIL(optFlags *optflgs)
 static int getDeprecated(optFlags *optflgs)
 {
     return (findOptFlag(optflgs, "Deprecated", bool_flag) != NULL);
+}
+
+/*
+ * Get the /MainThreadDestructor/ option flag.
+ */
+static int getMainThreadDestructor(optFlags *optflgs)
+{
+    return (findOptFlag(optflgs, "MainThreadDestructor", bool_flag) != NULL);
 }
 
 
