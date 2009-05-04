@@ -3221,8 +3221,6 @@ static void exitmsg(char* msg)
     exit(-1);
 }
 
-#include <windows.h>
-
 static varDef* findProperty(sipSpec *pt, moduleDef *module, classDef *cd, overDef *over, nameDef* propertyName, int* err)
 {
     varDef *var = NULL;
@@ -3407,8 +3405,6 @@ static void filterPropertiesWithoutGetters(sipSpec *pt)
         var = next;
     }
 }
-
-#include <windows.h>
 
 static void generateProperties(sipSpec *pt, moduleDef *mod, classDef *cd)
 {    
