@@ -91,6 +91,7 @@ static int getTransfer(optFlags *);
 static int getReleaseGIL(optFlags *);
 static int getHoldGIL(optFlags *);
 static int getDeprecated(optFlags *);
+static int getMainThreadDestructor(optFlags *);
 static void templateSignature(signatureDef *sd, int result, classTmplDef *tcd, templateDef *td, classDef *ncd);
 static void templateType(argDef *ad, classTmplDef *tcd, templateDef *td, classDef *ncd);
 static int search_back(const char *end, const char *start, const char *target);
