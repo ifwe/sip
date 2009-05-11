@@ -1,3 +1,26 @@
+2009/04/30 22:10:15  phil
+%DefaultSupertype now only changes the default for the current module.
+(%DefaultMetatype still affects importing modules.)  This should mean that
+modules that extend PyQt4 will continue to work without having to make
+super-type or meta-type changes.
+
+
+2009/04/24 18:29:38  phil
+Fixed the lookup of generated slot functions in sub-types.
+Moved some assertions to more appropriate places when a generated slot function
+isn't found.
+
+
+2009/04/20 19:54:57  phil
+Disabled the new implicit copying of const reference results where the class
+doesn't have a public copy ctor.
+
+
+2009/04/18 16:53:34  phil
+Fixed a problem handling __setitem__ when being used to support
+multi-dimensional mappings.
+
+
 2009/04/09 13:00:09  phil
 Print any exception raised by __dtor__.
 

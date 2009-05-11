@@ -301,7 +301,7 @@ ul.auto-toc {
 <tr><th class="docinfo-name">Contact:</th>
 <td><a class="first last reference" href="mailto:info&#64;riverbankcomputing.com">info&#64;riverbankcomputing.com</a></td></tr>
 <tr><th class="docinfo-name">Version:</th>
-<td>4.8-snapshot-20090409</td></tr>
+<td>4.8-snapshot-20090430</td></tr>
 <tr><th class="docinfo-name">Copyright:</th>
 <td>Copyright (c) 2009 Riverbank Computing Limited</td></tr>
 </tbody>
@@ -595,7 +595,7 @@ ul.auto-toc {
 </div>
 <div class="section">
 <h1><a class="toc-backref" href="#id25" id="introduction" name="introduction">1&nbsp;&nbsp;&nbsp;Introduction</a></h1>
-<p>This is the reference guide for SIP 4.8-snapshot-20090409.  SIP is a tool for
+<p>This is the reference guide for SIP 4.8-snapshot-20090430.  SIP is a tool for
 automatically generating <a class="reference" href="http://www.python.org">Python</a> bindings for C and
 C++ libraries.  SIP was originally developed in 1998 for
 <a class="reference" href="http://www.riverbankcomputing.com/software/pyqt/">PyQt</a> - the Python
@@ -1450,7 +1450,8 @@ memory.</p>
 <p>SIP allows a class's meta-type and super-type to be explicitly specified using
 the <a class="reference" href="#metatype">Metatype</a> and <a class="reference" href="#supertype">Supertype</a> class annotations.</p>
 <p>SIP also allows the default meta-type and super-type to be changed for a module
-using the <a class="reference" href="#defaultmetatype">%DefaultMetatype</a> and <a class="reference" href="#defaultsupertype">%DefaultSupertype</a> directives.</p>
+using the <a class="reference" href="#defaultmetatype">%DefaultMetatype</a> and <a class="reference" href="#defaultsupertype">%DefaultSupertype</a> directives.  Unlike the
+default super-type, the default meta-type is inherited by importing modules.</p>
 <p>If you want to use your own meta-type or super-type then they must be
 sub-classed from one of the SIP provided types.  Your types must be registered
 using <a class="reference" href="#sipregisterpytype">sipRegisterPyType()</a>.  This is normally done in code specified using
@@ -2587,7 +2588,8 @@ specified then <tt class="docutils literal"><span class="pre">&quot;None&quot;</
 %DefaultMetatype <em>dotted-name</em>
 </pre>
 <p>This directive is used to specify the Python type that should be used as the
-meta-type for any C/C++ data type that doesn't have an explicit super-type.</p>
+meta-type for any C/C++ data type defined in the same module, and by importing
+modules, that doesn't have an explicit super-type.</p>
 <p>If this is not specified then <tt class="docutils literal"><span class="pre">sip.wrappertype</span></tt> is used.</p>
 <p>You can also use the <a class="reference" href="#metatype">Metatype</a> class annotation to specify the meta-type
 used by a particular C/C++ type.</p>
@@ -2603,7 +2605,8 @@ used by a particular C/C++ type.</p>
 %DefaultSupertype <em>dotted-name</em>
 </pre>
 <p>This directive is used to specify the Python type that should be used as the
-super-type for any C/C++ data type that doesn't have an explicit super-type.</p>
+super-type for any C/C++ data type defined in the same module that doesn't have
+an explicit super-type.</p>
 <p>If this is not specified then <tt class="docutils literal"><span class="pre">sip.wrapper</span></tt> is used.</p>
 <p>You can also use the <a class="reference" href="#supertype">Supertype</a> class annotation to specify the super-type
 used by a particular C/C++ type.</p>
