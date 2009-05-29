@@ -1,3 +1,46 @@
+2009/05/28 10:46:11  phil
+Removed a compiler warning for the generated calls to PyInit_Module() for
+Python v2.5 and v2.6.
+
+
+2009/05/27 22:33:02  phil
+The implicit copying of const& results is disabled for abstract classes.
+
+
+2009/05/26 23:27:41  phil
+Fixed the generated code for abstract operators.
+
+
+2009/05/26 18:30:08  phil
+Added the missing initialisation of the sipVariableDescr_Type type.
+
+
+2009/05/25 18:30:44  phil
+__bool__ is now synonymous with __nonzero__.
+__truediv__ and __itruediv__ are now explicit.
+__div__ and __idiv__ are now Python v2 only.
+Added support for __floordiv__, __ifloordiv__ and __index__.
+
+
+2009/05/25 14:23:10  phil
+Hopefully fixed the regression with specific mapped types not properly
+superceding template mapped types that was affecting PyKDE3 and PyKDE4.
+
+
+2009/05/24 18:55:47  phil
+Added a repr() method to sip.methoddescriptor.
+
+
+2009/05/24 17:36:50  phil
+Fixed a bug where the name of an automatically generated complementary slot
+wasn't being generated.
+
+
+2009/05/24 17:11:16  phil
+Added support for images in the generated Scintilla API files from a patch from
+Detlev Offenbach.
+
+
 2009/04/30 22:10:15  phil
 %DefaultSupertype now only changes the default for the current module.
 (%DefaultMetatype still affects importing modules.)  This should mean that

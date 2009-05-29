@@ -3252,6 +3252,10 @@ static void finishClass(sipSpec *pt, moduleDef *mod, classDef *cd, optFlags *of)
             case idiv_slot:
             case mod_slot:
             case imod_slot:
+            case floordiv_slot:
+            case ifloordiv_slot:
+            case truediv_slot:
+            case itruediv_slot:
             case pos_slot:
             case neg_slot:
                 /* This is definately not a sequence. */
@@ -4404,14 +4408,20 @@ static void newTypedef(sipSpec *pt, moduleDef *mod, char *name, argDef *type,
  */
 static void resolveAnyTypedef(sipSpec *pt, argDef *ad)
 {
+    argDef orig = *ad;
+
     while (ad->atype == defined_type)
     {
         ad->atype = no_type;
         searchTypedefs(pt, ad->u.snd, ad);
 
-        if (ad->atype == no_type)
+        /*
+         * Don't resolve to a template type as it may be superceded later on
+         * by a more specific mapped type.
+         */
+        if (ad->atype == no_type || ad->atype == template_type)
         {
-            ad->atype = defined_type;
+            *ad = orig;
             break;
         }
     }
@@ -4874,6 +4884,8 @@ static memberDef *findFunction(sipSpec *pt, moduleDef *mod, classDef *cd,
         {"__mul__", mul_slot, FALSE, 1},
         {"__div__", div_slot, FALSE, 1},
         {"__mod__", mod_slot, FALSE, 1},
+        {"__floordiv__", floordiv_slot, TRUE, 1},
+        {"__truediv__", truediv_slot, FALSE, 1},
         {"__and__", and_slot, FALSE, 1},
         {"__or__", or_slot, FALSE, 1},
         {"__xor__", xor_slot, FALSE, 1},
@@ -4884,6 +4896,8 @@ static memberDef *findFunction(sipSpec *pt, moduleDef *mod, classDef *cd,
         {"__imul__", imul_slot, FALSE, 1},
         {"__idiv__", idiv_slot, FALSE, 1},
         {"__imod__", imod_slot, FALSE, 1},
+        {"__ifloordiv__", ifloordiv_slot, TRUE, 1},
+        {"__itruediv__", itruediv_slot, FALSE, 1},
         {"__iand__", iand_slot, FALSE, 1},
         {"__ior__", ior_slot, FALSE, 1},
         {"__ixor__", ixor_slot, FALSE, 1},
@@ -4901,12 +4915,14 @@ static memberDef *findFunction(sipSpec *pt, moduleDef *mod, classDef *cd,
         {"__gt__", gt_slot, FALSE, 1},
         {"__ge__", ge_slot, FALSE, 1},
         {"__cmp__", cmp_slot, FALSE, 1},
-        {"__nonzero__", nonzero_slot, TRUE, 0},
+        {"__bool__", bool_slot, TRUE, 0},
+        {"__nonzero__", bool_slot, TRUE, 0},
         {"__neg__", neg_slot, FALSE, 0},
         {"__pos__", pos_slot, FALSE, 0},
         {"__abs__", abs_slot, TRUE, 0},
         {"__repr__", repr_slot, TRUE, 0},
         {"__hash__", hash_slot, TRUE, 0},
+        {"__index__", index_slot, TRUE, 0},
         {NULL}
     };
 

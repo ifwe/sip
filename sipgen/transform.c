@@ -459,6 +459,9 @@ static void addComplementarySlot(sipSpec *pt, classDef *cd, memberDef *md,
 
                 md2->next = cd->members;
                 cd->members = md2;
+
+                if (isUsedName(md->pyname))
+                    setIsUsedName(md2->pyname);
             }
         }
 

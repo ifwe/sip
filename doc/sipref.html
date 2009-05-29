@@ -301,7 +301,7 @@ ul.auto-toc {
 <tr><th class="docinfo-name">Contact:</th>
 <td><a class="first last reference" href="mailto:info&#64;riverbankcomputing.com">info&#64;riverbankcomputing.com</a></td></tr>
 <tr><th class="docinfo-name">Version:</th>
-<td>4.8-snapshot-20090430</td></tr>
+<td>4.8-snapshot-20090528</td></tr>
 <tr><th class="docinfo-name">Copyright:</th>
 <td>Copyright (c) 2009 Riverbank Computing Limited</td></tr>
 </tbody>
@@ -595,7 +595,7 @@ ul.auto-toc {
 </div>
 <div class="section">
 <h1><a class="toc-backref" href="#id25" id="introduction" name="introduction">1&nbsp;&nbsp;&nbsp;Introduction</a></h1>
-<p>This is the reference guide for SIP 4.8-snapshot-20090430.  SIP is a tool for
+<p>This is the reference guide for SIP 4.8-snapshot-20090528.  SIP is a tool for
 automatically generating <a class="reference" href="http://www.python.org">Python</a> bindings for C and
 C++ libraries.  SIP was originally developed in 1998 for
 <a class="reference" href="http://www.riverbankcomputing.com/software/pyqt/">PyQt</a> - the Python
@@ -719,6 +719,9 @@ new Python signals, and allows any Python callable object to be used as a slot.<
 <h1><a class="toc-backref" href="#id30" id="potential-incompatibilities-with-earlier-versions" name="potential-incompatibilities-with-earlier-versions">2&nbsp;&nbsp;&nbsp;Potential Incompatibilities with Earlier Versions</a></h1>
 <div class="section">
 <h2><a class="toc-backref" href="#id31" id="sip-v4-8" name="sip-v4-8">2.1&nbsp;&nbsp;&nbsp;SIP v4.8</a></h2>
+<p>Prior to this version the <tt class="docutils literal"><span class="pre">__div__</span></tt> special method implicitly defined the
+<tt class="docutils literal"><span class="pre">__truediv__</span></tt> special method.  From this version the <tt class="docutils literal"><span class="pre">__truediv__</span></tt> special
+method must be explicitly defined.</p>
 <p>Prior to this version the <a class="reference" href="#sipwrapper">sipWrapper</a> structure had a member called <tt class="docutils literal"><span class="pre">user</span></tt>
 which is available for handwritten code to use.  From this version <tt class="docutils literal"><span class="pre">user</span></tt> is
 a member of the <a class="reference" href="#sipsimplewrapper">sipSimpleWrapper</a> structure.  <a class="reference" href="#sipwrapper">sipWrapper</a> pointers can be
@@ -1729,17 +1732,18 @@ file.</p>
         [<a class="reference" href="#methodcode">%MethodCode</a>]
 
 <em>special-method-name</em> ::= [ <tt class="docutils literal"><span class="pre">__abs__</span></tt> | <tt class="docutils literal"><span class="pre">__add__</span></tt> | <tt class="docutils literal"><span class="pre">__and__</span></tt> |
-        <tt class="docutils literal"><span class="pre">__call__</span></tt> | <tt class="docutils literal"><span class="pre">__cmp__</span></tt> | <tt class="docutils literal"><span class="pre">__contains__</span></tt> | <tt class="docutils literal"><span class="pre">__delitem__</span></tt> |
-        <tt class="docutils literal"><span class="pre">__div__</span></tt> | <tt class="docutils literal"><span class="pre">__eq__</span></tt> | <tt class="docutils literal"><span class="pre">__float__</span></tt> | <tt class="docutils literal"><span class="pre">__ge__</span></tt> |
-        <tt class="docutils literal"><span class="pre">__getitem__</span></tt> | <tt class="docutils literal"><span class="pre">__gt__</span></tt> | <tt class="docutils literal"><span class="pre">__hash__</span></tt> | <tt class="docutils literal"><span class="pre">__iadd__</span></tt> |
-        <tt class="docutils literal"><span class="pre">__iand__</span></tt> | <tt class="docutils literal"><span class="pre">__idiv__</span></tt> | <tt class="docutils literal"><span class="pre">__ilshift__</span></tt> | <tt class="docutils literal"><span class="pre">__imod__</span></tt> |
-        <tt class="docutils literal"><span class="pre">__imul__</span></tt> | <tt class="docutils literal"><span class="pre">__int__</span></tt> | <tt class="docutils literal"><span class="pre">__invert__</span></tt> | <tt class="docutils literal"><span class="pre">__ior__</span></tt> |
-        <tt class="docutils literal"><span class="pre">__irshift__</span></tt> | <tt class="docutils literal"><span class="pre">__isub__</span></tt> | <tt class="docutils literal"><span class="pre">__ixor__</span></tt> | <tt class="docutils literal"><span class="pre">__le__</span></tt> |
-        <tt class="docutils literal"><span class="pre">__len__</span></tt> | <tt class="docutils literal"><span class="pre">__long__</span></tt> | <tt class="docutils literal"><span class="pre">__lshift__</span></tt> | <tt class="docutils literal"><span class="pre">__lt__</span></tt> |
-        <tt class="docutils literal"><span class="pre">__mod__</span></tt> | <tt class="docutils literal"><span class="pre">__mul__</span></tt> | <tt class="docutils literal"><span class="pre">__ne__</span></tt> | <tt class="docutils literal"><span class="pre">__neg__</span></tt> |
+        <tt class="docutils literal"><span class="pre">__bool__</span></tt> | <tt class="docutils literal"><span class="pre">__call__</span></tt> | <tt class="docutils literal"><span class="pre">__cmp__</span></tt> | <tt class="docutils literal"><span class="pre">__contains__</span></tt> |
+        <tt class="docutils literal"><span class="pre">__delitem__</span></tt> | <tt class="docutils literal"><span class="pre">__div__</span></tt> | <tt class="docutils literal"><span class="pre">__eq__</span></tt> | <tt class="docutils literal"><span class="pre">__float__</span></tt> |
+        <tt class="docutils literal"><span class="pre">__floordiv__</span></tt> | <tt class="docutils literal"><span class="pre">__ge__</span></tt> | <tt class="docutils literal"><span class="pre">__getitem__</span></tt> | <tt class="docutils literal"><span class="pre">__gt__</span></tt> |
+        <tt class="docutils literal"><span class="pre">__hash__</span></tt> | <tt class="docutils literal"><span class="pre">__iadd__</span></tt> | <tt class="docutils literal"><span class="pre">__iand__</span></tt> | <tt class="docutils literal"><span class="pre">__idiv__</span></tt> |
+        <tt class="docutils literal"><span class="pre">__ifloordiv__</span></tt> | <tt class="docutils literal"><span class="pre">__ilshift__</span></tt> | <tt class="docutils literal"><span class="pre">__imod__</span></tt> | <tt class="docutils literal"><span class="pre">__imul__</span></tt> |
+        <tt class="docutils literal"><span class="pre">__index__</span></tt> | <tt class="docutils literal"><span class="pre">__int__</span></tt> | <tt class="docutils literal"><span class="pre">__invert__</span></tt> | <tt class="docutils literal"><span class="pre">__ior__</span></tt> |
+        <tt class="docutils literal"><span class="pre">__irshift__</span></tt> | <tt class="docutils literal"><span class="pre">__isub__</span></tt> | <tt class="docutils literal"><span class="pre">__itruediv__</span></tt> | <tt class="docutils literal"><span class="pre">__ixor__</span></tt> |
+        <tt class="docutils literal"><span class="pre">__le__</span></tt> | <tt class="docutils literal"><span class="pre">__len__</span></tt> | <tt class="docutils literal"><span class="pre">__long__</span></tt> | <tt class="docutils literal"><span class="pre">__lshift__</span></tt> |
+        <tt class="docutils literal"><span class="pre">__lt__</span></tt> | <tt class="docutils literal"><span class="pre">__mod__</span></tt> | <tt class="docutils literal"><span class="pre">__mul__</span></tt> | <tt class="docutils literal"><span class="pre">__ne__</span></tt> | <tt class="docutils literal"><span class="pre">__neg__</span></tt> |
         <tt class="docutils literal"><span class="pre">__nonzero__</span></tt> | <tt class="docutils literal"><span class="pre">__or__</span></tt> | <tt class="docutils literal"><span class="pre">__pos__</span></tt> | <tt class="docutils literal"><span class="pre">__repr__</span></tt> |
         <tt class="docutils literal"><span class="pre">__rshift__</span></tt> | <tt class="docutils literal"><span class="pre">__setitem__</span></tt> | <tt class="docutils literal"><span class="pre">__str__</span></tt> | <tt class="docutils literal"><span class="pre">__sub__</span></tt> |
-        <tt class="docutils literal"><span class="pre">__xor__</span></tt>]
+        <tt class="docutils literal"><span class="pre">__truediv__</span></tt> | <tt class="docutils literal"><span class="pre">__xor__</span></tt>]
 
 <em>operator</em> ::= <em>operator-type</em>
         <tt class="docutils literal"><span class="pre">(</span></tt> [<em>argument-list</em>] <tt class="docutils literal"><span class="pre">)</span></tt> [<tt class="docutils literal"><span class="pre">const</span></tt>] [<em>exceptions</em>]

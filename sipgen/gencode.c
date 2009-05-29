@@ -227,7 +227,8 @@ static void prCachedName(FILE *fp, nameDef *nd, const char *prefix);
 static void generateSignalTableEntry(classDef *cd, overDef *sig, int membernr,
         FILE *fp);
 static void generateTypesTable(sipSpec *pt, moduleDef *mod, FILE *fp);
-static int py2SlotOnly(slotType st);
+static int py2OnlySlot(slotType st);
+static int py2_5LaterSlot(slotType st);
 static int keepPyReference(argDef *ad);
 static int isDuplicateProtected(classDef *cd, overDef *target);
 static char getEncoding(argType atype);
@@ -794,7 +795,7 @@ static char *makePartName(const char *codeDir, const char *mname, int part,
 
 
 /*
- * Generate the C/C++ code for a composite module.
+ * Generate the C code for a composite module.
  */
 static void generateCompositeCpp(sipSpec *pt, const char *codeDir)
 {
@@ -1257,16 +1258,20 @@ static void generateCpp(sipSpec *pt, moduleDef *mod, const char *codeDir,
             for (od = mod->overs; od != NULL; od = od->next)
                 if (od->common == md)
                 {
-                    if (py2SlotOnly(md->slot))
+                    if (py2OnlySlot(md->slot))
                         prcode(fp,
 "#if PY_MAJOR_VERSION < 3\n"
+                            );
+                    else if (py2_5LaterSlot(md->slot))
+                        prcode(fp,
+"#if PY_VERSION_HEX >= 0x02050000\n"
                             );
 
                     prcode(fp,
 "    {(void *)slot_%s, %s, {0, 0, 0}},\n"
                         , md->pyname->text, slotName(md->slot));
 
-                    if (py2SlotOnly(md->slot))
+                    if (py2OnlySlot(md->slot) || py2_5LaterSlot(md->slot))
                         prcode(fp,
 "#endif\n"
                             );
@@ -1278,9 +1283,13 @@ static void generateCpp(sipSpec *pt, moduleDef *mod, const char *codeDir,
         for (cd = mod->proxies; cd != NULL; cd = cd->next)
             for (md = cd->members; md != NULL; md = md->next)
             {
-                if (py2SlotOnly(md->slot))
+                if (py2OnlySlot(md->slot))
                     prcode(fp,
 "#if PY_MAJOR_VERSION < 3\n"
+                        );
+                else if (py2_5LaterSlot(md->slot))
+                    prcode(fp,
+"#if PY_VERSION_HEX >= 0x02050000\n"
                         );
 
                 prcode(fp,
@@ -1291,7 +1300,7 @@ static void generateCpp(sipSpec *pt, moduleDef *mod, const char *codeDir,
                 prcode(fp, "},\n"
                       );
 
-                if (py2SlotOnly(md->slot))
+                if (py2OnlySlot(md->slot) || py2_5LaterSlot(md->slot))
                     prcode(fp,
 "#endif\n"
                         );
@@ -1368,16 +1377,20 @@ static void generateCpp(sipSpec *pt, moduleDef *mod, const char *codeDir,
 
             if ((stype = slotName(slot->slot)) != NULL)
             {
-                if (py2SlotOnly(slot->slot))
+                if (py2OnlySlot(slot->slot))
                     prcode(fp,
 "#if PY_MAJOR_VERSION < 3\n"
+                        );
+                else if (py2_5LaterSlot(slot->slot))
+                    prcode(fp,
+"#if PY_VERSION_HEX >= 0x02050000\n"
                         );
 
                 prcode(fp,
 "    {(void *)slot_%C_%s, %s},\n"
                     , ed->fqcname, slot->pyname->text, stype);
 
-                if (py2SlotOnly(slot->slot))
+                if (py2OnlySlot(slot->slot) || py2_5LaterSlot(slot->slot))
                     prcode(fp,
 "#endif\n"
                         );
@@ -1785,8 +1798,21 @@ static void generateCpp(sipSpec *pt, moduleDef *mod, const char *codeDir,
 "    /* Initialise the module and get it's dictionary. */\n"
 "#if PY_MAJOR_VERSION >= 3\n"
 "    sipModule = PyModule_Create(&sip_module_def);\n"
+"#elif PY_VERSION_HEX >= 0x02050000\n"
+"    sipModule = Py_InitModule(%N, sip_methods);\n"
 "#else\n"
+        , mod->fullname);
+
+    if (generating_c)
+        prcode(fp,
 "    sipModule = Py_InitModule((char *)%N, sip_methods);\n"
+            , mod->fullname);
+    else
+        prcode(fp,
+"    sipModule = Py_InitModule(const_cast<char *>(%N), sip_methods);\n"
+            , mod->fullname);
+
+    prcode(fp,
 "#endif\n"
 "\n"
 "    if (sipModule == NULL)\n"
@@ -1794,7 +1820,7 @@ static void generateCpp(sipSpec *pt, moduleDef *mod, const char *codeDir,
 "\n"
 "    sipModuleDict = PyModule_GetDict(sipModule);\n"
 "\n"
-        , mod->fullname);
+        );
 
     generateSipImport(mod, fp);
 
@@ -2015,11 +2041,7 @@ static void generateSipImport(moduleDef *mod, FILE *fp)
 {
     prcode(fp,
 "    /* Import the SIP module and get it's API. */\n"
-"#if PY_VERSION_HEX >= 0x02050000\n"
 "    sip_sipmod = PyImport_ImportModule(\"sip\");\n"
-"#else\n"
-"    sip_sipmod = PyImport_ImportModule((char *)\"sip\");\n"
-"#endif\n"
 "\n"
 "    if (sip_sipmod == NULL)\n"
 "    {\n"
@@ -4377,8 +4399,9 @@ static int isZeroArgSlot(memberDef *md)
 
     return (st == str_slot || st == int_slot || st == long_slot ||
         st == float_slot || st == invert_slot || st == neg_slot ||
-        st == len_slot || st == nonzero_slot || st == pos_slot ||
-        st == abs_slot || st == repr_slot || st == hash_slot);
+        st == len_slot || st == bool_slot || st == pos_slot ||
+        st == abs_slot || st == repr_slot || st == hash_slot ||
+        st == index_slot);
 }
 
 
@@ -4413,7 +4436,7 @@ int isIntReturnSlot(memberDef *md)
 {
     slotType st = md->slot;
 
-    return (st == len_slot || st == nonzero_slot || st == contains_slot ||
+    return (st == len_slot || st == bool_slot || st == contains_slot ||
         st == cmp_slot);
 }
 
@@ -4448,9 +4471,9 @@ static int isInplaceNumberSlot(memberDef *md)
     slotType st = md->slot;
 
     return (st == iadd_slot || st == isub_slot || st == imul_slot ||
-        st == idiv_slot || st == imod_slot ||
-        st == ior_slot || st == ixor_slot || st == iand_slot ||
-        st == ilshift_slot || st == irshift_slot);
+        st == idiv_slot || st == imod_slot || st == ifloordiv_slot ||
+        st == itruediv_slot || st == ior_slot || st == ixor_slot ||
+        st == iand_slot || st == ilshift_slot || st == irshift_slot);
 }
 
 
@@ -4473,9 +4496,9 @@ int isNumberSlot(memberDef *md)
     slotType st = md->slot;
 
     return (st == add_slot || st == sub_slot || st == mul_slot ||
-        st == div_slot || st == mod_slot ||
-        st == and_slot || st == or_slot || st == xor_slot ||
-        st == lshift_slot || st == rshift_slot);
+        st == div_slot || st == mod_slot || st == floordiv_slot ||
+        st == truediv_slot || st == and_slot || st == or_slot ||
+        st == xor_slot || st == lshift_slot || st == rshift_slot);
 }
 
 
@@ -4571,9 +4594,13 @@ static void generateSlot(moduleDef *mod, classDef *cd, enumDef *ed,
 "\n"
         );
 
-    if (py2SlotOnly(md->slot))
+    if (py2OnlySlot(md->slot))
         prcode(fp,
 "#if PY_MAJOR_VERSION < 3\n"
+            );
+    else if (py2_5LaterSlot(md->slot))
+        prcode(fp,
+"#if PY_VERSION_HEX >= 0x02050000\n"
             );
 
     if (!generating_c)
@@ -4712,7 +4739,7 @@ static void generateSlot(moduleDef *mod, classDef *cd, enumDef *ed,
 "}\n"
         );
 
-    if (py2SlotOnly(md->slot))
+    if (py2OnlySlot(md->slot) || py2_5LaterSlot(md->slot))
         prcode(fp,
 "#endif\n"
             );
@@ -8190,16 +8217,20 @@ static void generateTypeDefinition(sipSpec *pt, classDef *cd, FILE *fp)
 
         if ((stype = slotName(md->slot)) != NULL)
         {
-            if (py2SlotOnly(md->slot))
+            if (py2OnlySlot(md->slot))
                 prcode(fp,
 "#if PY_MAJOR_VERSION < 3\n"
+                    );
+            else if (py2_5LaterSlot(md->slot))
+                prcode(fp,
+"#if PY_VERSION_HEX >= 0x02050000\n"
                     );
 
             prcode(fp,
 "    {(void *)slot_%C_%s, %s},\n"
                 , classFQCName(cd), md->pyname->text, stype);
 
-            if (py2SlotOnly(md->slot))
+            if (py2OnlySlot(md->slot) || py2_5LaterSlot(md->slot))
                 prcode(fp,
 "#endif\n"
                     );
@@ -8774,9 +8805,19 @@ static void generateSignalTableEntry(classDef *cd, overDef *sig, int membernr,
 /*
  * Return TRUE if the slot is specific to Python v2.
  */
-static int py2SlotOnly(slotType st)
+static int py2OnlySlot(slotType st)
 {
-    return (st == long_slot || st == cmp_slot);
+    return (st == long_slot || st == cmp_slot || st == div_slot ||
+            st == idiv_slot);
+}
+
+
+/*
+ * Return TRUE if the slot is specific to Python v2.5 and later.
+ */
+static int py2_5LaterSlot(slotType st)
+{
+    return (st == index_slot);
 }
 
 
@@ -8841,6 +8882,14 @@ static const char *slotName(slotType st)
         sn = "mod_slot";
         break;
 
+    case floordiv_slot:
+        sn = "floordiv_slot";
+        break;
+
+    case truediv_slot:
+        sn = "truediv_slot";
+        break;
+
     case and_slot:
         sn = "and_slot";
         break;
@@ -8887,6 +8936,14 @@ static const char *slotName(slotType st)
 
     case imod_slot:
         sn = "imod_slot";
+        break;
+
+    case ifloordiv_slot:
+        sn = "ifloordiv_slot";
+        break;
+
+    case itruediv_slot:
+        sn = "itruediv_slot";
         break;
 
     case iand_slot:
@@ -8957,8 +9014,8 @@ static const char *slotName(slotType st)
         sn = "cmp_slot";
         break;
 
-    case nonzero_slot:
-        sn = "nonzero_slot";
+    case bool_slot:
+        sn = "bool_slot";
         break;
 
     case neg_slot:
@@ -8979,6 +9036,10 @@ static const char *slotName(slotType st)
 
     case hash_slot:
         sn = "hash_slot";
+        break;
+
+    case index_slot:
+        sn = "index_slot";
         break;
 
     default:
@@ -10199,7 +10260,7 @@ static void generateFunctionCall(classDef *cd,classDef *ocd,overDef *od,
         if (!isReference(res) || isConstArg(res))
         {
             /* If it is a class then we must be able to copy it. */
-            if (res->atype != class_type || !cannotCopy(res->u.cd))
+            if (res->atype != class_type || !(cannotCopy(res->u.cd) || isAbstractClass(res->u.cd)))
             {
                 needsNew = TRUE;
                 resetIsConstArg(res);
@@ -10444,6 +10505,7 @@ static void generateFunctionCall(classDef *cd,classDef *ocd,overDef *od,
             break;
 
         case div_slot:
+        case truediv_slot:
             generateNumberSlotCall(od,"/",fp);
             break;
 
@@ -10486,6 +10548,7 @@ static void generateFunctionCall(classDef *cd,classDef *ocd,overDef *od,
             break;
 
         case idiv_slot:
+        case itruediv_slot:
             generateBinarySlotCall(cd, od, "/=", deref, fp);
             break;
 
@@ -10759,8 +10822,14 @@ static void generateComparisonSlotCall(classDef *cd, overDef *od,
     }
 
     if (!isGlobal(od))
-        prcode(fp, "sipCpp%s%S::operator%s(", (deref ? "->" : "."),
-                classFQCName(cd), op);
+    {
+        const char *deref_s = (deref ? "->" : ".");
+
+        if (isAbstract(od))
+            prcode(fp, "sipCpp%soperator%s(", deref_s, op);
+        else
+            prcode(fp, "sipCpp%s%S::operator%s(", deref_s, classFQCName(cd), op);
+    }
     else if (deref)
         prcode(fp, "operator%s((*sipCpp), ", op);
     else
@@ -11832,6 +11901,7 @@ void prOverloadName(FILE *fp, overDef *od)
         break;
 
     case div_slot:
+    case truediv_slot:
         pt2 = "/";
         break;
 
@@ -11872,6 +11942,7 @@ void prOverloadName(FILE *fp, overDef *od)
         break;
 
     case idiv_slot:
+    case itruediv_slot:
         pt2 = "/=";
         break;
 
