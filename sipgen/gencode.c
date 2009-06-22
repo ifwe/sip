@@ -3685,7 +3685,7 @@ static void generateVariableGetter(classDef *context, varDef *vd, FILE *fp)
 {
     argType atype = vd->type.atype;
     const char *first_arg, *pyobj_arg, *last_arg;
-    int needsNew;
+    int needsNew, needsDelete;
     codeBlock* methodcode = isProperty(vd) && vd->getter ? vd->getter->methodcode : 0;
 
     if (generating_c || !isStaticVar(vd))
@@ -3781,6 +3781,7 @@ static void generateVariableGetter(classDef *context, varDef *vd, FILE *fp)
     }
 
     needsNew = ((atype == class_type || atype == mapped_type) && vd->type.nrderefs == 0 && (isConstArg(&vd->type) || !isReference(&vd->type)));
+    needsDelete = atype == mapped_type;
 
     if (needsNew)
     {
@@ -3813,8 +3814,14 @@ generate_return:
     case mapped_type:
         prcode(fp,
                 /* TODO: don't use (void*) cast here. instead, remove const* if necessary (?) */
-"    return sipConvertFromType((void*)sipVal, sipType_%T, NULL);\n"
+"    PyObject* retVal = sipConvertFromType((void*)sipVal, sipType_%T, NULL);\n"
             , &vd->type);
+        if (needsNew && needsDelete)
+            prcode(fp,
+"    delete sipVal;\n\n");
+
+        prcode(fp,
+"    return retVal;\n");
 
         break;
 
