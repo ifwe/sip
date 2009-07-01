@@ -92,7 +92,7 @@
 #define CLASS_NO_QMETAOBJECT    0x02000000  /* It has no QMetaObject. */
 #define CLASS_IS_TEMPLATE   0x04000000  /* It is a template class. */
 #define CLASS_IS_DEPRECATED 0x08000000  /* It is deprecated. */
-#define CLASS_MAIN_THREAD_DESTRUCTOR 0x16000000  /* Its destructor must be called on the main thread. */
+#define CLASS_MAIN_THREAD_DESTRUCTOR 0x10000000  /* Its destructor must be called on the main thread. */
 
 #define hasSigSlots(cd)     ((cd)->classflags & CLASS_HAS_SIGSLOTS)
 #define setHasSigSlots(cd)  ((cd)->classflags |= CLASS_HAS_SIGSLOTS)
