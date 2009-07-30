@@ -119,7 +119,13 @@ static PyObject *sipMethodDescr_repr(PyObject *self)
 {
     sipMethodDescr *md = (sipMethodDescr *)self;
 
-    return PyString_FromFormat("<built-in method %s>", md->pmd->ml_name);
+    return
+#if PY_MAJOR_VERSION >= 3
+            PyUnicode_FromFormat
+#else
+            PyString_FromFormat
+#endif
+                    ("<built-in method %s>", md->pmd->ml_name);
 }
 
 
@@ -280,7 +286,7 @@ static int get_instance_address(sipVariableDescr *vd, PyObject *obj,
         }
 
         /* Get the C++ instance. */
-        if ((addr = sip_api_get_cpp_ptr((sipSimpleWrapper *)obj, vd->ctd)) == NULL)
+        if ((addr = sip_api_get_cpp_ptr((sipSimpleWrapper *)obj, &vd->ctd->ctd_base)) == NULL)
             return -1;
     }
 

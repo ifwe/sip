@@ -100,13 +100,13 @@ static sipWrapperType *sip_api_find_class(const char *type);
 static const sipMappedType *sip_api_find_mapped_type(const char *type);
 static PyTypeObject *sip_api_find_named_enum(const char *type);
 static char sip_api_bytes_as_char(PyObject *obj);
-static char *sip_api_bytes_as_string(PyObject *obj);
+static const char *sip_api_bytes_as_string(PyObject *obj);
 static char sip_api_string_as_ascii_char(PyObject *obj);
-static char *sip_api_string_as_ascii_string(PyObject **obj);
+static const char *sip_api_string_as_ascii_string(PyObject **obj);
 static char sip_api_string_as_latin1_char(PyObject *obj);
-static char *sip_api_string_as_latin1_string(PyObject **obj);
+static const char *sip_api_string_as_latin1_string(PyObject **obj);
 static char sip_api_string_as_utf8_char(PyObject *obj);
-static char *sip_api_string_as_utf8_string(PyObject **obj);
+static const char *sip_api_string_as_utf8_string(PyObject **obj);
 #if defined(HAVE_WCHAR_H)
 static wchar_t sip_api_unicode_as_wchar(PyObject *obj);
 static wchar_t *sip_api_unicode_as_wstring(PyObject *obj);
@@ -126,10 +126,10 @@ static int sip_api_register_py_type(PyTypeObject *supertype);
 static PyObject *sip_api_convert_from_enum(int eval, const sipTypeDef *td);
 static const sipTypeDef *sip_api_type_from_py_type_object(PyTypeObject *py_type);
 static const sipTypeDef *sip_api_type_scope(const sipTypeDef *td);
-static const char *sip_api_resolve_typedef(const char *name,
-        const sipExportedModuleDef *em);
+static const char *sip_api_resolve_typedef(const char *name);
 static int sip_api_register_attribute_getter(const sipTypeDef *td,
         sipAttrGetterFunc getter);
+static int sip_api_is_api_enabled(const char *name, int from, int to);
 static void sip_api_clear_any_slot_reference(sipSlot *slot);
 static int sip_api_visit_slot(sipSlot *slot, visitproc visit, void *arg);
 static void sip_api_keep_reference(PyObject *self, int key, PyObject *obj);
@@ -149,7 +149,6 @@ static const sipAPIDef sip_api = {
     &sipWrapperType_Type,
     &sipVoidPtr_Type,
 
-    sip_api_init_module,
     sip_api_bad_catcher_result,
     sip_api_bad_length_for_slice,
     sip_api_build_result,
@@ -188,6 +187,7 @@ static const sipAPIDef sip_api = {
     sip_api_type_scope,
     sip_api_resolve_typedef,
     sip_api_register_attribute_getter,
+    sip_api_is_api_enabled,
     /*
      * The following are deprecated parts of the public API.
      */
@@ -210,6 +210,7 @@ static const sipAPIDef sip_api = {
     /*
      * The following are not part of the public API.
      */
+    sip_api_init_module,
     sip_api_parse_args,
     sip_api_parse_pair,
     sip_api_common_dtor,
@@ -373,8 +374,6 @@ static int parsePass2(sipSimpleWrapper *self, int selfarg, int nrargs,
 static int getSelfFromArgs(sipTypeDef *td, PyObject *args, int argnr,
         sipSimpleWrapper **selfp);
 static PyObject *createEnumMember(sipClassTypeDef *ctd, sipEnumMemberDef *enm);
-static int get_lazy_attr(sipWrapperType *wt, sipSimpleWrapper *sw,
-        const char *name, PyObject **attr);
 static int compareTypedefName(const void *key, const void *el);
 static int checkPointer(void *ptr);
 static void *cast_cpp_ptr(void *ptr, PyTypeObject *src_type,
@@ -435,14 +434,14 @@ static int parseBytes_AsCharArray(PyObject *obj, const char **ap,
 static int parseBytes_AsChar(PyObject *obj, char *ap);
 static int parseBytes_AsString(PyObject *obj, const char **ap);
 static int parseString_AsASCIIChar(PyObject *obj, char *ap);
-static PyObject *parseString_AsASCIIString(PyObject *obj, char **ap);
+static PyObject *parseString_AsASCIIString(PyObject *obj, const char **ap);
 static int parseString_AsLatin1Char(PyObject *obj, char *ap);
-static PyObject *parseString_AsLatin1String(PyObject *obj, char **ap);
+static PyObject *parseString_AsLatin1String(PyObject *obj, const char **ap);
 static int parseString_AsUTF8Char(PyObject *obj, char *ap);
-static PyObject *parseString_AsUTF8String(PyObject *obj, char **ap);
+static PyObject *parseString_AsUTF8String(PyObject *obj, const char **ap);
 static int parseString_AsEncodedChar(PyObject *bytes, PyObject *obj, char *ap);
 static PyObject *parseString_AsEncodedString(PyObject *bytes, PyObject *obj,
-        char **ap);
+        const char **ap);
 #if defined(HAVE_WCHAR_H)
 static int parseWCharArray(PyObject *obj, wchar_t **ap, SIP_SSIZE_T *aszp);
 static int parseWChar(PyObject *obj, wchar_t *ap);
@@ -3957,7 +3956,7 @@ static int createClassType(sipExportedModuleDef *client, sipClassTypeDef *ctd,
          * same module if it needs doing.
          */
         if (createClassType(client, scope_ctd, mod_dict) < 0)
-            return -1;
+            goto reterr;
 
         scope_dict = (sipTypeAsPyTypeObject((sipTypeDef *)scope_ctd))->tp_dict;
     }
@@ -4120,6 +4119,7 @@ relname:
     Py_DECREF(name);
 
 reterr:
+    ctd->ctd_base.td_module = NULL;
     return -1;
 }
 
@@ -4781,6 +4781,15 @@ static int sip_api_register_attribute_getter(const sipTypeDef *td,
     sipAttrGetters = ag;
 
     return 0;
+}
+
+/*
+ * See if a range of versions of a particular API is enabled.
+ */
+static int sip_api_is_api_enabled(const char *name, int from, int to)
+{
+    /* Not yet implemented. */
+    return FALSE;
 }
 
 
@@ -5800,7 +5809,13 @@ static int sip_api_can_convert_to_type(PyObject *pyObj, const sipTypeDef *td,
 
     /* None is handled outside the type checkers. */
     if (pyObj == Py_None)
-        ok = ((flags & SIP_NOT_NONE) == 0);
+    {
+        /* If the type explicitly handles None then ignore the flags. */
+        if (sipTypeAllowNone(td))
+            ok = TRUE;
+        else
+            ok = ((flags & SIP_NOT_NONE) == 0);
+    }
     else
     {
         sipConvertToFunc cto;
@@ -5837,7 +5852,7 @@ static void *sip_api_convert_to_type(PyObject *pyObj, const sipTypeDef *td,
     if (!*iserrp)
     {
         /* Do the conversion. */
-        if (pyObj == Py_None)
+        if (pyObj == Py_None && !sipTypeAllowNone(td))
             cpp = NULL;
         else
         {
@@ -6037,13 +6052,48 @@ int sip_api_get_state(PyObject *transferObj)
 
 
 /*
+ * This is set by sip_api_find_type() before calling bsearch() on the types
+ * table for the module.  This is a hack that works around the problem of
+ * unresolved externally defined types.
+ */
+static sipExportedModuleDef *module_searched;
+
+
+/*
  * The bsearch() helper function for searching the types table.
  */
 static int compareTypeDef(const void *key, const void *el)
 {
     const char *s1 = (const char *)key;
-    const char *s2 = sipTypeName(*(const sipTypeDef **)el);
+    const char *s2 = NULL;
+    const sipTypeDef *td;
     char ch1, ch2;
+
+    /* Allow for unresolved externally defined types. */
+    td = *(const sipTypeDef **)el;
+
+    if (td != NULL)
+        s2 = sipTypeName(td);
+    else
+    {
+        sipExternalTypeDef *etd = module_searched->em_external;
+
+        assert(etd != NULL);
+
+        /* Find which external type it is. */
+        while (etd->et_nr >= 0)
+        {
+            const sipTypeDef **tdp = &module_searched->em_types[etd->et_nr];
+
+            if (tdp == (const sipTypeDef **)el)
+            {
+                s2 = etd->et_name;
+                break;
+            }
+        }
+
+        assert(s2 != NULL);
+    }
 
     /*
      * Compare while ignoring spaces so that we don't impose a rigorous naming
@@ -6077,12 +6127,21 @@ static const sipTypeDef *sip_api_find_type(const char *type)
     {
         sipTypeDef **tdp;
 
+        /* The backdoor to the comparison helper. */
+        module_searched = em;
+
         tdp = (sipTypeDef **)bsearch((const void *)type,
                 (const void *)em->em_types, em->em_nrtypes,
                 sizeof (sipTypeDef *), compareTypeDef);
 
         if (tdp != NULL)
+        {
+            /*
+             * Note that this will be NULL for unresolved externally defined
+             * types.
+             */
             return *tdp;
+        }
     }
 
     return NULL;
@@ -6676,41 +6735,7 @@ static int sipVoidPtr_getbuffer(PyObject *self, Py_buffer *buf, int flags)
 {
     sipVoidPtrObject *v = (sipVoidPtrObject *)self;
 
-    /* Check the data is writeable. */
-    if ((flags & PyBUF_WRITABLE) && !v->rw)
-    {
-        PyErr_SetString(PyExc_TypeError, "the sip.voidptr is not writeable");
-        return -1;
-    }
-
-    /* We only support simple buffers. */
-    if (flags & PyBUF_ND)
-    {
-        PyErr_SetString(PyExc_TypeError,
-                "sip.voidptr does not support shape information");
-        return -1;
-    }
-
-    if (flags & PyBUF_STRIDES)
-    {
-        PyErr_SetString(PyExc_TypeError,
-                "sip.voidptr does not support strides information");
-        return -1;
-    }
-
-    buf->buf = v->voidptr;
-    buf->len = v->size;
-    buf->readonly = !v->rw;
-
-    buf->format = NULL;
-    buf->ndim = 0;
-    buf->shape = NULL;
-    buf->strides = NULL;
-    buf->suboffsets = NULL;
-    buf->itemsize = 1;
-    buf->internal = NULL;
-
-    return 0;
+    return PyBuffer_FillInfo(buf, self, v->voidptr, v->size, !v->rw, flags);
 }
 #endif
 
@@ -8255,12 +8280,15 @@ static void addTypeSlots(PyTypeObject *to, PyNumberMethods *nb,
 #endif
             break;
 
-#if PY_MAJOR_VERSION < 3
         case div_slot:
             if (nb != NULL)
+            {
+                nb->nb_true_divide = (binaryfunc)f;
+#if PY_MAJOR_VERSION < 3
                 nb->nb_divide = (binaryfunc)f;
-            break;
 #endif
+            }
+            break;
 
         case mod_slot:
             if (nb != NULL)
@@ -8331,12 +8359,15 @@ static void addTypeSlots(PyTypeObject *to, PyNumberMethods *nb,
 #endif
             break;
 
-#if PY_MAJOR_VERSION < 3
         case idiv_slot:
             if (nb != NULL)
+            {
+                nb->nb_inplace_true_divide = (binaryfunc)f;
+#if PY_MAJOR_VERSION < 3
                 nb->nb_inplace_divide = (binaryfunc)f;
-            break;
 #endif
+            }
+            break;
 
         case imod_slot:
             if (nb != NULL)
@@ -8499,32 +8530,29 @@ static void forgetObject(sipSimpleWrapper *sw)
  * If the given name is that of a typedef then the corresponding type is
  * returned.
  */
-static const char *sip_api_resolve_typedef(const char *name,
-        const sipExportedModuleDef *em)
+static const char *sip_api_resolve_typedef(const char *name)
 {
-    sipTypedefDef *tdd;
-    sipImportedModuleDef *im;
-
-    /* Check this module. */
-    if (em->em_nrtypedefs > 0 && (tdd = (sipTypedefDef *)bsearch(name,
-            em->em_typedefs, em->em_nrtypedefs, sizeof (sipTypedefDef),
-            compareTypedefName)) != NULL)
-        return tdd->tdd_type_name;
+    const sipExportedModuleDef *em;
 
     /*
-     * Check parent modules.  We don't check every module because independent
-     * modules could define the same name with different types.
+     * Note that if the same name is defined as more than one type (which is
+     * possible if more than one completely independent modules are being
+     * used) then we might pick the wrong one.
      */
-    if ((im = em->em_imports) != NULL)
-        do
+    for (em = moduleList; em != NULL; em = em->em_next)
+    {
+        if (em->em_nrtypedefs > 0)
         {
-            const char *type_name = sip_api_resolve_typedef(name,
-                    im->im_module);
+            sipTypedefDef *tdd;
 
-            if (type_name != NULL)
-                return type_name;
+            tdd = (sipTypedefDef *)bsearch(name, em->em_typedefs,
+                    em->em_nrtypedefs, sizeof (sipTypedefDef),
+                    compareTypedefName);
+
+            if (tdd != NULL)
+                return tdd->tdd_type_name;
         }
-        while ((++im)->im_name != NULL);
+    }
 
     return NULL;
 }
@@ -8664,9 +8692,9 @@ static char sip_api_bytes_as_char(PyObject *obj)
  * Convert a Python object to a string and raise an exception if there was
  * an error.
  */
-static char *sip_api_bytes_as_string(PyObject *obj)
+static const char *sip_api_bytes_as_string(PyObject *obj)
 {
-    char *a;
+    const char *a;
 
     if (parseBytes_AsString(obj, &a) < 0)
     {
@@ -8836,10 +8864,10 @@ static int parseString_AsEncodedChar(PyObject *bytes, PyObject *obj, char *ap)
  * there was an error.  The object is updated with the one that owns the
  * string.  Note that None is considered an error.
  */
-static char *sip_api_string_as_ascii_string(PyObject **obj)
+static const char *sip_api_string_as_ascii_string(PyObject **obj)
 {
     PyObject *s = *obj;
-    char *a;
+    const char *a;
 
     if (s == Py_None || (*obj = parseString_AsASCIIString(s, &a)) == NULL)
     {
@@ -8864,7 +8892,7 @@ static char *sip_api_string_as_ascii_string(PyObject **obj)
  * Parse an ASCII string and return it and a new reference to the object that
  * owns the string.
  */
-static PyObject *parseString_AsASCIIString(PyObject *obj, char **ap)
+static PyObject *parseString_AsASCIIString(PyObject *obj, const char **ap)
 {
     return parseString_AsEncodedString(PyUnicode_AsASCIIString(obj), obj, ap);
 }
@@ -8875,10 +8903,10 @@ static PyObject *parseString_AsASCIIString(PyObject *obj, char **ap)
  * there was an error.  The object is updated with the one that owns the
  * string.  Note that None is considered an error.
  */
-static char *sip_api_string_as_latin1_string(PyObject **obj)
+static const char *sip_api_string_as_latin1_string(PyObject **obj)
 {
     PyObject *s = *obj;
-    char *a;
+    const char *a;
 
     if (s == Py_None || (*obj = parseString_AsLatin1String(s, &a)) == NULL)
     {
@@ -8903,7 +8931,7 @@ static char *sip_api_string_as_latin1_string(PyObject **obj)
  * Parse a Latin-1 string and return it and a new reference to the object that
  * owns the string.
  */
-static PyObject *parseString_AsLatin1String(PyObject *obj, char **ap)
+static PyObject *parseString_AsLatin1String(PyObject *obj, const char **ap)
 {
     return parseString_AsEncodedString(PyUnicode_AsLatin1String(obj), obj, ap);
 }
@@ -8914,10 +8942,10 @@ static PyObject *parseString_AsLatin1String(PyObject *obj, char **ap)
  * there was an error.  The object is updated with the one that owns the
  * string.  Note that None is considered an error.
  */
-static char *sip_api_string_as_utf8_string(PyObject **obj)
+static const char *sip_api_string_as_utf8_string(PyObject **obj)
 {
     PyObject *s = *obj;
-    char *a;
+    const char *a;
 
     if (s == Py_None || (*obj = parseString_AsUTF8String(s, &a)) == NULL)
     {
@@ -8942,7 +8970,7 @@ static char *sip_api_string_as_utf8_string(PyObject **obj)
  * Parse a UTF-8 string and return it and a new reference to the object that
  * owns the string.
  */
-static PyObject *parseString_AsUTF8String(PyObject *obj, char **ap)
+static PyObject *parseString_AsUTF8String(PyObject *obj, const char **ap)
 {
     return parseString_AsEncodedString(PyUnicode_AsUTF8String(obj), obj, ap);
 }
@@ -8953,7 +8981,7 @@ static PyObject *parseString_AsUTF8String(PyObject *obj, char **ap)
  * owns the string.
  */
 static PyObject *parseString_AsEncodedString(PyObject *bytes, PyObject *obj,
-        char **ap)
+        const char **ap)
 {
     if (bytes != NULL)
     {

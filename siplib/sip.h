@@ -50,8 +50,8 @@ extern "C" {
 /*
  * Define the SIP version number.
  */
-#define SIP_VERSION         0x040800
-#define SIP_VERSION_STR     "4.8-snapshot-20090528"
+#define SIP_VERSION         0x040803
+#define SIP_VERSION_STR     "4.8.3-snapshot-20090729"
 
 
 /*
@@ -63,6 +63,12 @@ extern "C" {
  * to 0.
  *
  * History:
+ *
+ * 5.0  Added sip_api_is_api_enabled().
+ *      Renamed the td_version_nr member of sipTypeDef to be int and where -1
+ *      indicates it is not versioned.
+ *      Added the em_versions member to sipExportedModuleDef.
+ *      Added the em_versioned_functions member to sipExportedModuleDef.
  *
  * 4.0  Much refactoring.
  *
@@ -136,7 +142,7 @@ extern "C" {
  *
  * 0.0  Original version.
  */
-#define SIP_API_MAJOR_NR    4
+#define SIP_API_MAJOR_NR    5
 #define SIP_API_MINOR_NR    0
 
 
@@ -148,11 +154,21 @@ extern "C" {
 
 /* Some Python compatibility stuff. */
 #if PY_VERSION_HEX >= 0x02050000
+
 #define SIP_SSIZE_T         Py_ssize_t
-#define SIP_PYMETHODDEF_CAST(s) (s)
+
+#define SIP_MLNAME_CAST(s)  (s)
+#define SIP_MLDOC_CAST(s)   (s)
+#define SIP_TPNAME_CAST(s)  (s)
+
 #else
+
 #define SIP_SSIZE_T         int
-#define SIP_PYMETHODDEF_CAST(s) ((char *)(s))
+
+#define SIP_MLNAME_CAST(s)  ((char *)(s))
+#define SIP_MLDOC_CAST(s)   ((char *)(s))
+#define SIP_TPNAME_CAST(s)  ((char *)(s))
+
 #endif
 
 #if PY_MAJOR_VERSION >= 3
@@ -448,9 +464,7 @@ typedef enum {
     sub_slot,           /* __sub__ */
     mul_slot,           /* __mul__ for number types */
     repeat_slot,        /* __mul__ for sequence types */
-#if PY_MAJOR_VERSION < 3
     div_slot,           /* __div__ */
-#endif
     mod_slot,           /* __mod__ */
     floordiv_slot,      /* __floordiv__ */
     truediv_slot,       /* __truediv__ */
@@ -464,9 +478,7 @@ typedef enum {
     isub_slot,          /* __isub__ */
     imul_slot,          /* __imul__ for number types */
     irepeat_slot,       /* __imul__ for sequence types */
-#if PY_MAJOR_VERSION < 3
     idiv_slot,          /* __idiv__ */
-#endif
     imod_slot,          /* __imod__ */
     ifloordiv_slot,     /* __ifloordiv__ */
     itruediv_slot,      /* __itruediv__ */
@@ -563,8 +575,8 @@ typedef struct _sipVariableDef {
  * namespace, a mapped type or a named enum.
  */
 typedef struct _sipTypeDef {
-    /* The version number, 0 if the type isn't versioned. */
-    unsigned td_version_nr;
+    /* The version number, -1 if the type isn't versioned. */
+    int td_version;
 
     /* The next version of this type. */
     struct _sipTypeDef *td_next_version;
@@ -853,6 +865,15 @@ typedef struct _sipExportedModuleDef {
 
     /* The list of delayed dtors. */
     sipDelayedDtor *em_ddlist;
+
+    /*
+     * The array of API version definitions.  Each definition takes up 3
+     * elements.
+     */
+    int *em_versions;
+
+    /* The optional table of versioned functions. */
+    void *em_versioned_functions;
 } sipExportedModuleDef;
 
 
@@ -1100,7 +1121,6 @@ typedef struct _sipAPIDef {
     PyTypeObject *api_wrappertype_type;
     PyTypeObject *api_voidptr_type;
 
-    int (*api_init_module)(sipExportedModuleDef *client, PyObject *mod_dict);
     void (*api_bad_catcher_result)(PyObject *method);
     void (*api_bad_length_for_slice)(SIP_SSIZE_T seqlen, SIP_SSIZE_T slicelen);
     PyObject *(*api_build_result)(int *isErr, const char *fmt, ...);
@@ -1149,10 +1169,10 @@ typedef struct _sipAPIDef {
     int (*api_register_py_type)(PyTypeObject *type);
     const sipTypeDef *(*api_type_from_py_type_object)(PyTypeObject *py_type);
     const sipTypeDef *(*api_type_scope)(const sipTypeDef *td);
-    const char *(*api_resolve_typedef)(const char *name,
-            const sipExportedModuleDef *em);
+    const char *(*api_resolve_typedef)(const char *name);
     int (*api_register_attribute_getter)(const sipTypeDef *td,
             sipAttrGetterFunc getter);
+    int (*api_is_api_enabled)(const char *name, int from, int to);
 
     /*
      * The following are deprecated parts of the public API.
@@ -1182,6 +1202,7 @@ typedef struct _sipAPIDef {
     /*
      * The following are not part of the public API.
      */
+    int (*api_init_module)(sipExportedModuleDef *client, PyObject *mod_dict);
     int (*api_parse_args)(int *argsParsedp, PyObject *sipArgs,
             const char *fmt, ...);
     int (*api_parse_pair)(int *argsParsedp, PyObject *arg0, PyObject *arg1,
@@ -1209,13 +1230,13 @@ typedef struct _sipAPIDef {
             const sipTypeDef *type, PyObject *arg0, PyObject *arg1);
     void (*api_add_delayed_dtor)(sipSimpleWrapper *w);
     char (*api_bytes_as_char)(PyObject *obj);
-    char *(*api_bytes_as_string)(PyObject *obj);
+    const char *(*api_bytes_as_string)(PyObject *obj);
     char (*api_string_as_ascii_char)(PyObject *obj);
-    char *(*api_string_as_ascii_string)(PyObject **obj);
+    const char *(*api_string_as_ascii_string)(PyObject **obj);
     char (*api_string_as_latin1_char)(PyObject *obj);
-    char *(*api_string_as_latin1_string)(PyObject **obj);
+    const char *(*api_string_as_latin1_string)(PyObject **obj);
     char (*api_string_as_utf8_char)(PyObject *obj);
-    char *(*api_string_as_utf8_string)(PyObject **obj);
+    const char *(*api_string_as_utf8_string)(PyObject **obj);
 #if defined(HAVE_WCHAR_H)
     wchar_t (*api_unicode_as_wchar)(PyObject *obj);
     wchar_t *(*api_unicode_as_wstring)(PyObject *obj);
@@ -1307,6 +1328,7 @@ typedef struct _sipQtAPI {
 #define SIP_TYPE_ENUM       0x0003  /* If the type is a named enum. */
 #define SIP_TYPE_ABSTRACT   0x0008  /* If the type is abstract. */
 #define SIP_TYPE_SCC        0x0010  /* If the type is subject to sub-class convertors. */
+#define SIP_TYPE_ALLOW_NONE 0x0020  /* If the type can handle None. */
 
 
 /*
@@ -1337,6 +1359,7 @@ typedef struct _sipQtAPI {
  */
 #define sipTypeIsAbstract(td)   ((td)->td_flags & SIP_TYPE_ABSTRACT)
 #define sipTypeHasSCC(td)   ((td)->td_flags & SIP_TYPE_SCC)
+#define sipTypeAllowNone(td)    ((td)->td_flags & SIP_TYPE_ALLOW_NONE)
 
 /*
  * Get various names from the string pool for various data types.

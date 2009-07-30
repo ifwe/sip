@@ -488,10 +488,14 @@ static void registerMetaType(classDef *cd)
     ctorDef *ct;
 
     /*
-     * We register types with Qt if the class is not abstract, has a public
-     * default ctor, a public copy ctor and a public dtor.
+     * We register types with Qt if the class is not abstract, doesn't have a
+     * private assignment operator, has a public default ctor, a public copy
+     * ctor and a public dtor.
      */
     if (isAbstractClass(cd))
+        return;
+
+    if (cannotAssign(cd))
         return;
 
     if (!isPublicDtor(cd))
@@ -1115,6 +1119,13 @@ static void setHierarchy(sipSpec *pt, classDef *base, classDef *cd,
                     setIsQObjectSubClass(cd);
 
                 /*
+                 * If the super-class can't be assigned to then this one
+                 * cannot either.
+                 */
+                if (cannotAssign(mro->cd))
+                    setCannotAssign(cd);
+
+                /*
                  * If the super-class has a shadow then this one should have
                  * one as well.
                  */
@@ -1664,7 +1675,13 @@ static void resolveMappedTypeTypes(sipSpec *pt, mappedTypeDef *mt)
     signatureDef *sd = &mt->type.u.td->types;
 
     for (a = 0; a < sd->nrArgs; ++a)
-        getBaseType(pt, mt->iff->module, NULL, &sd->args[a]);
+    {
+        argDef *ad = &sd->args[a];
+
+        /* Leave templates as they are. */
+        if (ad->atype != template_type)
+            getBaseType(pt, mt->iff->module, NULL, ad);
+    }
 
     /* Make sure that the signature result won't cause problems. */
     sd->result.atype = no_type;
@@ -1819,9 +1836,9 @@ static void resolvePySigTypes(sipSpec *pt, moduleDef *mod, classDef *scope,
             }
 
             if (isVirtual(od))
-                fatal("%s() unsupported function argument type - provide %%Method code, a valid %%VirtualCatcherCode and a valid C++ signature\n",od -> cppname);
+                fatal("%s() unsupported function argument type - provide %%MethodCode, a valid %%VirtualCatcherCode and a valid C++ signature\n",od -> cppname);
 
-            fatal("%s() unsupported function argument type - provide %%Method code and a valid %s signature\n",od -> cppname,(pt -> genc ? "C" : "C++"));
+            fatal("%s() unsupported function argument type - provide %%MethodCode and a valid %s signature\n",od -> cppname,(pt -> genc ? "C" : "C++"));
         }
 
         if (scope != NULL)
@@ -2391,7 +2408,7 @@ int sameBaseType(argDef *a1, argDef *a2)
             td2 = a2->u.td;
 
             if (compareScopedNames(td1->fqname, td2->fqname) != 0 ||
-                td1->types.nrArgs != td2->types.nrArgs)
+                    td1->types.nrArgs != td2->types.nrArgs)
                 return FALSE;
 
             for (a = 0; a < td1->types.nrArgs; ++a)

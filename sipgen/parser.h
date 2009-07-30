@@ -250,7 +250,7 @@
 
 
 #if ! defined (YYSTYPE) && ! defined (YYSTYPE_IS_DECLARED)
-#line 123 "parser.y"
+#line 124 "parser.y"
 typedef union YYSTYPE {
     char            qchar;
     char            *text;

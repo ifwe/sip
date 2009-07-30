@@ -91,6 +91,7 @@ static int getTransfer(optFlags *);
 static int getReleaseGIL(optFlags *);
 static int getHoldGIL(optFlags *);
 static int getDeprecated(optFlags *);
+static int getAllowNone(optFlags *);
 static void templateSignature(signatureDef *sd, int result, classTmplDef *tcd, templateDef *td, classDef *ncd);
 static void templateType(argDef *ad, classTmplDef *tcd, templateDef *td, classDef *ncd);
 static int search_back(const char *end, const char *start, const char *target);
@@ -1815,6 +1816,24 @@ function:   cpptype TK_NAME '(' arglist ')' optconst optexceptions optabstract o
             currentIsStatic = FALSE;
             currentOverIsVirt = FALSE;
         }
+    |   cpptype TK_OPERATOR '=' '(' cpptype ')' ';' {
+            /*
+             * It looks like an assignment operator (though we don't bother to
+             * check the types) so make sure it is private.
+             */
+            if (notSkipping())
+            {
+                classDef *cd = currentScope();
+
+                if (cd == NULL || !(sectionFlags & SECT_IS_PRIVATE))
+                    yyerror("Assignment operators may only be defined as private");
+
+                setCannotAssign(cd);
+            }
+
+            currentIsStatic = FALSE;
+            currentOverIsVirt = FALSE;
+        }
     |   cpptype TK_OPERATOR operatorname '(' arglist ')' optconst optexceptions optabstract optflags optsig ';' methodcode virtualcatchercode {
             if (notSkipping())
             {
@@ -2760,17 +2779,9 @@ void appendToClassList(classList **clp,classDef *cd)
  */
 static void newModule(FILE *fp, char *filename)
 {
-    moduleDef *importing_module = currentModule;
-
     parseFile(fp, filename, currentModule, FALSE);
     currentModule = allocModule();
     currentModule->file = filename;
-
-    /* Inherit from any importing module. */
-    if (importing_module != NULL)
-    {
-        currentModule->encoding = importing_module->encoding;
-    }
 }
 
 
@@ -2784,7 +2795,7 @@ static moduleDef *allocModule()
     newmod = sipMalloc(sizeof (moduleDef));
 
     newmod->version = -1;
-    newmod->encoding = string_type;
+    newmod->encoding = no_type;
     newmod->qobjclass = -1;
     newmod->nrvirthandlers = -1;
     newmod->next_key = 1;
@@ -3005,10 +3016,12 @@ static exceptionDef *findException(sipSpec *pt, scopedNameDef *fqname, int new)
      * as a (as yet undefined) class.
      */
     if (new)
+    {
         if (iff->type == exception_iface)
             cd = NULL;
         else
             yyerror("There is already a class with the same name or the exception has been used before being defined");
+    }
     else
     {
         if (iff->type == exception_iface)
@@ -3208,6 +3221,9 @@ static void finishClass(sipSpec *pt, moduleDef *mod, classDef *cd, optFlags *of)
 
         if (getDeprecated(of))
             setIsDeprecatedClass(cd);
+
+        if (cd->convtocode != NULL && getAllowNone(of))
+            setClassHandlesNone(cd);
 
         if (findOptFlag(of,"Abstract",bool_flag) != NULL)
         {
@@ -5166,14 +5182,19 @@ static void handleEOF()
  */
 static void handleEOM()
 {
-    /* Check it has been named. */
+    moduleDef *imported_module = currentModule;
 
-    if (currentModule -> name == NULL)
-        fatal("No %%Module has been specified for module defined in %s\n",previousFile);
+    /* Check it has been named. */
+    if (currentModule->name == NULL)
+        fatal("No %%Module has been specified for module defined in %s\n",
+                previousFile);
 
     /* The previous module is now current. */
-
     currentModule = currentContext.prevmod;
+
+    /* Import any defaults from the parsed module. */
+    if (currentModule != NULL && currentModule->encoding == no_type)
+        currentModule->encoding = imported_module->encoding;
 }
 
 
@@ -5598,6 +5619,15 @@ static int getDeprecated(optFlags *optflgs)
 
 
 /*
+ * Get the /AllowNone/ option flag.
+ */
+static int getAllowNone(optFlags *optflgs)
+{
+    return (findOptFlag(optflgs, "AllowNone", bool_flag) != NULL);
+}
+
+
+/*
  * Return TRUE if the PyQt3 plugin was specified.
  */
 int pluginPyQt3(sipSpec *pt)
@@ -5721,7 +5751,12 @@ static void applyTypeFlags(moduleDef *mod, argDef *ad, optFlags *flags)
         optFlag *of;
 
         if ((of = findOptFlag(flags, "Encoding", string_flag)) == NULL)
-            ad->atype = mod->encoding;
+        {
+            if (mod->encoding != no_type)
+                ad->atype = mod->encoding;
+            else
+                ad->atype = string_type;
+        }
         else if ((ad->atype = convertEncoding(of->fvalue.sval)) == no_type)
             yyerror("The value of the /Encoding/ annotation must be one of \"ASCII\", \"Latin-1\", \"UTF-8\" or \"None\"");
     }

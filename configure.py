@@ -21,8 +21,8 @@ import siputils
 
 
 # Initialise the globals.
-sip_version = 0x040800
-sip_version_str = "4.8-snapshot-20090528"
+sip_version = 0x040803
+sip_version_str = "4.8.3-snapshot-20090729"
 py_version = sys.hexversion >> 8
 plat_py_site_dir = None
 plat_py_inc_dir = None
