@@ -1,4 +1,5 @@
 doc/sipref.html
+doc/html/
 sipgen/parser.c
 
 *.pyc
