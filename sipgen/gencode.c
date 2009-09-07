@@ -9980,7 +9980,7 @@ static void generateHandleResult(classDef *od_cd, overDef *od, int isNew, int re
             prcode(fp, ");\n");
 
             prcode(fp,
-"            return PyUnicode_FromWideChar((wchar_t*)s.c_str(), s.length());\n");
+"            return PyUnicode_FromWideChar((const wchar_t*)s.c_str(), s.length());\n");
 
             return;
         }
