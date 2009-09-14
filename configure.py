@@ -7,6 +7,11 @@
 # This copy of SIP is licensed for use under the terms of the SIP License
 # Agreement.  See the file LICENSE for more details.
 # 
+# This copy of SIP may also used under the terms of the GNU General Public
+# License v2 or v3 as published by the Free Software Foundation which can be
+# found in the files LICENSE-GPL2.txt and LICENSE-GPL3.txt included in this
+# package.
+# 
 # SIP is supplied WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
@@ -21,8 +26,8 @@ import siputils
 
 
 # Initialise the globals.
-sip_version = 0x040803
-sip_version_str = "4.8.3-snapshot-20090729"
+sip_version = 0x040900
+sip_version_str = "4.9-snapshot-20090906"
 py_version = sys.hexversion >> 8
 plat_py_site_dir = None
 plat_py_inc_dir = None

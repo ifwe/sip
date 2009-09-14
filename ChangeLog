@@ -1,22 +1,241 @@
-2009/07/29 22:20:18  phil
+2009/09/06 22:30:08  phil
+Added the support for handling keyword arguments to QObject ctors.
+
+
+2009/09/04 17:30:51  phil
+Completed the support for /Array/ applied to classes and mapped types.
+
+
+2009/09/04 15:11:07  phil
+Added support for /Array/ for classes and mapped types for non-virtual
+functions.
+
+
+2009/09/03 18:26:07  phil
+Added the extended assignment helper and the array allocation helper for the
+future support of /Array/ for classes and mapped types.
+
+
+2009/09/01 14:05:37  phil
+Added the GPL as a licensing option.
+
+
+2009/09/01 12:59:57  phil
+Added support for __iter__ and __next__.
+
+
+2009/08/21 18:07:18  phil
+Added a check for recursive class hierarchies.
+Fixed the error message about type2string() by making sure it handles structs.
+
+
+2009/08/11 18:43:58  phil
+Fixed sipIsPyMethod() to not use PyObject_GetAttr() so that reimplementations
+defined in mixins will be found.  This was a regression introduced when
+attribute lookup was made less lazy when getting super() to work properly.
+
+
+2009/08/11 15:27:32  phil
+Fixed the conversion of strings to wchar_t arrays as it was using calls that
+appeared in Python v2.6.
+
+
+2009/08/08 12:52:42  phil
+sipFindType() will now find types given as a pointer.
+
+
+2009/08/06 11:26:36  phil
+Fixed sipdistutils.py for Python v3.
+
+
+2009/08/05 11:17:35  phil
+Fixes for looking up types when some times have no implementation for all API
+versions.
+
+
+2009/08/04 12:41:19  phil
+No longer complain about methods having the same Python signature if they all
+are versioned.
+
+
+2009/08/04 10:35:38  phil
+Init extenders now respect API version numbers.
+
+
+2009/08/04  0:28:38  phil
+Virtual methods now support API versions.
+
+
+2009/08/03 15:02:18  phil
+Added support for the /API/ annotation to all overloaded methods.
+
+
+2009/08/03 13:41:35  phil
+The /API/ annotation is now supported for ctors.
+
+
+2009/08/02 12:23:40  phil
+Instantiated class templates now take their API from the scoping class.
+
+
+2009/08/01 22:02:58  phil
+Operator casts and global slots now handle classes with alternate mapped type
+implementations.  (In a limited way, but good enough for PyQt.)
+
+
+2009/07/29 22:21:13  phil
 Fixed a crash with sipFindType() when the search happens to land on an
 unresolved external type.
 
 
-2009/07/29 20:39:37  phil
+2009/07/29 20:37:20  phil
 Fixed the Python v3 buffer interface for sip.voidptr.
 
 
-2009/07/27 14:25:50  phil
-Released as v4.8.2.
-
-
-2009/07/25 17:23:10  phil
+2009/07/25 17:23:33  phil
 Fixed the '/' operator for Python v3 and future import for Python v2.
 
 
-2009/07/20 10:19:19  phil
-Backported the /AllowNone/ class annotation from v4.9.
+2009/07/18 22:14:15  phil
+Fixed a typo in a couple of error messages.
+
+
+2009/07/09 17:18:12  phil
+Fixed the nb_index initialiser for sip.voidptr for Python v2.4 and earler.
+
+
+2009/07/09 12:20:30  phil
+Allow the meta-type to be used with with ordinary Python classes, not just SIP
+generated classes.
+
+
+2009/07/08 11:44:04  phil
+Complete the support for mapped type static methods.
+
+
+2009/07/07 18:14:22  phil
+Safety commit of (mostly complete) support for static functions in mapped
+types.
+
+
+2009/07/07 10:29:25  phil
+Extended the use of /AllowNone/ to classes with %ConvertToType code.
+
+
+2009/07/06 19:12:44  phil
+Added the /AllowNone/ mapped type annotation for mapped types that want to
+place a special interpretation on None.
+
+
+2009/07/06 15:30:00  phil
+The generated virtual handler code is now the same for classes and for mapped
+types that might have an alternate class implementation.
+
+
+2009/07/06 12:38:38  phil
+Make sure mapped types honour the /Constrained/ annotation.
+
+
+2009/07/05 18:10:46  phil
+Debugged mapped types with namespaces.
+
+
+2009/07/05 16:44:44  phil
+Safety checkin on the run-time support for mapped types with namespaces.
+
+
+2009/06/29 11:53:56  phil
+Finished the code generation support for enums in mapped types.  (Runtime
+support still to do.)
+
+
+2009/06/28 19:12:05  phil
+Safety commit of the support for mapped types containing enums.
+
+
+2009/06/28 17:36:14  phil
+Implemented the sipContainerDef in anticipation of mapped types supporting
+enums (for the moment, static methods and variables at a later date).
+Fixed a problem where API version ranges wheren't being reused.
+
+
+2009/06/28 11:06:50  phil
+Fixed a problem with enums in a type with alternate APIs.
+
+
+2009/06/27 13:16:51  phil
+Added a workaround to the build system when using virtualenv on MacOS.
+
+
+2009/06/25 15:11:28  phil
+A Python string object can now be provided when a wide character (wchar_t) is
+expected.
+
+
+2009/06/23 18:06:58  phil
+Some fixes for generated code for mapped types and classes not being as
+completely interchangeable as needed. (Still more to do.)
+
+
+2009/06/22 16:48:00  phil
+Bug fixes to the multi-API type support - PyQt4 now builds again.
+
+
+2009/06/22  5:50:37  phil
+Completed the run-time support for multi-API types.
+
+
+2009/06/21 19:02:40  phil
+Completed the code generation changes for multi-API types.
+
+
+2009/06/21 17:54:42  phil
+More refactoring in preparation for multi-API support for types.
+
+
+2009/06/21 10:18:14  phil
+More changes to the multi-API support for types.
+
+
+2009/06/20 18:51:14  phil
+Safety commit of latest changes for support of type API selection.
+
+
+2009/06/19 22:49:31  phil
+Safety commit of parser changes to get at the API version of a class before it
+is defined.
+
+
+2009/06/18 18:52:52  phil
+Implemented API selection for global functions.
+
+
+2009/06/17 22:37:28  phil
+Completed the documentation for the API support.
+The %API directive can now be used any number of times in a module.
+Added the parser support for the API annotation.
+
+
+2009/06/17 11:59:48  phil
+Added support for the %API directive.
+
+
+2009/06/16 22:28:45  phil
+Implemented sipIsAPIEnabled().
+
+
+2009/06/16 18:19:36  phil
+...and made sure it compiles.
+
+
+2009/06/16 18:16:16  phil
+Fixed the reference count of the sip module in the error path if its
+initialisation fails.
+Added the sip.getapi() and sip.setapi() functions.
+
+
+2009/06/16 16:26:31  phil
+Merged v4.8.1 into the trunk.
 
 
 2009/06/16  9:35:20  phil

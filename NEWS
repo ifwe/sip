@@ -1,5 +1,13 @@
-v4.8.2 27th July 2009
-  - Added the /AllowNone/ class annotation.
+v4.9 ??? September 2009
+  - Added support for __iter__ and __next__.  (__next__ is used for Python v2
+    as well as v3.)
+  - Added the %API directive.
+  - Added the /API/ annotation.
+  - Added sipIsAPIEnabled() to the C API.
+  - Added sip.getapi() and sip.setapi() to the Python API.
+  - Mapped types can now act as a namespace for enums and static methods.
+  - The /Array/ annotation can now be applied to classes and mapped types.
+  - SIP is now also licensed under the GPL v2 and v3.
 
 v4.8.1 16th June 2009
   - Added support for defining a private assignment operator to suppress the

@@ -8,6 +8,11 @@
  * This copy of SIP is licensed for use under the terms of the SIP License
  * Agreement.  See the file LICENSE for more details.
  * 
+ * This copy of SIP may also used under the terms of the GNU General Public
+ * License v2 or v3 as published by the Free Software Foundation which can be
+ * found in the files LICENSE-GPL2.txt and LICENSE-GPL3.txt included in this
+ * package.
+ * 
  * SIP is supplied WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  */
@@ -59,7 +64,18 @@ extern PyTypeObject sipMethodDescr_Type;
 PyObject *sipMethodDescr_New(PyMethodDef *pmd);
 
 extern PyTypeObject sipVariableDescr_Type;
-PyObject *sipVariableDescr_New(sipVariableDef *vd, const sipClassTypeDef *ctd);
+PyObject *sipVariableDescr_New(sipVariableDef *vd, const sipTypeDef *td,
+    const sipContainerDef *cod);
+
+
+/*
+ * Support for API versions.
+ */
+PyObject *sipGetAPI(PyObject *self, PyObject *args);
+PyObject *sipSetAPI(PyObject *self, PyObject *args);
+int sip_api_is_api_enabled(const char *name, int from, int to);
+int sipIsRangeEnabled(sipExportedModuleDef *em, int range_index);
+int sipInitAPI(sipExportedModuleDef *em, PyObject *mod_dict);
 
 
 extern sipQtAPI *sipQtSupport;  /* The Qt support API. */

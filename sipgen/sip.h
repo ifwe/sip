@@ -8,6 +8,11 @@
  * This copy of SIP is licensed for use under the terms of the SIP License
  * Agreement.  See the file LICENSE for more details.
  * 
+ * This copy of SIP may also used under the terms of the GNU General Public
+ * License v2 or v3 as published by the Free Software Foundation which can be
+ * found in the files LICENSE-GPL2.txt and LICENSE-GPL3.txt included in this
+ * package.
+ * 
  * SIP is supplied WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  */
@@ -113,8 +118,8 @@
 #define wasProtectedClass(cd)   ((cd)->classflags & CLASS_IS_PROTECTED_SAV)
 #define setWasProtectedClass(cd)    ((cd)->classflags |= CLASS_IS_PROTECTED_SAV)
 #define resetWasProtectedClass(cd)  ((cd)->classflags &= ~CLASS_IS_PROTECTED_SAV)
-#define isReleaseGILDtor(c) ((cd)->classflags & CLASS_DTOR_RELEASE_GIL)
-#define setIsReleaseGILDtor(c)  ((cd)->classflags |= CLASS_DTOR_RELEASE_GIL)
+#define isReleaseGILDtor(cd)    ((cd)->classflags & CLASS_DTOR_RELEASE_GIL)
+#define setIsReleaseGILDtor(cd) ((cd)->classflags |= CLASS_DTOR_RELEASE_GIL)
 #define isIncomplete(cd)    ((cd)->classflags & CLASS_IS_INCOMPLETE)
 #define setIsIncomplete(cd) ((cd)->classflags |= CLASS_IS_INCOMPLETE)
 #define canCreate(cd)       ((cd)->classflags & CLASS_CAN_CREATE)
@@ -128,12 +133,12 @@
 #define setNoDefaultCtors(cd)   ((cd)->classflags |= CLASS_NO_DEFAULT_CTORS)
 #define isQObjectSubClass(cd)   ((cd)->classflags & CLASS_QOBJECT_SUB)
 #define setIsQObjectSubClass(cd)    ((cd)->classflags |= CLASS_QOBJECT_SUB)
-#define isHoldGILDtor(c)    ((cd)->classflags & CLASS_DTOR_HOLD_GIL)
-#define setIsHoldGILDtor(c) ((cd)->classflags |= CLASS_DTOR_HOLD_GIL)
-#define assignmentHelper(c) ((cd)->classflags & CLASS_ASSIGN_HELPER)
-#define setAssignmentHelper(c)      ((cd)->classflags |= CLASS_ASSIGN_HELPER)
-#define noPyQt4QMetaObject(c)       ((cd)->classflags & CLASS_NO_QMETAOBJECT)
-#define setPyQt4NoQMetaObject(c)    ((cd)->classflags |= CLASS_NO_QMETAOBJECT)
+#define isHoldGILDtor(cd)   ((cd)->classflags & CLASS_DTOR_HOLD_GIL)
+#define setIsHoldGILDtor(cd) ((cd)->classflags |= CLASS_DTOR_HOLD_GIL)
+#define assignmentHelper(cd) ((cd)->classflags & CLASS_ASSIGN_HELPER)
+#define setAssignmentHelper(cd) ((cd)->classflags |= CLASS_ASSIGN_HELPER)
+#define noPyQt4QMetaObject(cd)  ((cd)->classflags & CLASS_NO_QMETAOBJECT)
+#define setPyQt4NoQMetaObject(cd)   ((cd)->classflags |= CLASS_NO_QMETAOBJECT)
 #define isTemplateClass(cd) ((cd)->classflags & CLASS_IS_TEMPLATE)
 #define setIsTemplateClass(cd)  ((cd)->classflags |= CLASS_IS_TEMPLATE)
 #define resetIsTemplateClass(cd)    ((cd)->classflags &= ~CLASS_IS_TEMPLATE)
@@ -187,11 +192,14 @@
 
 #define MEMBR_NUMERIC       0x0001      /* It is a numeric slot. */
 #define MEMBR_NO_ARG_PARSER 0x0002      /* Don't generate an argument parser. */
+#define MEMBR_NOT_VERSIONED 0x0004      /* There is an unversioned overload. */
 
 #define isNumeric(m)        ((m)->memberflags & MEMBR_NUMERIC)
 #define setIsNumeric(m)     ((m)->memberflags |= MEMBR_NUMERIC)
 #define noArgParser(m)      ((m)->memberflags & MEMBR_NO_ARG_PARSER)
 #define setNoArgParser(m)   ((m)->memberflags |= MEMBR_NO_ARG_PARSER)
+#define notVersioned(m)     ((m)->memberflags & MEMBR_NOT_VERSIONED)
+#define setNotVersioned(m)  ((m)->memberflags |= MEMBR_NOT_VERSIONED)
 
 
 /* Handle enum flags.  These are combined with the section flags. */
@@ -211,11 +219,15 @@
 
 #define HIER_IS_DUPLICATE   0x0001      /* It is a super class duplicate. */
 #define HIER_HAS_DUPLICATE  0x0002      /* It has a super class duplicate. */
+#define HIER_BEING_SET      0x0004      /* The MRO is being set. */
 
 #define isDuplicateSuper(m) ((m)->mroflags & HIER_IS_DUPLICATE)
 #define setIsDuplicateSuper(m)  ((m)->mroflags |= HIER_IS_DUPLICATE)
 #define hasDuplicateSuper(m)    ((m)->mroflags & HIER_HAS_DUPLICATE)
 #define setHasDuplicateSuper(m) ((m)->mroflags |= HIER_HAS_DUPLICATE)
+#define hierBeingSet(m)     ((m)->mroflags & HIER_BEING_SET)
+#define setHierBeingSet(m)  ((m)->mroflags |= HIER_BEING_SET)
+#define resetHierBeingSet(m)    ((m)->mroflags &= ~HIER_BEING_SET)
 
 
 /* Handle overload flags.  These are combined with the section flags. */
@@ -377,9 +389,12 @@
 /* Handle mapped type flags. */
 
 #define MT_NO_RELEASE       0x01    /* Do not generate a release function. */
+#define MT_ALLOW_NONE       0x02    /* The mapped type will handle None. */
 
 #define noRelease(mt)       ((mt)->mtflags & MT_NO_RELEASE)
 #define setNoRelease(mt)    ((mt)->mtflags |= MT_NO_RELEASE)
+#define handlesNone(mt)     ((mt)->mtflags & MT_ALLOW_NONE)
+#define setHandlesNone(mt)  ((mt)->mtflags |= MT_ALLOW_NONE)
 
 
 /* Handle typedef flags. */
@@ -447,6 +462,8 @@ typedef enum {
     repr_slot,
     hash_slot,
     index_slot,
+    iter_slot,
+    next_slot,
     no_slot
 } slotType;
 
@@ -669,11 +686,22 @@ typedef struct _fcallDef {
 } fcallDef;
 
 
+/* An API version range definition. */
+typedef struct _apiVersionRangeDef {
+    nameDef *api_name;                  /* The API name. */
+    int from;                           /* The lower bound. */
+    int to;                             /* The upper bound. */
+    struct _apiVersionRangeDef *next;   /* The next in the list. */
+} apiVersionRangeDef;
+
+
 /* A module definition. */
 typedef struct _moduleDef {
     nameDef *fullname;                  /* The full module name. */
     const char *name;                   /* The module base name. */
     int version;                        /* The module version. */
+    apiVersionRangeDef *api_versions;   /* The defined APIs. */
+    apiVersionRangeDef *api_ranges;     /* The list of API version ranges. */
     int modflags;                       /* The module flags. */
     int qobjclass;                      /* QObject class, -1 if none. */
     struct _memberDef *othfuncs;        /* List of other functions. */
@@ -720,7 +748,11 @@ typedef struct _moduleListDef {
 
 typedef struct _ifaceFileDef {
     nameDef *name;                      /* The name. */
+    int api_range;                      /* The optional API version range. */
+    struct _ifaceFileDef *first_alt;    /* The first alternate API. */
+    struct _ifaceFileDef *next_alt;     /* The next alternate API. */
     ifaceFileType type;                 /* Interface file type. */
+    int ifacenr;                        /* The index into the types table. */
     scopedNameDef *fqcname;             /* The fully qualified C++ name. */
     moduleDef *module;                  /* The owning module. */
     codeBlock *hdrcode;                 /* Header code. */
@@ -742,9 +774,11 @@ typedef struct _ifaceFileList {
 typedef struct _mappedTypeDef {
     int mtflags;                        /* The mapped type flags. */
     argDef type;                        /* The type being mapped. */
+    nameDef *pyname;                    /* The Python name. */
     nameDef *cname;                     /* The C/C++ name. */
-    int mappednr;                       /* The mapped type number. */
     ifaceFileDef *iff;                  /* The interface file. */
+    struct _memberDef *members;         /* The static member functions. */
+    struct _overDef *overs;             /* The static overloads. */
     codeBlock *convfromcode;            /* Convert from C++ code. */
     codeBlock *convtocode;              /* Convert to C++ code. */
     struct _mappedTypeDef *next;        /* Next in the list. */
@@ -823,6 +857,7 @@ typedef struct _overDef {
     char *cppname;                      /* The C++ name. */
     int overflags;                      /* The overload flags. */
     struct _memberDef *common;          /* Common parts. */
+    int api_range;                      /* The optional API version range. */
     signatureDef pysig;                 /* The Python signature. */
     signatureDef *cppsig;               /* The C++ signature. */
     throwArgs *exceptions;              /* The exceptions. */
@@ -838,6 +873,7 @@ typedef struct _overDef {
 
 typedef struct _ctorDef {
     int ctorflags;                      /* The ctor flags. */
+    int api_range;                      /* The optional API version range. */
     signatureDef pysig;                 /* The Python signature. */
     signatureDef *cppsig;               /* The C++ signature, NULL if /NoDerived/. */
     throwArgs *exceptions;              /* The exceptions. */
@@ -865,9 +901,12 @@ typedef struct _enumDef {
     nameDef *pyname;                    /* The Python name (may be NULL). */
     scopedNameDef *fqcname;             /* The C/C++ name (may be NULL). */
     nameDef *cname;                     /* The C/C++ name (may be NULL). */
+    struct _enumDef *first_alt;         /* The first alternate API. */
+    struct _enumDef *next_alt;          /* The next alternate API. */
     int enumnr;                         /* The enum number. */
     int enum_idx;                       /* The enum index within the module. */
-    struct _classDef *ecd;              /* The enclosing class. */
+    struct _classDef *ecd;              /* The enclosing class, if any. */
+    struct _mappedTypeDef *emtd;        /* The enclosing mapped type, if any. */
     moduleDef *module;                  /* The owning module. */
     enumMemberDef *members;             /* The list of members. */
     struct _memberDef *slots;           /* The list of slots. */
@@ -928,7 +967,6 @@ typedef struct _mroDef {
 typedef struct _classDef {
     int classflags;                     /* The class flags. */
     int pyqt4_flags;                    /* The PyQt4 specific flags. */
-    int classnr;                        /* The class number. */
     nameDef *pyname;                    /* The Python name. */
     ifaceFileDef *iff;                  /* The interface file. */
     struct _classDef *ecd;              /* The enclosing scope. */
@@ -1052,7 +1090,6 @@ int sameTemplateSignature(signatureDef *tmpl_sd, signatureDef *args_sd,
 int compareScopedNames(scopedNameDef *snd1, scopedNameDef *snd2);
 int sameBaseType(argDef *,argDef *);
 char *scopedNameTail(scopedNameDef *);
-scopedNameDef *text2scopePart(char *);
 scopedNameDef *copyScopedName(scopedNameDef *);
 void appendScopedName(scopedNameDef **,scopedNameDef *);
 void freeScopedName(scopedNameDef *);
@@ -1060,7 +1097,7 @@ void appendToClassList(classList **,classDef *);
 void appendCodeBlock(codeBlock **headp, codeBlock *new);
 void prcode(FILE *fp, const char *fmt, ...);
 void prOverloadName(FILE *fp, overDef *od);
-void prOverloadDecl(FILE *fp, classDef *context, overDef *od, int defval);
+void prOverloadDecl(FILE *fp, ifaceFileDef *scope, overDef *od, int defval);
 void searchTypedefs(sipSpec *pt, scopedNameDef *snd, argDef *ad);
 int isIntReturnSlot(memberDef *md);
 int isLongReturnSlot(memberDef *md);
@@ -1071,11 +1108,14 @@ mappedTypeDef *allocMappedType(sipSpec *pt, argDef *type);
 void appendString(stringList **headp, const char *s);
 void appendTypeStrings(scopedNameDef *ename, signatureDef *patt, signatureDef *src, signatureDef *known, scopedNameDef **names, scopedNameDef **values);
 codeBlock *templateCode(sipSpec *pt, ifaceFileList **used, codeBlock *ocb, scopedNameDef *names, scopedNameDef *values);
-ifaceFileDef *findIfaceFile(sipSpec *pt, moduleDef *mod, scopedNameDef *fqname, ifaceFileType iftype, argDef *ad);
+ifaceFileDef *findIfaceFile(sipSpec *pt, moduleDef *mod,
+        scopedNameDef *fqname, ifaceFileType iftype, int api_range,
+        argDef *ad);
 int pluginPyQt3(sipSpec *pt);
 int pluginPyQt4(sipSpec *pt);
 void yywarning(char *);
 nameDef *cacheName(sipSpec *pt, const char *name);
+scopedNameDef *encodedTemplateName(templateDef *td);
 
 
 /* These are only here because bison publically references them. */
@@ -1090,7 +1130,8 @@ typedef enum {
     name_flag,
     opt_name_flag,
     dotted_name_flag,
-    integer_flag
+    integer_flag,
+    api_range_flag
 } flagType;
 
 typedef struct {
@@ -1098,7 +1139,7 @@ typedef struct {
     flagType ftype;                     /* The flag type. */
     union {                             /* The flag value. */
         char *sval;                     /* A string value. */
-        long ival;                      /* An integer value. */
+        long ival;                      /* An integer or API range value. */
     } fvalue;
 } optFlag;
 

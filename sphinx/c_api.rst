@@ -157,6 +157,10 @@ specification files.
     ``o`` (long) [unsigned long long]
         Convert a C/C++ ``unsigned long long`` to a Python long.
 
+    ``r`` (wrapped instance) [*type* \*, :cmacro:`SIP_SSIZE_T`, const :ctype:`sipTypeDef` \*]
+        Convert an array of C structures, C++ classes or mapped type instances
+        to a Python tuple.  Note that copies of the array elements are made.
+
     ``s`` (string/bytes) [char \*]
         Convert a C/C++ ``'\0'`` terminated string to a Python v2 string object
         or a Python v3 bytes object.  If the string pointer is ``NULL`` then
@@ -906,6 +910,20 @@ specification files.
         C/C++ instance hasn't been wrapped.
 
 
+.. cfunction:: int sipGetState(PyObject *transferObj)
+
+    The :directive:`%ConvertToTypeCode` directive requires that the provided
+    code returns an ``int`` describing the state of the converted value.  The
+    state usually depends on any transfers of ownership that have been
+    requested.  This is a convenience function that returns the correct state
+    when the converted value is a temporary.
+
+    :param transferObj:
+        the object that describes the requested transfer of ownership.
+    :return:
+        the state of the converted value.
+
+
 .. cfunction:: PyObject *sipGetWrapper(void *cppptr, sipWrapperType *type)
 
     This returns a borrowed reference to the wrapped instance object for a C
@@ -955,6 +973,27 @@ specification files.
 
     .. note::
         This is deprecated from SIP v4.8.
+
+
+.. cfunction:: int sipIsAPIEnabled(const char *name, int from, int to)
+
+    .. versionadded:: 4.9
+
+    This checks to see if the current version number of an API falls within a
+    given range.  See :ref:`ref-incompat-apis` for more detail.
+
+    :param name:
+        the name of the API.
+    :param from:
+        the lower bound of the range.  For the API to be enabled its version
+        number must be greater than or equal to *from*.  If *from* is 0 then
+        this check isn't made.
+    :param to:
+        the upper bound of the range.  For the API to be enabled its version
+        number must be less than *to*.  If *to* is 0 then this check isn't
+        made.
+    :return:
+        a non-zero value if the API is enabled.
 
 
 .. cfunction:: unsigned long sipLong_AsUnsignedLong(PyObject *obj)
@@ -1114,13 +1153,13 @@ specification files.
         Convert a Python long to a C/C++ ``unsigned int``.
 
     ``w`` (unicode/string) [wchar_t \*]
-        Convert a Python v2 unicode object or a Python v3 string object of
-        length 1 to a C/C++ wide character.
+        Convert a Python v2 string or unicode object or a Python v3 string
+        object of length 1 to a C/C++ wide character.
 
     ``x`` (unicode/string) [wchar_t \*\*]
-        Convert a Python v2 unicode object or a Python v3 string object to a
-        C/C++ ``L'\0'`` terminated wide character string.  If the Python object
-        is ``Py_None`` then the string is ``NULL``.
+        Convert a Python v2 string or unicode object or a Python v3 string
+        object to a C/C++ ``L'\0'`` terminated wide character string.  If the
+        Python object is ``Py_None`` then the string is ``NULL``.
 
     ``Ae`` (object) [int, const char \*\*]
         Convert a Python string-like object to a C/C++ ``'\0'`` terminated
@@ -1183,10 +1222,11 @@ specification files.
     ``F`` (wrapped enum) [:ctype:`sipTypeDef` \*, enum \*]
         Convert a Python named enum type to the corresponding C/C++ ``enum``.
 
-    ``G`` (unicode) [wchar_t \*\*, :cmacro:`SIP_SSIZE_T` \*]
-        Convert a Python unicode object to a C/C++ wide character array and its
-        length.  If the Python object is ``Py_None`` then the array and length
-        are ``NULL`` and zero respectively.
+    ``G`` (unicode/string) [wchar_t \*\*, :cmacro:`SIP_SSIZE_T` \*]
+        Convert a Python v2 string or unicode object or a Python v3 string
+        object to a C/C++ wide character array and its length.  If the Python
+        object is ``Py_None`` then the array and length are ``NULL`` and zero
+        respectively.
 
     ``N`` (object) [PyTypeObject \*, :PyObject \*\*]
         A Python object is checked to see if it is a certain type and then

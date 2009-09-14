@@ -1,2 +1,10 @@
 doc/html/
 sipgen/parser.c
+*.obj
+*.pyc
+*.exe
+*.exe.manifest
+*.pyd
+*.pyd.manifest
+*.pdb
+

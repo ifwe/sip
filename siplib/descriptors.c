@@ -8,6 +8,11 @@
  * This copy of SIP is licensed for use under the terms of the SIP License
  * Agreement.  See the file LICENSE for more details.
  * 
+ * This copy of SIP may also used under the terms of the GNU General Public
+ * License v2 or v3 as published by the Free Software Foundation which can be
+ * found in the files LICENSE-GPL2.txt and LICENSE-GPL3.txt included in this
+ * package.
+ * 
  * SIP is supplied WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  */
@@ -152,7 +157,10 @@ typedef struct _sipVariableDescr {
     sipVariableDef *vd;
 
     /* The generated type definition. */
-    const sipClassTypeDef *ctd;
+    const sipTypeDef *td;
+
+    /* The generated container definition. */
+    const sipContainerDef *cod;
 } sipVariableDescr;
 
 
@@ -205,14 +213,16 @@ static int get_instance_address(sipVariableDescr *vd, PyObject *obj,
 /*
  * Return a new method descriptor for the given getter/setter.
  */
-PyObject *sipVariableDescr_New(sipVariableDef *vd, const sipClassTypeDef *ctd)
+PyObject *sipVariableDescr_New(sipVariableDef *vd, const sipTypeDef *td,
+        const sipContainerDef *cod)
 {
     PyObject *descr = PyType_GenericAlloc(&sipVariableDescr_Type, 0);
 
     if (descr != NULL)
     {
         ((sipVariableDescr *)descr)->vd = vd;
-        ((sipVariableDescr *)descr)->ctd = ctd;
+        ((sipVariableDescr *)descr)->td = td;
+        ((sipVariableDescr *)descr)->cod = cod;
     }
 
     return descr;
@@ -249,7 +259,7 @@ static int sipVariableDescr_descr_set(PyObject *self, PyObject *obj,
     {
         PyErr_Format(PyExc_AttributeError,
                 "'%s' object attribute '%s' is read-only",
-                sipPyNameOfClass(vd->ctd), vd->vd->vd_name);
+                sipPyNameOfContainer(vd->cod, vd->td), vd->vd->vd_name);
 
         return -1;
     }
@@ -280,13 +290,13 @@ static int get_instance_address(sipVariableDescr *vd, PyObject *obj,
         {
             PyErr_Format(PyExc_AttributeError,
                     "'%s' object attribute '%s' is an instance attribute",
-                    sipPyNameOfClass(vd->ctd), vd->vd->vd_name);
+                    sipPyNameOfContainer(vd->cod, vd->td), vd->vd->vd_name);
 
             return -1;
         }
 
         /* Get the C++ instance. */
-        if ((addr = sip_api_get_cpp_ptr((sipSimpleWrapper *)obj, &vd->ctd->ctd_base)) == NULL)
+        if ((addr = sip_api_get_cpp_ptr((sipSimpleWrapper *)obj, vd->td)) == NULL)
             return -1;
     }
 

@@ -35,6 +35,24 @@ Annotations can have one of the following types:
 *string*
     The value is a double quoted string.
 
+*API range*
+    The value is the name of an API (defined using the :directive:`%API`
+    directive) separated by a range of version numbers with a colon.
+
+    The range of version numbers is a pair of numbers separated by a hyphen
+    specifying the lower and upper bounds of the range.  A version number is
+    within the range if it is greater or equal to the lower bound and less
+    than the upper bound.  Each bound can be omitted meaning that the range is
+    unbounded in that direction.
+
+    For example::
+
+        # This is part of the PyQt4 API up to but excluding v2.
+        void hex() /API=PyQt4:-2/
+
+        # This is part of the PyQt4 API starting from v2.
+        void hex() /PyName=hex_, API=PyQt4:2-/
+
 The following example shows argument and function annotations::
 
     void exec(QWidget * /Transfer/) /ReleaseGIL, PyName=call_exec/;
@@ -58,14 +76,17 @@ Argument Annotations
 
 .. argument-annotation:: Array
 
-    This boolean annotation specifies that the corresponding argument (which
-    should be either ``char *`` or ``unsigned char *``) refers to an array
-    rather than a ``'\0'`` terminated string.  There must be a corresponding
-    argument with the :aanno:`ArraySize` annotation specified.  The annotation
-    may only be specified once in a list of arguments.
+    This boolean annotation specifies that the corresponding argument refers
+    to an array.
+    
+    The argument should be either a pointer to a wrapped type, a ``char *`` or
+    a ``unsigned char *``.  If the argument is a character array then the
+    annotation also implies the :aanno:`Encoding` annotation with an encoding
+    of ``"None"``.
 
-    The annotation also implies the :aanno:`Encoding` annotation with an
-    encoding of ``"None"``.
+    There must be a corresponding argument with the :aanno:`ArraySize`
+    annotation specified.  The annotation may only be specified once in a list
+    of arguments.
 
 
 .. argument-annotation:: ArraySize
@@ -261,6 +282,19 @@ Class Annotations
     does not have any :directive:`%ConvertToTypeCode`.
 
 
+.. class-annotation:: API
+
+    .. versionadded:: 4.9
+
+    This API range annotation is used to specify an API and corresponding
+    range of version numbers that the class is enabled for.
+
+    If a class or mapped type has different implementations enabled for
+    different ranges of version numbers then those ranges must not overlap.
+
+    See :ref:`ref-incompat-apis` for more detail.
+
+
 .. class-annotation:: DelayDtor
 
     This boolean annotation is used to specify that the class's destructor
@@ -365,6 +399,28 @@ Class Annotations
 Mapped Type Annotations
 -----------------------
 
+.. mapped-type-annotation:: AllowNone
+
+    Normally when a Python object is converted to a C/C++ instance ``None``
+    is handled automatically before the mapped type's
+    :directive:`%ConvertToTypeCode` is called.  This boolean annotation
+    specifies that the handling of ``None`` will be left to the
+    :directive:`%ConvertToTypeCode`.
+
+
+.. mapped-type-annotation:: API
+
+    .. versionadded:: 4.9
+
+    This API range annotation is used to specify an API and corresponding
+    range of version numbers that the mapped type is enabled for.
+
+    If a class or mapped type has different implementations enabled for
+    different ranges of version numbers then those ranges must not overlap.
+
+    See :ref:`ref-incompat-apis` for more detail.
+
+
 .. mapped-type-annotation:: NoRelease
 
     This boolean annotation is used to specify that the mapped type does not
@@ -406,6 +462,16 @@ Exception Annotations
 
 Function Annotations
 --------------------
+
+.. function-annotation:: API
+
+    .. versionadded:: 4.9
+
+    This API range annotation is used to specify an API and corresponding
+    range of version numbers that the function is enabled for.
+
+    See :ref:`ref-incompat-apis` for more detail.
+
 
 .. function-annotation:: AutoGen
 

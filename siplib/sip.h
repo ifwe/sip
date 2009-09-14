@@ -8,6 +8,11 @@
  * This copy of SIP is licensed for use under the terms of the SIP License
  * Agreement.  See the file LICENSE for more details.
  * 
+ * This copy of SIP may also used under the terms of the GNU General Public
+ * License v2 or v3 as published by the Free Software Foundation which can be
+ * found in the files LICENSE-GPL2.txt and LICENSE-GPL3.txt included in this
+ * package.
+ * 
  * SIP is supplied WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  */
@@ -50,8 +55,8 @@ extern "C" {
 /*
  * Define the SIP version number.
  */
-#define SIP_VERSION         0x040803
-#define SIP_VERSION_STR     "4.8.3-snapshot-20090729"
+#define SIP_VERSION         0x040900
+#define SIP_VERSION_STR     "4.9-snapshot-20090906"
 
 
 /*
@@ -63,6 +68,14 @@ extern "C" {
  * to 0.
  *
  * History:
+ *
+ * 6.0  Added the sipContainerDef structure to define the contents of a class
+ *      or mapped type.  Restructured sipClassDef and sipMappedTypeDef
+ *      accordingly.
+ *      Added the 'r' format character to sip_api_parse_args().
+ *      Added the 'r' format character to sip_api_call_method() and
+ *      sip_api_build_result().
+ *      Added the assignment, array and copy allocation helpers.
  *
  * 5.0  Added sip_api_is_api_enabled().
  *      Renamed the td_version_nr member of sipTypeDef to be int and where -1
@@ -142,7 +155,7 @@ extern "C" {
  *
  * 0.0  Original version.
  */
-#define SIP_API_MAJOR_NR    5
+#define SIP_API_MAJOR_NR    6
 #define SIP_API_MINOR_NR    0
 
 
@@ -344,6 +357,9 @@ typedef const struct _sipTypeDef *(*sipSubClassConvertFunc)(void **);
 typedef int (*sipConvertToFunc)(PyObject *, void **, int *, PyObject *);
 typedef PyObject *(*sipConvertFromFunc)(void *, PyObject *);
 typedef int (*sipVirtHandlerFunc)(void *, PyObject *, ...);
+typedef void (*sipAssignFunc)(void *, SIP_SSIZE_T, const void *);
+typedef void *(*sipArrayFunc)(SIP_SSIZE_T);
+typedef void *(*sipCopyFunc)(const void *, SIP_SSIZE_T);
 typedef void (*sipReleaseFunc)(void *, int);
 typedef PyObject *(*sipPickleFunc)(void *);
 typedef int (*sipAttrGetterFunc)(const struct _sipTypeDef *, PyObject *);
@@ -352,18 +368,18 @@ typedef int (*sipVariableSetterFunc)(void *, PyObject *, PyObject *);
 
 
 /*
- * The information describing an encoded class ID.
+ * The information describing an encoded type ID.
  */
-typedef struct _sipEncodedClassDef {
-    /* The class number. */
-    unsigned sc_class:16;
+typedef struct _sipEncodedTypeDef {
+    /* The type number. */
+    unsigned sc_type:16;
 
     /* The module number (255 for this one). */
     unsigned sc_module:8;
 
     /* A context specific flag. */
     unsigned sc_flag:1;
-} sipEncodedClassDef;
+} sipEncodedTypeDef;
 
 
 /*
@@ -421,11 +437,14 @@ typedef struct _sipInstancesDef {
  * The information describing a type initialiser extender.
  */
 typedef struct _sipInitExtenderDef {
+    /* The API version range index. */
+    int ie_api_range;
+
     /* The extender function. */
     sipInitFunc ie_extender;
 
     /* The class being extended. */
-    sipEncodedClassDef ie_class;
+    sipEncodedTypeDef ie_class;
 
     /* The next extender for this class. */
     struct _sipInitExtenderDef *ie_next;
@@ -440,7 +459,7 @@ typedef struct _sipSubClassConvertorDef {
     sipSubClassConvertFunc scc_convertor;
 
     /* The encoded base type. */
-    sipEncodedClassDef scc_base;
+    sipEncodedTypeDef scc_base;
 
     /* The base type. */
     struct _sipTypeDef *scc_basetype;
@@ -510,6 +529,8 @@ typedef enum {
 #if PY_VERSION_HEX >= 0x02050000
     index_slot,         /* __index__ */
 #endif
+    iter_slot,          /* __iter__ */
+    next_slot,          /* __next__ */
 } sipPySlotType;
 
 
@@ -536,7 +557,7 @@ typedef struct _sipPySlotExtenderDef {
     sipPySlotType pse_type;
 
     /* The encoded class. */
-    sipEncodedClassDef pse_class;
+    sipEncodedTypeDef pse_class;
 } sipPySlotExtenderDef;
 
 
@@ -575,7 +596,7 @@ typedef struct _sipVariableDef {
  * namespace, a mapped type or a named enum.
  */
 typedef struct _sipTypeDef {
-    /* The version number, -1 if the type isn't versioned. */
+    /* The version range index, -1 if the type isn't versioned. */
     int td_version;
 
     /* The next version of this type. */
@@ -602,14 +623,54 @@ typedef struct _sipTypeDef {
 
 
 /*
+ * The information describing a container (ie. a class, namespace or a mapped
+ * type).
+ */
+typedef struct _sipContainerDef {
+    /*
+     * The Python name of the type, -1 if this is a namespace extender (in the
+     * context of a class) or doesn't require a namespace (in the context of a
+     * mapped type). */
+    int cod_name;
+
+    /*
+     * The scoping type or the namespace this is extending if it is a namespace
+     * extender.
+     */
+    sipEncodedTypeDef cod_scope;
+
+    /* The number of lazy methods. */
+    int cod_nrmethods;
+
+    /* The table of lazy methods. */
+    PyMethodDef *cod_methods;
+
+    /* The number of lazy enum members. */
+    int cod_nrenummembers;
+
+    /* The table of lazy enum members. */
+    sipEnumMemberDef *cod_enummembers;
+
+    /* The number of variables. */
+    int cod_nrvariables;
+
+    /* The table of variables. */
+    sipVariableDef *cod_variables;
+
+    /* The static instances. */
+    sipInstancesDef cod_instances;
+} sipContainerDef;
+
+
+/*
  * The information describing a C++ class (or C struct) or a C++ namespace.
  */
 typedef struct _sipClassTypeDef {
     /* The base type information. */
     sipTypeDef ctd_base;
 
-    /* The Python name of the type, -1 if this is a namespace extender. */
-    int ctd_name;
+    /* The container information. */
+    sipContainerDef ctd_container;
 
     /*
      * The meta-type name, -1 to use the meta-type of the first super-type
@@ -620,35 +681,11 @@ typedef struct _sipClassTypeDef {
     /* The super-type name, -1 to use sipWrapper. */
     int ctd_supertype;
 
-    /*
-     * The scoping type or the namespace this is extending if it is a namespace
-     * extender.
-     */
-    sipEncodedClassDef ctd_scope;
-
     /* The super-types. */
-    sipEncodedClassDef *ctd_supers;
+    sipEncodedTypeDef *ctd_supers;
 
     /* The table of Python slots. */
     sipPySlotDef *ctd_pyslots;
-
-    /* The number of lazy methods. */
-    int ctd_nrmethods;
-
-    /* The table of lazy methods. */
-    PyMethodDef *ctd_methods;
-
-    /* The number of lazy enum members. */
-    int ctd_nrenummembers;
-
-    /* The table of lazy enum members. */
-    sipEnumMemberDef *ctd_enummembers;
-
-    /* The number of variables. */
-    int ctd_nrvariables;
-
-    /* The table of variables. */
-    sipVariableDef *ctd_variables;
 
     /* The initialisation function. */
     sipInitFunc ctd_init;
@@ -682,6 +719,15 @@ typedef struct _sipClassTypeDef {
     /* The deallocation function. */
     sipDeallocFunc ctd_dealloc;
 
+    /* The optional assignment function. */
+    sipAssignFunc ctd_assign;
+
+    /* The optional array allocation function. */
+    sipArrayFunc ctd_array;
+
+    /* The optional copy function. */
+    sipCopyFunc ctd_copy;
+
     /* The release function, 0 if a C strict. */
     sipReleaseFunc ctd_release;
 
@@ -690,9 +736,6 @@ typedef struct _sipClassTypeDef {
 
     /* The optional convert to function. */
     sipConvertToFunc ctd_cto;
-
-    /* The static instances. */
-    sipInstancesDef ctd_instances;
 
     /* The next namespace extender. */
     struct _sipClassTypeDef *ctd_nsextender;
@@ -708,6 +751,22 @@ typedef struct _sipClassTypeDef {
 typedef struct _sipMappedTypeDef {
     /* The base type information. */
     sipTypeDef mtd_base;
+
+    /*
+     * The container information.  (At the moment only the enum information is
+     * used but mapped types should be able to contain any static methods,
+     * variables, instances etc.)
+     */
+    sipContainerDef mtd_container;
+
+    /* The optional assignment function. */
+    sipAssignFunc mtd_assign;
+
+    /* The optional array allocation function. */
+    sipArrayFunc mtd_array;
+
+    /* The optional copy function. */
+    sipCopyFunc mtd_copy;
 
     /* The optional release function. */
     sipReleaseFunc mtd_release;
@@ -773,6 +832,26 @@ typedef struct _sipDelayedDtor {
     /* Next in the list. */
     struct _sipDelayedDtor *dd_next;
 } sipDelayedDtor;
+
+
+/*
+ * Defines an entry in the table of global functions all of whose overloads
+ * are versioned (so their names can't be automatically added to the module
+ * dictionary).
+ */
+typedef struct _sipVersionedFunctionDef {
+    /* The name, -1 marks the end of the table. */
+    int vf_name;
+
+    /* The function itself. */
+    PyCFunction vf_function;
+
+    /* The METH_* flags. */
+    int vf_flags;
+
+    /* The API version range index. */
+    int vf_api_range;
+} sipVersionedFunctionDef;
 
 
 /*
@@ -868,12 +947,15 @@ typedef struct _sipExportedModuleDef {
 
     /*
      * The array of API version definitions.  Each definition takes up 3
-     * elements.
+     * elements.  If the third element of a 3-tuple is negative then the first
+     * two elements define an API and its default version.  All such
+     * definitions will appear at the end of the array.  If the first element
+     * of a 3-tuple is negative then that is the last element of the array.
      */
     int *em_versions;
 
     /* The optional table of versioned functions. */
-    void *em_versioned_functions;
+    sipVersionedFunctionDef *em_versioned_functions;
 } sipExportedModuleDef;
 
 
@@ -1329,6 +1411,7 @@ typedef struct _sipQtAPI {
 #define SIP_TYPE_ABSTRACT   0x0008  /* If the type is abstract. */
 #define SIP_TYPE_SCC        0x0010  /* If the type is subject to sub-class convertors. */
 #define SIP_TYPE_ALLOW_NONE 0x0020  /* If the type can handle None. */
+#define SIP_TYPE_STUB       0x0040  /* If the type is a stub. */
 
 
 /*
@@ -1360,13 +1443,15 @@ typedef struct _sipQtAPI {
 #define sipTypeIsAbstract(td)   ((td)->td_flags & SIP_TYPE_ABSTRACT)
 #define sipTypeHasSCC(td)   ((td)->td_flags & SIP_TYPE_SCC)
 #define sipTypeAllowNone(td)    ((td)->td_flags & SIP_TYPE_ALLOW_NONE)
+#define sipTypeIsStub(td)   ((td)->td_flags & SIP_TYPE_STUB)
+#define sipTypeSetStub(td)  ((td)->td_flags |= SIP_TYPE_STUB)
 
 /*
  * Get various names from the string pool for various data types.
  */
 #define sipNameFromPool(em, mr) (&((em)->em_strings)[(mr)])
 #define sipNameOfModule(em)     sipNameFromPool((em), (em)->em_name)
-#define sipPyNameOfClass(ctd)   sipNameFromPool((ctd)->ctd_base.td_module, (ctd)->ctd_name)
+#define sipPyNameOfContainer(cod, td)   sipNameFromPool((td)->td_module, (cod)->cod_name)
 #define sipPyNameOfEnum(etd)    sipNameFromPool((etd)->etd_base.td_module, (etd)->etd_name)
 
 
@@ -1435,9 +1520,6 @@ typedef struct _pyqt4ClassTypeDef {
      */
     sipClassTypeDef super;
 
-    /* A pointer to the optional assignment helper function. */
-    void (*qt4_assign_func)(void *, const void *);
-
     /* A pointer to the QObject sub-class's staticMetaObject class variable. */
     const void *qt4_static_metaobject;
 
@@ -1453,22 +1535,6 @@ typedef struct _pyqt4ClassTypeDef {
      */
     const pyqt4QtSignal *qt4_signals;
 } pyqt4ClassTypeDef;
-
-
-/*
- * This is the PyQt4-specific extension to the generated mapped type structure.
- * In SIP v5 this will be pushed out to a plugin supplied by PyQt4.
- */
-typedef struct _pyqt4MappedTypeDef {
-    /*
-     * The super-type structure.  This must be first in the structure so that
-     * it can be cast to sipMappedTypeDef *.
-     */
-    sipMappedTypeDef super;
-
-    /* A pointer to the optional assignment helper function. */
-    void (*qt4_assign_func)(void *, const void *);
-} pyqt4MappedTypeDef;
 
 
 #ifdef __cplusplus
