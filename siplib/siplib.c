@@ -6596,11 +6596,7 @@ static int vp_convertor(PyObject *arg, struct vp_values *vp)
     }
     else
     {
-#if PY_MAJOR_VERSION >= 3
         ptr = PyLong_AsVoidPtr(arg);
-#else
-        ptr = (void *)PyInt_AsLong(arg);
-#endif
 
         if (PyErr_Occurred())
         {
