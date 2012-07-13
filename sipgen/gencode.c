@@ -9858,8 +9858,13 @@ static void generateFunctionBody(overDef *od, classDef *cd, classDef *ocd,
 int typeNameCmp(argDef* ad, const char* s)
 {
     const char* tempName = tmpnam(NULL);
-    FILE* fp = fopen(tempName, "w");
+    FILE* fp;
     const char buf[255];
+
+    if (tempName[0] == '\\') // Win7 returns a name with a backslash
+        tempName = &tempName[1];
+
+    fp = fopen(tempName, "w");
 
     if (fp == NULL)
         fatal("could not open temporary file");

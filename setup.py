@@ -17,9 +17,6 @@ if not 'build' in sys.argv:
     print 'use "python setup.py build" to build SIP'
 else:
     # TODO: submit a distutils.sysconfig patch to python.org
-    import distutils.sysconfig as s
-    s.python_build = True
-
     print 'Generating parser.c from parser.y...'
     cwd = os.getcwd()
     try:
